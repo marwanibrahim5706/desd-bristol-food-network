@@ -42,12 +42,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     "rest_framework",
-    "brfn_accounts",
-    "brfn_products",
-    "brfn_cart",
-    "brfn_orders",
-    "brfn_payments",
-    "brfn_alerts",
+    "market_accounts",
+    "market_products",
+    "market_cart",
+    "market_orders",
+    "market_payments",
+    "market_alerts",
 ]
 
 MIDDLEWARE = [
@@ -137,4 +137,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = "brfn_accounts.User"
+AUTH_USER_MODEL = "market_accounts.User"
