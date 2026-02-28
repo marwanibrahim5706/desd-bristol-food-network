@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Producer Dashboard • Orders</title>
+
+  <style>
+    :root{
+      --bg:#04070c;
+      --panel:#030f25;
+      --card:#101f3d;
+      --card2:#0d1933;
+      --text:#e8eefc;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.08);
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 700px at 15% -10%, rgba(124,58,237,.35), transparent 55%),
+        radial-gradient(1000px 600px at 95% 5%, rgba(34,197,94,.22), transparent 55%),
+        radial-gradient(900px 600px at 60% 110%, rgba(59,130,246,.18), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    /* subtle page enter animation */
+    .page { animation: fadeUp .45s ease-out both; }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(10px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* Layout */
+    .layout{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    /* Sidebar */
+    .sidebar{
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:18px 14px;
+      background: linear-gradient(180deg, rgba(209, 19, 19, 0.06), rgba(255,255,255,.02));
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px 12px 16px;
+      border-bottom:1px solid var(--line);
+      margin-bottom:14px;
+    }
+    .logo{
+      width:40px; height:40px;
+      border-radius: 14px;
+      background:
+        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.55), transparent 60%),
+        linear-gradient(135deg, rgba(124,58,237,1), rgba(34,197,94,1));
+      box-shadow: 0 10px 30px rgba(124,58,237,.22);
+    }
+    .brand h1{ font-size:14px; margin:0; letter-spacing:.3px; }
+    .brand p{ margin:2px 0 0; color:var(--muted); font-size:12px; }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding: 8px 6px;
+    }
+
+    .nav a{
+      text-decoration:none;
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 12px;
+      border-radius: 14px;
+      border:1px solid transparent;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .nav a:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.08);
+    }
+    .nav .active{
+      background: rgba(124,58,237,.18);
+      border-color: rgba(124,58,237,.35);
+      box-shadow: 0 10px 28px rgba(124,58,237,.16);
+    }
+    .icon{
+      width:28px; height:28px;
+      display:grid; place-items:center;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:14px;
+    }
+
+    .profile{
+      position:absolute;
+      left:14px; right:14px; bottom:14px;
+      padding:12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      display:flex; gap:10px; align-items:center;
+    }
+    .avatar{
+      width:36px; height:36px; border-radius: 14px;
+      background: rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.10);
+      display:grid; place-items:center;
+      font-weight:700;
+    }
+    .profile small{ color:var(--muted); display:block; margin-top:2px; }
+
+    /* Main */
+    .main{
+      padding: 22px 22px 36px;
+    }
+
+    .topbar{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-bottom:16px;
+    }
+    .headline h2{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .headline p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+    .stats{
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .stat{
+      min-width:160px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding:10px 12px;
+      transition: transform .15s ease;
+    }
+    .stat:hover{ transform: translateY(-1px); }
+    .stat .k{ color:var(--muted); font-size:12px; }
+    .stat .v{ font-size:18px; font-weight:700; margin-top:2px; }
+
+    /* Filters */
+    .filters{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      padding: 12px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      margin-bottom:14px;
+    }
+    .filters label{ color:var(--muted); font-size:12px; }
+    select, input[type="search"], button{
+      appearance:none;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(15,27,51,.55);
+      color: var(--text);
+      padding:10px 12px;
+      outline:none;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    input[type="search"]{ min-width:240px; }
+    select:focus, input:focus{ border-color: rgba(124,58,237,.6); }
+    button{
+      cursor:pointer;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(99,102,241,.85));
+      border-color: rgba(124,58,237,.45);
+      font-weight:600;
+    }
+    button:hover{ transform: translateY(-1px); }
+    .ghost{
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.10);
+      font-weight:600;
+    }
+
+    /* Cards grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+    }
+    @media (min-width: 1020px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      transform: translateZ(0);
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .card:hover{
+      transform: translateY(-2px);
+      border-color: rgba(124,58,237,.22);
+    }
+
+    .cardHeader{
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.10);
+    }
+    .meta{ line-height:1.25; }
+    .meta .id{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:14px;
+    }
+    .meta .sub{
+      margin-top:4px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .chip{
+      padding:6px 10px;
+      border-radius: 999px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+    .chip.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
+    .chip.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
+    .chip.status{ border-color: rgba(124,58,237,.35); background: rgba(124,58,237,.12); }
+    .chip.status[data-s="PENDING"]{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.12); }
+    .chip.status[data-s="CONFIRMED"]{ border-color: rgba(59,130,246,.35); background: rgba(59,130,246,.12); }
+    .chip.status[data-s="READY"]{ border-color: rgba(124,58,237,.35); background: rgba(124,58,237,.12); }
+    .chip.status[data-s="DELIVERED"]{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
+    .chip.status[data-s="CANCELLED"]{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
+
+    .cardBody{
+      padding:14px 16px 16px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+    }
+    @media (min-width: 640px){
+      .cardBody{ grid-template-columns: 1.2fr .8fr; }
+    }
+
+    .sectionTitle{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:6px;
+      letter-spacing:.2px;
+    }
+    .items{
+      margin:0;
+      padding-left:18px;
+      color:var(--text);
+    }
+    .items li{ margin:6px 0; }
+    .items .muted{ color:var(--muted); }
+
+    .totals{
+      background: rgba(0,0,0,.12);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding:12px;
+    }
+    .row{
+      display:flex; justify-content:space-between; gap:10px;
+      font-size:13px;
+      padding:6px 0;
+      border-bottom:1px dashed rgba(255,255,255,.10);
+    }
+    .row:last-child{ border-bottom:none; }
+    .row b{ font-weight:800; }
+    .money{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    .cardFooter{
+      padding: 12px 16px;
+      border-top:1px solid rgba(255,255,255,.08);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background: rgba(0,0,0,.10);
+    }
+    .link{
+      text-decoration:none;
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      transition: transform .15s ease, border-color .15s ease;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .link:hover{ transform: translateY(-1px); border-color: rgba(124,58,237,.35); }
+    .hint{ color:var(--muted); font-size:12px; }
+
+    .empty{
+      padding:20px;
+      border-radius: 18px;
+      border:1px dashed rgba(255,255,255,.18);
+      background: rgba(255,255,255,.04);
+      text-align:center;
+      color:var(--muted);
+    }
+
+    /* Mobile */
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
+      .sidebar{ height:auto; position:relative; }
+      .profile{ position:relative; margin-top:10px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Market Producer</h1>
+          <p>Order Management</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="active" href="/orders/producer/dashboard/">
+          <span class="icon">📦</span>
+          <span>Incoming Orders</span>
+        </a>
+        <a href="/admin/">
+          <span class="icon">⚙️</span>
+          <span>Admin</span>
+        </a>
+      </nav>
+
+      <div class="profile">
+        <div class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</div>
+        <div>
+          <div style="font-weight:700;">{{ request.user }}</div>
+          <small>Producer session</small>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="topbar">
+        <div class="headline">
+          <h2>Incoming Orders</h2>
+          <p>Sorted by <b>delivery date</b>. Minimum lead time requirement: <b>48 hours</b>.</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Total suborders</div>
+            <div class="v">{{ suborders|length }}</div>
+          </div>
+          <div class="stat">
+            <div class="k">Status filter</div>
+            <div class="v">{% if status_filter %}{{ status_filter }}{% else %}All{% endif %}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR (backend compatible: GET params only) -->
+      <form class="filters" method="get">
+        <div>
+          <label><b>Status</b></label><br>
+          <select name="status">
+            <option value="">All</option>
+            {% for value,label in status_choices %}
+              <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label><b>Search (customer / order id)</b></label><br>
+          <input type="search" name="q" placeholder="e.g. customer1 or 12" value="{{ request.GET.q|default:'' }}">
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:flex-end;">
+          <button type="submit">Apply</button>
+          <a class="link ghost" href="/orders/producer/dashboard/">Reset</a>
+        </div>
+
+        <div class="hint">Tip: Click “View details” to see full customer + delivery info.</div>
+      </form>
+
+      {% if suborders %}
+        <section class="grid">
+          {% for suborder, lead_ok in suborders %}
+
+
+
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">SubOrder #{{ suborder.id }} • Order #{{ suborder.order.id }}</div>
+                  <div class="sub">
+                    Customer: <b>{{ suborder.order.customer }}</b> •
+                    Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }} •
+                    Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
+                  </div>
+                </div>
+
+                <div class="chips">
+                  <span class="chip status" data-s="{{ suborder.status }}">● {{ suborder.status }}</span>
+                  {% if lead_ok %}
+                    <span class="chip ok">✅ 48h OK</span>
+                  {% else %}
+                    <span class="chip bad">❌ Lead time</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="cardBody">
+                <div>
+                  <div class="sectionTitle">ITEMS</div>
+                  <ul class="items">
+                    {% for item in suborder.items.all %}
+                      <li>
+                        {{ item.product_name }} —
+                        Qty: <b>{{ item.quantity }}</b>
+                        <span class="muted">• Unit £{{ item.unit_price }}</span>
+                      </li>
+                    {% empty %}
+                      <li class="muted">No items.</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+
+                <div>
+                  <div class="sectionTitle">TOTALS</div>
+                  <div class="totals">
+                    <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal }}</span></div>
+                    <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount }}</span></div>
+                    <div class="row"><b>Payout</b><b class="money">£{{ suborder.producer_payout_amount }}</b></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cardFooter">
+                <span class="hint">Only your items are shown for multi-vendor orders.</span>
+                <a class="link" href="/orders/producer/suborders/{{ suborder.id }}/">View details <span>→</span></a>
+              </div>
+            </article>
+
+          {% endfor %}
+        </section>
+      {% else %}
+        <div class="empty">
+          <h3 style="margin:0 0 8px; color:var(--text);">No incoming orders</h3>
+          <p style="margin:0;">Create demo orders (3 different delivery dates) to satisfy TC9 preconditions.</p>
+        </div>
+      {% endif %}
+
+    </main>
+  </div>
+</body>
+</html>
