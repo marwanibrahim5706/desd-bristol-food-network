@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Login</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;background:#0b1220;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .card{width:420px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px}
+    h1{margin:0 0 16px;font-size:22px}
+    label{display:block;margin-top:12px;font-size:14px;opacity:.9}
+    input{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#fff}
+    button{width:100%;margin-top:18px;padding:12px;border-radius:10px;border:0;background:#7c3aed;color:#fff;font-weight:700;cursor:pointer}
+    .msg{margin-top:12px;color:#ffb4b4;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sign in</h1>
+
+    {% if messages %}
+      {% for m in messages %}
+        <div class="msg">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <label>Email or Username</label>
+      <input name="identifier" placeholder="e.g. marwan@test.com" required />
+
+      <label>Password</label>
+      <input type="password" name="password" placeholder="••••••••" required />
+
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>

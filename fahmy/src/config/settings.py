@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     "rest_framework",
+    "accounts",  
     "market_accounts",
     "market_products",
     "market_cart",
@@ -139,4 +140,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "market_accounts.User"
 
-LOGIN_URL = "/admin/login/"
+LOGIN_URL = "/accounts/login/"
