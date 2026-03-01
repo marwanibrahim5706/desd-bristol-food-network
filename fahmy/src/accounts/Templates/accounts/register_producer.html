@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Producer Registration</title>
+</head>
+<body style="font-family: Arial; max-width: 520px; margin: 60px auto;">
+  <h2>Producer Registration</h2>
+
+  {% if messages %}
+    {% for m in messages %}
+      <p style="color:red">{{ m }}</p>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <input name="business_name" placeholder="Business Name" required style="width:100%;padding:10px"><br><br>
+    <input name="contact_name" placeholder="Contact Name" required style="width:100%;padding:10px"><br><br>
+    <input name="email" type="email" placeholder="Email" required style="width:100%;padding:10px"><br><br>
+    <input name="phone" placeholder="Phone" required style="width:100%;padding:10px"><br><br>
+    <input name="address" placeholder="Address" required style="width:100%;padding:10px"><br><br>
+    <input name="postcode" placeholder="Postcode" required style="width:100%;padding:10px"><br><br>
+
+    <input name="password" type="password" placeholder="Password" required style="width:100%;padding:10px"><br><br>
+    <input name="confirm_password" type="password" placeholder="Confirm Password" required style="width:100%;padding:10px"><br><br>
+
+    <button type="submit" style="padding:10px 14px">Register</button>
+  </form>
+
+  <p style="margin-top:20px;"><a href="/accounts/login/">Back to login</a></p>
+</body>
+</html>

@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
-
+from accounts.permissions import is_admin
 from .models import ProducerSubOrder
 
 
@@ -23,7 +23,7 @@ def producer_dashboard(request):
     q = (request.GET.get("q") or "").strip()
 
     # Base queryset: ONLY this producer
-    qs = ProducerSubOrder.objects.filter(producer=request.user)
+    qs = ProducerSubOrder.objects.all() if is_admin(request.user) else ProducerSubOrder.objects.filter(producer=request.user)
 
     # Optional status filter
     if status_filter:
@@ -72,11 +72,12 @@ def producer_suborder_detail(request, suborder_id):
     - Shows 48h lead time check
     """
 
-    suborder = get_object_or_404(
-        ProducerSubOrder.objects.select_related("order", "order__customer").prefetch_related("items"),
-        id=suborder_id,
-        producer=request.user,  # 🔐 critical security check
-    )
+    base_qs = ProducerSubOrder.objects.select_related("order", "order__customer").prefetch_related("items")
+
+    if is_admin(request.user):
+        suborder = get_object_or_404(base_qs, id=suborder_id)
+    else:
+        suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
 
     lead_ok = (suborder.delivery_date - suborder.order.created_at) >= timedelta(hours=48)
 
