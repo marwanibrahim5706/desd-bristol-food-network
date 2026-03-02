@@ -21,8 +21,10 @@
     .pill{ padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); font-size:12px; }
     .ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
     .bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
+
     .grid{ display:grid; gap:12px; padding:18px; grid-template-columns: 1fr; }
     @media(min-width:860px){ .grid{ grid-template-columns: 1fr 1fr; } }
+
     .box{
       background: rgba(0,0,0,.14);
       border:1px solid rgba(255,255,255,.10);
@@ -31,19 +33,51 @@
     }
     h1{ margin:0; font-size:18px; }
     h3{ margin:0 0 10px; font-size:14px; letter-spacing:.2px; }
+
     .row{ display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.10); font-size:13px; }
     .row:last-child{ border-bottom:none; }
+
     ul{ margin:0; padding-left:18px; }
     li{ margin:6px 0; }
+
     .actions{ padding:14px 18px; border-top:1px solid rgba(255,255,255,.10); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
     .btn{
       display:inline-flex; align-items:center; gap:8px;
       padding:10px 12px; border-radius:14px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
+      cursor:pointer;
     }
     .btn:hover{ border-color: rgba(124,58,237,.35); transform: translateY(-1px); transition:.15s; }
     .money{ font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+    /* Messages */
+    .msgs{ padding:12px 18px 0; }
+    .msg{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      border-radius: 14px;
+      padding:10px 12px;
+      font-size:13px;
+      margin-bottom:10px;
+    }
+    .msg.success{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .msg.error{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+
+    /* Status form */
+    .field{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+    label{ font-size:12px; color:#9fb0d0; }
+    select, input[type="text"]{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:#e8eefc;
+      outline:none;
+    }
+    select:disabled, input:disabled{ opacity:.6; cursor:not-allowed; }
+    .inline{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .small-muted{ color:#9fb0d0; font-size:12px; }
   </style>
 </head>
 <body>
@@ -68,6 +102,17 @@
           {% endif %}
         </div>
       </div>
+
+      <!-- Django messages (success/error after status change) -->
+      {% if messages %}
+      <div class="msgs">
+        {% for message in messages %}
+          <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
 
       <div class="grid">
         <div class="box">
@@ -104,6 +149,63 @@
           <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal }}</span></div>
           <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount }}</span></div>
           <div class="row"><b>Payout</b><b class="money">£{{ suborder.producer_payout_amount }}</b></div>
+        </div>
+
+        <!-- TC-010: Controlled status transitions -->
+        <div class="box">
+          <h3>Change Status (TC-010)</h3>
+          <div class="small-muted">
+            Allowed next steps depend on current status. Every change is logged.
+          </div>
+
+          <form method="post" action="{% url 'producer_suborder_change_status' suborder.id %}" style="margin-top:10px;">
+            {% csrf_token %}
+
+            <div class="inline">
+              <div class="field" style="min-width:220px;">
+                <label for="new_status">New status</label>
+                <select name="new_status" id="new_status" {% if not allowed_next %}disabled{% endif %} required>
+                  {% if allowed_next %}
+                    {% for s in allowed_next %}
+                      <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                  {% else %}
+                    <option value="">No transitions available</option>
+                  {% endif %}
+                </select>
+              </div>
+
+              <div class="field" style="flex:1; min-width:240px;">
+                <label for="note">Note (optional)</label>
+                <input type="text" name="note" id="note" placeholder="e.g., Packed and ready" {% if not allowed_next %}disabled{% endif %} />
+              </div>
+
+              <button class="btn" type="submit" {% if not allowed_next %}disabled{% endif %}>Update status</button>
+            </div>
+
+            {% if not allowed_next %}
+              <div class="small-muted" style="margin-top:10px;">
+                This suborder is <b>{{ suborder.status }}</b> and cannot be changed further.
+              </div>
+            {% endif %}
+          </form>
+        </div>
+
+        <!-- TC-010: Status history -->
+        <div class="box">
+          <h3>Status History</h3>
+          <ul>
+            {% for ev in status_events %}
+              <li>
+                <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span> —
+                <b>{{ ev.old_status }}</b> → <b>{{ ev.new_status }}</b>
+                <span class="muted">by {{ ev.changed_by.username }}</span>
+                {% if ev.note %}<span class="muted">• “{{ ev.note }}”</span>{% endif %}
+              </li>
+            {% empty %}
+              <li class="muted">No status changes yet.</li>
+            {% endfor %}
+          </ul>
         </div>
       </div>
 
