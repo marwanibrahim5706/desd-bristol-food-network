@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Discovery</title>
+  <style>
+    body { font-family: system-ui, Arial; margin:0; background:#f6f7fb; color:#111827; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .top { display:flex; align-items:end; justify-content:space-between; gap:12px; }
+    .muted { color:#6b7280; font-size: 13px; }
+    form { display:flex; gap:10px; margin: 14px 0 18px; }
+    input, select { padding:10px 12px; border:1px solid #d9dee8; border-radius:12px; width: 100%; background:white; }
+    button { padding:10px 14px; border:0; border-radius:12px; background:#111827; color:white; cursor:pointer; }
+    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .card { background:white; border:1px solid #e5e7eb; border-radius:16px; padding:14px; }
+    .row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; }
+    .danger { background:#fee2e2; }
+    .ok { background:#dcfce7; }
+    .pagination { display:flex; gap:10px; margin-top:18px; }
+    a { text-decoration:none; color:inherit; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1 style="margin:0;">Discovery</h1>
+        <div class="muted">Browse products and search by name/producer.</div>
+      </div>
+      <a class="muted" href="/admin/">Admin</a>
+    </div>
+
+    <form method="get">
+      <input name="q" placeholder="Search (e.g. apples)" value="{{ q }}">
+      <select name="available">
+        <option value="">Active products</option>
+        <option value="1" {% if available == "1" %}selected{% endif %}>Available only (stock &gt; 0)</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+
+    <div class="grid">
+      {% for p in page_obj %}
+        <a class="card" href="{% url 'product_detail' p.id %}">
+          <div class="row">
+            <strong>{{ p.name }}</strong>
+            <span class="pill">£{{ p.price }}</span>
+          </div>
+          <div class="muted" style="margin-top:6px;">Producer: {{ p.producer.username }}</div>
+
+          <div style="margin-top:10px;">
+            {% if p.stock_quantity > 0 %}
+              <span class="pill ok">In stock: {{ p.stock_quantity }}</span>
+            {% else %}
+              <span class="pill danger">Out of stock</span>
+            {% endif %}
+            {% if not p.is_active %}
+              <span class="pill danger">Inactive</span>
+            {% endif %}
+          </div>
+        </a>
+      {% empty %}
+        <div class="card" style="grid-column: 1 / -1;">
+          No products found.
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a class="pill" href="?q={{ q }}&available={{ available }}&page={{ page_obj.previous_page_number }}">Prev</a>
+      {% endif %}
+      <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a class="pill" href="?q={{ q }}&available={{ available }}&page={{ page_obj.next_page_number }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

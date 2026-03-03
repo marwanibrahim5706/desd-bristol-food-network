@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ product.name }}</title>
+  <style>
+    body { font-family: system-ui, Arial; margin:0; background:#f6f7fb; color:#111827; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .card { background:white; border:1px solid #e5e7eb; border-radius:16px; padding:18px; }
+    .muted { color:#6b7280; }
+    a { text-decoration:none; color:inherit; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="muted" href="{% url 'discovery' %}">← Back to Discovery</a>
+    <div class="card" style="margin-top:12px;">
+      <h1 style="margin:0 0 8px;">{{ product.name }}</h1>
+      <div class="muted">Producer: {{ product.producer.username }}</div>
+      <p><strong>Price:</strong> £{{ product.price }}</p>
+      <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
+    </div>
+  </div>
+</body>
+</html>
