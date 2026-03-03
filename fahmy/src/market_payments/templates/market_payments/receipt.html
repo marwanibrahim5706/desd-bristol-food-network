@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Receipt</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;background:#0b1220;color:#fff;margin:0;padding:30px}
+    .card{max-width:900px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px}
+    .row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+    .row:last-child{border-bottom:0}
+    .muted{opacity:.8}
+    .btn{display:inline-block;margin-top:14px;padding:10px 14px;border-radius:10px;background:#7c3aed;color:#fff;font-weight:700;text-decoration:none}
+    .pill{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.35);margin-left:8px}
+    hr{border:0;border-top:1px solid rgba(255,255,255,.10);margin:14px 0}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 style="margin:0 0 6px;">Receipt <span class="pill">{{ payment.status }}</span></h1>
+    <div class="muted">Payment ID: {{ payment.id }} · Order ID: {{ order.id }} · {{ payment.created_at }}</div>
+
+    <hr>
+
+    <h3 style="margin:0 0 10px;">Items</h3>
+    {% if items %}
+      {% for item in items %}
+        <div class="row">
+          <div>
+            <div style="font-weight:700;">{{ item.name }}</div>
+            <div class="muted" style="font-size:13px;">£{{ item.unit_price }} × {{ item.quantity }}</div>
+          </div>
+          <div style="font-weight:700;">£{{ item.line_total }}</div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="muted">No items recorded on this order.</div>
+    {% endif %}
+
+    <hr>
+
+    <h3 style="margin:0 0 10px;">Totals</h3>
+    <div class="row"><div class="muted">Subtotal</div><div style="font-weight:700;">£{{ order.subtotal }}</div></div>
+    <div class="row"><div class="muted">Platform commission (5%)</div><div style="font-weight:700;">£{{ order.commission }}</div></div>
+    <div class="row"><div>Total paid</div><div style="font-weight:800;">£{{ order.total }}</div></div>
+
+    <a class="btn" href="{% url 'market_payments:payment' %}">Back to Payment</a>
+  </div>
+</body>
+</html>
