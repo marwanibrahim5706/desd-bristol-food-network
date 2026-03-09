@@ -39,7 +39,7 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    product = models.ForeignKey("market_products.Product", on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=1)
 
     class Meta:
