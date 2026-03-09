@@ -1,49 +1,233 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Receipt</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Arial;background:#0b1220;color:#fff;margin:0;padding:30px}
-    .card{max-width:900px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px}
-    .row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
-    .row:last-child{border-bottom:0}
-    .muted{opacity:.8}
-    .btn{display:inline-block;margin-top:14px;padding:10px 14px;border-radius:10px;background:#7c3aed;color:#fff;font-weight:700;text-decoration:none}
-    .pill{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.35);margin-left:8px}
-    hr{border:0;border-top:1px solid rgba(255,255,255,.10);margin:14px 0}
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #f6f7fb;
+      color: #111827;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .top h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+
+    .pill.ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .pill.danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .items {
+      margin-top: 8px;
+    }
+
+    .item-row,
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .item-row:last-child,
+    .total-row:last-child {
+      border-bottom: 0;
+    }
+
+    .item-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .item-meta {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .amount {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .totals {
+      margin-top: 20px;
+      padding-top: 6px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .grand-total {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid #111827;
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: #111827;
+    }
+
+    .empty {
+      color: #6b7280;
+      padding: 8px 0 4px;
+    }
+
+    @media (max-width: 640px) {
+      .top {
+        flex-direction: column;
+      }
+
+      .item-row,
+      .total-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .amount {
+        white-space: normal;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1 style="margin:0 0 6px;">Receipt <span class="pill">{{ payment.status }}</span></h1>
-    <div class="muted">Payment ID: {{ payment.id }} · Order ID: {{ order.id }} · {{ payment.created_at }}</div>
-
-    <hr>
-
-    <h3 style="margin:0 0 10px;">Items</h3>
-    {% if items %}
-      {% for item in items %}
-        <div class="row">
-          <div>
-            <div style="font-weight:700;">{{ item.name }}</div>
-            <div class="muted" style="font-size:13px;">£{{ item.unit_price }} × {{ item.quantity }}</div>
-          </div>
-          <div style="font-weight:700;">£{{ item.line_total }}</div>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>
+          Receipt
+          {% if payment.status %}
+            {% if payment.status == "PAID" %}
+              <span class="pill ok">{{ payment.get_status_display }}</span>
+            {% else %}
+              <span class="pill danger">{{ payment.get_status_display }}</span>
+            {% endif %}
+          {% endif %}
+        </h1>
+        <div class="muted">
+          Payment #{{ payment.id }} · Order #{{ order.id }} · {{ payment.created_at|date:"d M Y, H:i" }}
         </div>
-      {% endfor %}
-    {% else %}
-      <div class="muted">No items recorded on this order.</div>
-    {% endif %}
+      </div>
 
-    <hr>
+      <a class="muted" href="/admin/">Admin</a>
+    </div>
 
-    <h3 style="margin:0 0 10px;">Totals</h3>
-    <div class="row"><div class="muted">Subtotal</div><div style="font-weight:700;">£{{ order.subtotal }}</div></div>
-    <div class="row"><div class="muted">Platform commission (5%)</div><div style="font-weight:700;">£{{ order.commission }}</div></div>
-    <div class="row"><div>Total paid</div><div style="font-weight:800;">£{{ order.total }}</div></div>
+    <div class="card">
+      <h2 class="section-title">Items purchased</h2>
 
-    <a class="btn" href="{% url 'market_payments:payment' %}">Back to Payment</a>
+      <div class="items">
+        {% if items %}
+          {% for item in items %}
+            <div class="item-row">
+              <div>
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-meta">
+                  Unit price: £{{ item.unit_price }} · Quantity: {{ item.quantity }}
+                </div>
+              </div>
+              <div class="amount">£{{ item.line_total }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">No items recorded for this order.</div>
+        {% endif %}
+      </div>
+
+      <div class="totals">
+        <h2 class="section-title">Payment summary</h2>
+
+        <div class="total-row">
+          <div class="muted">Subtotal</div>
+          <div class="amount">£{{ order.subtotal }}</div>
+        </div>
+
+        <div class="total-row">
+          <div class="muted">Platform commission (5%)</div>
+          <div class="amount">£{{ order.commission }}</div>
+        </div>
+
+        <div class="total-row">
+          <div class="grand-total">Total paid</div>
+          <div class="grand-total">£{{ order.total }}</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="/">Continue Shopping</a>
+        <a class="btn secondary" href="{% url 'market_payments:cart' %}">View Cart</a>
+      </div>
+    </div>
   </div>
 </body>
 </html>

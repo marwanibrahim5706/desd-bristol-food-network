@@ -4,7 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Cart, CartItem, Order, OrderItem, Payment, Product
+
+from .models import Cart, CartItem, Order, OrderItem, Payment
+from market_products.models import Product
 
 
 def _get_or_create_cart(user):
@@ -19,26 +21,25 @@ def cart_page(request):
 
 
 @login_required
-def add_demo_item(request):
-    # create a demo product if it doesn't exist
-    demo, _ = Product.objects.get_or_create(
-        name="Demo Item",
-        defaults={"price": Decimal("50.00")},
-    )
+def add_to_cart(request, product_id):
+    if request.method != "POST":
+        return redirect("market_payments:cart")
 
+    product = get_object_or_404(Product, id=product_id, is_active=True)
     cart = _get_or_create_cart(request.user)
+
     item, created = CartItem.objects.get_or_create(
         cart=cart,
-        product=demo,
+        product=product,
         defaults={"quantity": 1},
     )
+
     if not created:
         item.quantity += 1
         item.save()
 
-    messages.success(request, "Added Demo Item to cart.")
-    return redirect("market_payments:cart")
-
+    messages.success(request, f"{product.name} added to cart.")
+    return redirect(request.POST.get("next") or "/")
 
 @login_required
 def payment_page(request):
@@ -66,7 +67,6 @@ def payment_page(request):
         },
     )
 
-
 @login_required
 def pay_now(request):
     if request.method != "POST":
@@ -75,10 +75,22 @@ def pay_now(request):
     cart = _get_or_create_cart(request.user)
 
     if cart.items.count() == 0:
-        messages.error(request, "Your cart is empty.")
+        messages.error(request, "Please add an item to your cart before continuing.")
         return redirect("market_payments:cart")
 
-    # create order
+    # Validate stock before creating the order
+    for ci in cart.items.select_related("product"):
+        if not ci.product.is_active:
+            messages.error(request, f"{ci.product.name} is no longer available.")
+            return redirect("market_payments:cart")
+
+        if ci.quantity > ci.product.stock_quantity:
+            messages.error(
+                request,
+                f"Not enough stock for {ci.product.name}. Available: {ci.product.stock_quantity}."
+            )
+            return redirect("market_payments:cart")
+
     order = Order.objects.create(
         user=request.user,
         subtotal=cart.subtotal,
@@ -86,7 +98,6 @@ def pay_now(request):
         total=cart.total,
     )
 
-    # copy cart items to order items
     for ci in cart.items.select_related("product"):
         OrderItem.objects.create(
             order=order,
@@ -95,19 +106,36 @@ def pay_now(request):
             quantity=ci.quantity,
         )
 
-    # create ONE payment record
+        # Reduce stock after successful order creation
+        ci.product.stock_quantity -= ci.quantity
+
+        # Optional: deactivate product when stock reaches 0
+        if ci.product.stock_quantity <= 0:
+            ci.product.stock_quantity = 0
+            ci.product.is_active = False
+
+        ci.product.save()
+
     payment = Payment.objects.create(
         order=order,
         status=Payment.Status.PAID,
         provider="demo",
     )
 
-    # clear cart
     cart.items.all().delete()
 
     messages.success(request, f"Payment successful. Receipt #{payment.id} generated.")
     return redirect("market_payments:receipt", payment_id=payment.id)
 
+@login_required
+def clear_cart(request):
+    if request.method != "POST":
+        return redirect("market_payments:cart")
+
+    cart = _get_or_create_cart(request.user)
+    cart.items.all().delete()
+    messages.info(request, "Cart cleared.")
+    return redirect("market_payments:cart")
 
 @login_required
 def receipt_page(request, payment_id: int):

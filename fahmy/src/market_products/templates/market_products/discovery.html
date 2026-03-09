@@ -1,24 +1,196 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Discovery</title>
   <style>
-    body { font-family: system-ui, Arial; margin:0; background:#f6f7fb; color:#111827; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
-    .top { display:flex; align-items:end; justify-content:space-between; gap:12px; }
-    .muted { color:#6b7280; font-size: 13px; }
-    form { display:flex; gap:10px; margin: 14px 0 18px; }
-    input, select { padding:10px 12px; border:1px solid #d9dee8; border-radius:12px; width: 100%; background:white; }
-    button { padding:10px 14px; border:0; border-radius:12px; background:#111827; color:white; cursor:pointer; }
-    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .card { background:white; border:1px solid #e5e7eb; border-radius:16px; padding:14px; }
-    .row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; }
-    .danger { background:#fee2e2; }
-    .ok { background:#dcfce7; }
-    .pagination { display:flex; gap:10px; margin-top:18px; }
-    a { text-decoration:none; color:inherit; }
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      margin: 0;
+      background: #f6f7fb;
+      color: #111827;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .search-form {
+      display: flex;
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+
+    input, select {
+      padding: 10px 12px;
+      border: 1px solid #d9dee8;
+      border-radius: 12px;
+      width: 100%;
+      background: white;
+    }
+
+    button,
+    .btn {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #111827;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-secondary {
+      padding: 10px 14px;
+      border: 1px solid #d9dee8;
+      border-radius: 12px;
+      background: white;
+      color: #111827;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #eef2ff;
+      font-size: 12px;
+    }
+
+    .danger {
+      background: #fee2e2;
+    }
+
+    .ok {
+      background: #dcfce7;
+    }
+
+    .product-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .product-actions {
+      margin-top: 14px;
+    }
+
+    .product-actions form {
+      margin: 0;
+      display: block;
+    }
+
+    .product-actions button {
+      width: 100%;
+    }
+
+    .disabled-btn {
+      width: 100%;
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #9ca3af;
+    }
+
+    .pagination {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    .msg-wrap {
+      margin: 14px 0;
+    }
+
+    .msg {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #eef2ff;
+      color: #3730a3;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .top-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .search-form {
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -28,10 +200,22 @@
         <h1 style="margin:0;">Discovery</h1>
         <div class="muted">Browse products and search by name/producer.</div>
       </div>
-      <a class="muted" href="/admin/">Admin</a>
+
+      <div class="top-right">
+        <a class="btn-secondary" href="{% url 'market_payments:cart' %}">Cart</a>
+        <a class="muted" href="/admin/">Admin</a>
+      </div>
     </div>
 
-    <form method="get">
+    {% if messages %}
+      <div class="msg-wrap">
+        {% for m in messages %}
+          <div class="msg">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="get" class="search-form">
       <input name="q" placeholder="Search (e.g. apples)" value="{{ q }}">
       <select name="available">
         <option value="">Active products</option>
@@ -42,24 +226,42 @@
 
     <div class="grid">
       {% for p in page_obj %}
-        <a class="card" href="{% url 'product_detail' p.id %}">
-          <div class="row">
-            <strong>{{ p.name }}</strong>
-            <span class="pill">£{{ p.price }}</span>
-          </div>
-          <div class="muted" style="margin-top:6px;">Producer: {{ p.producer.username }}</div>
+        <div class="card">
+          <a class="product-link" href="{% url 'product_detail' p.id %}">
+            <div class="row">
+              <strong>{{ p.name }}</strong>
+              <span class="pill">£{{ p.price }}</span>
+            </div>
 
-          <div style="margin-top:10px;">
-            {% if p.stock_quantity > 0 %}
-              <span class="pill ok">In stock: {{ p.stock_quantity }}</span>
+            <div class="muted" style="margin-top:6px;">
+              Producer: {{ p.producer.username }}
+            </div>
+
+            <div style="margin-top:10px;">
+              {% if p.stock_quantity > 0 %}
+                <span class="pill ok">In stock: {{ p.stock_quantity }}</span>
+              {% else %}
+                <span class="pill danger">Out of stock</span>
+              {% endif %}
+
+              {% if not p.is_active %}
+                <span class="pill danger">Inactive</span>
+              {% endif %}
+            </div>
+          </a>
+
+          <div class="product-actions">
+            {% if p.is_active and p.stock_quantity > 0 %}
+              <form method="post" action="{% url 'market_payments:add_to_cart' p.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="/" />
+                <button type="submit">Add to cart</button>
+              </form>
             {% else %}
-              <span class="pill danger">Out of stock</span>
-            {% endif %}
-            {% if not p.is_active %}
-              <span class="pill danger">Inactive</span>
+              <button type="button" class="disabled-btn" disabled>Unavailable</button>
             {% endif %}
           </div>
-        </a>
+        </div>
       {% empty %}
         <div class="card" style="grid-column: 1 / -1;">
           No products found.
@@ -71,7 +273,9 @@
       {% if page_obj.has_previous %}
         <a class="pill" href="?q={{ q }}&available={{ available }}&page={{ page_obj.previous_page_number }}">Prev</a>
       {% endif %}
+
       <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
       {% if page_obj.has_next %}
         <a class="pill" href="?q={{ q }}&available={{ available }}&page={{ page_obj.next_page_number }}">Next</a>
       {% endif %}

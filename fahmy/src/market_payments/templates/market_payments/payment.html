@@ -1,90 +1,278 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Payment</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Arial;background:#0b1220;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:24px}
-    .card{width:900px;max-width:95vw;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px}
-    h1{margin:0 0 8px;font-size:22px}
-    p{margin:0 0 18px;opacity:.8}
-    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
-    .panel{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:16px}
-    .row{display:flex;justify-content:space-between;gap:12px;margin:10px 0}
-    .muted{opacity:.8}
-    hr{border:0;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
-    button{width:100%;margin-top:14px;padding:12px;border-radius:10px;border:0;background:#7c3aed;color:#fff;font-weight:700;cursor:pointer}
-    a{color:#c4b5fd;text-decoration:none}
-    .item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
-    .item:last-child{border-bottom:0}
-    .tag{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.35);margin-left:8px}
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #f6f7fb;
+      color: #111827;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .top h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .item-row,
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .item-row:last-child,
+    .total-row:last-child {
+      border-bottom: 0;
+    }
+
+    .item-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .item-meta {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .amount {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .pill.neutral {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 14px 0 0;
+    }
+
+    .btn,
+    .btn-secondary,
+    .clear-btn {
+      display: inline-block;
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .btn {
+      border: 1px solid #111827;
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #111827;
+    }
+
+    .clear-btn {
+      border: 0;
+      background: transparent;
+      color: #6b7280;
+      padding: 8px 0 0;
+    }
+
+    .totals {
+      margin-top: 16px;
+      padding-top: 4px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .grand-total {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .empty {
+      color: #6b7280;
+      padding: 8px 0 4px;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top {
+        flex-direction: column;
+      }
+
+      .item-row,
+      .total-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .amount {
+        white-space: normal;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Payment</h1>
-    <p>Review your order and confirm payment.</p>
-
-      <div style="margin:14px 0 18px;">
-        <a href="{% url 'market_payments:add_demo_item' %}"
-            style="display:inline-block;padding:10px 14px;border-radius:10px;background:#7c3aed;color:#fff;font-weight:700;text-decoration:none;">
-            Add Demo Item
-        </a>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Payment</h1>
+        <div class="muted">Review your order and confirm payment.</div>
       </div>
 
+      <a class="muted" href="/admin/">Admin</a>
+    </div>
+
+    <div class="actions">
+      <a class="btn-secondary" style="width:auto;" href="{% url 'market_payments:cart' %}">View Cart</a>
+      <a class="btn-secondary" style="width:auto;" href="/">Continue Shopping</a>
+
+      {% if payment_status %}
+        <span class="pill neutral">{{ payment_status }}</span>
+      {% endif %}
+    </div>
+
     <div class="grid">
-      <!-- LEFT: Items -->
-      <div class="panel">
-        <h2 style="margin:0 0 12px;font-size:16px;">Order summary</h2>
+      <div class="card">
+        <div class="row" style="margin-bottom: 12px;">
+          <h2 class="section-title" style="margin:0;">Order summary</h2>
+          {% if items %}
+            <span class="pill ok">{{ items|length }} item{{ items|length|pluralize }}</span>
+          {% endif %}
+        </div>
 
         {% if items %}
           {% for item in items %}
-            <div class="item">
+            <div class="item-row">
               <div>
-                <div style="font-weight:700;">{{ item.name }}</div>
-                <div class="muted" style="font-size:13px;">Qty: {{ item.quantity }}</div>
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-meta">Quantity: {{ item.quantity }}</div>
               </div>
-              <div style="font-weight:700;">£{{ item.line_total }}</div>
+              <div class="amount">£{{ item.line_total }}</div>
             </div>
           {% endfor %}
         {% else %}
-          <div class="muted">No items to display.</div>
+          <div class="empty">No items to display.</div>
         {% endif %}
       </div>
 
-      <!-- RIGHT: Totals -->
-      <div class="panel">
-        <h2 style="margin:0 0 12px;font-size:16px;">
-          Total
-          {% if payment_status %}
-            <span class="tag">{{ payment_status }}</span>
-          {% endif %}
-        </h2>
+      <div class="card">
+        <h2 class="section-title">Payment summary</h2>
 
-        <div class="row">
-          <span class="muted">Subtotal</span>
-          <strong>£{{ subtotal }}</strong>
-        </div>
-        <div class="row">
-          <span class="muted">Platform commission (5%)</span>
-          <strong>£{{ commission }}</strong>
-        </div>
+        <div class="totals">
+          <div class="total-row">
+            <div class="muted">Subtotal</div>
+            <div class="amount">£{{ subtotal }}</div>
+          </div>
 
-        <hr>
+          <div class="total-row">
+            <div class="muted">Platform commission (5%)</div>
+            <div class="amount">£{{ commission }}</div>
+          </div>
 
-        <div class="row" style="font-size:18px;">
-          <span>Total payable</span>
-          <strong>£{{ total }}</strong>
+          <div class="total-row">
+            <div class="grand-total">Total payable</div>
+            <div class="grand-total">£{{ total }}</div>
+          </div>
         </div>
 
-        <form method="post" action="{% url 'market_payments:pay_now' %}">
-          {% csrf_token %}
-          <input type="hidden" name="order_id" value="{{ order_id }}">
-          <button type="submit">Pay now</button>
-        </form>
+        <div class="stack">
+          <form method="post" action="{% url 'market_payments:pay_now' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn">Pay now</button>
+          </form>
 
-        <div style="text-align:center;margin-top:10px;" class="muted">
-          <a href="">Back</a>
+          <form method="post" action="{% url 'market_payments:clear_cart' %}">
+            {% csrf_token %}
+            <button type="submit" class="clear-btn">Clear cart</button>
+          </form>
         </div>
       </div>
     </div>
