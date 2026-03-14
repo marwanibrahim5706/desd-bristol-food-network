@@ -80,6 +80,15 @@
       border-bottom: 0;
     }
 
+    .producer-block {
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .producer-block:last-child {
+      border-bottom: 0;
+    }
+
     .item-name {
       font-weight: 700;
       margin-bottom: 4px;
@@ -176,6 +185,36 @@
       margin-top: 16px;
     }
 
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .form-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+      color: #111827;
+    }
+
     @media (max-width: 800px) {
       .grid {
         grid-template-columns: 1fr;
@@ -183,18 +222,20 @@
     }
 
     @media (max-width: 640px) {
-      .top {
-        flex-direction: column;
-      }
-
+      .top,
       .item-row,
-      .total-row {
+      .total-row,
+      .row {
         flex-direction: column;
         align-items: flex-start;
       }
 
       .amount {
         white-space: normal;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -228,19 +269,46 @@
           {% endif %}
         </div>
 
-        {% if items %}
-          {% for item in items %}
-            <div class="item-row">
-              <div>
-                <div class="item-name">{{ item.name }}</div>
-                <div class="item-meta">Quantity: {{ item.quantity }}</div>
+        {% if producer_sections %}
+          {% for section in producer_sections %}
+            <div class="producer-block">
+              <div class="row" style="margin-bottom: 10px;">
+                <div>
+                  <div class="item-name">{{ section.producer_name }}</div>
+                  <div class="item-meta">Separate producer section</div>
+                </div>
+                <div class="amount">£{{ section.subtotal }}</div>
               </div>
-              <div class="amount">£{{ item.line_total }}</div>
+
+              {% for item in section.items %}
+                <div class="item-row" style="padding-left: 12px;">
+                  <div>
+                    <div class="item-name">{{ item.product.name }}</div>
+                    <div class="item-meta">Quantity: {{ item.quantity }}</div>
+                  </div>
+                  <div class="amount">£{{ item.line_total }}</div>
+                </div>
+              {% endfor %}
             </div>
           {% endfor %}
         {% else %}
           <div class="empty">No items to display.</div>
         {% endif %}
+
+        <div class="form-grid">
+          <div class="full">
+            <label for="delivery_address_preview">Delivery address</label>
+            <textarea id="delivery_address_preview" readonly>{{ delivery_address }}</textarea>
+          </div>
+          <div>
+            <label for="delivery_date_preview">Minimum delivery date</label>
+            <input id="delivery_date_preview" type="datetime-local" value="{{ min_delivery_at }}" readonly />
+          </div>
+          <div>
+            <label for="single_producer_status">Checkout scope</label>
+            <input id="single_producer_status" value="{% if single_producer_only %}Single producer{% else %}Multiple producers detected{% endif %}" readonly />
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -266,7 +334,55 @@
         <div class="stack">
           <form method="post" action="{% url 'market_payments:pay_now' %}">
             {% csrf_token %}
-            <button type="submit" class="btn">Pay now</button>
+            <div class="form-grid">
+              <div class="full">
+                <label for="delivery_address">Delivery address</label>
+                <textarea id="delivery_address" name="delivery_address" required>{{ delivery_address }}</textarea>
+              </div>
+              <div>
+                <label for="customer_phone">Phone number</label>
+                <input id="customer_phone" name="customer_phone" value="{{ customer_phone }}" />
+              </div>
+              {% if single_producer_only %}
+                <div>
+                  <label for="delivery_date">Delivery date</label>
+                  <input id="delivery_date" name="delivery_date" type="datetime-local" min="{{ min_delivery_at }}" required />
+                </div>
+              {% endif %}
+              <div>
+                <label for="payment_method">Payment method</label>
+                <select id="payment_method" name="payment_method">
+                  <option value="demo_card">Demo card</option>
+                </select>
+              </div>
+              <div>
+                <label for="card_number">Card number</label>
+                <input id="card_number" name="card_number" value="4242 4242 4242 4242" />
+              </div>
+              <div>
+                <label for="card_expiry">Expiry</label>
+                <input id="card_expiry" name="card_expiry" value="12/34" />
+              </div>
+              {% if not single_producer_only %}
+                {% for section in producer_sections %}
+                  <div class="full">
+                    <label for="delivery_date_{{ section.producer.id }}">
+                      Delivery date for {{ section.producer_name }}
+                    </label>
+                    <input
+                      id="delivery_date_{{ section.producer.id }}"
+                      name="delivery_date_{{ section.producer.id }}"
+                      type="datetime-local"
+                      min="{{ min_delivery_at }}"
+                      required
+                    />
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <button type="submit" class="btn">
+              {% if single_producer_only %}Pay now{% else %}Confirm multi-vendor order{% endif %}
+            </button>
           </form>
 
           <form method="post" action="{% url 'market_payments:clear_cart' %}">

@@ -87,6 +87,15 @@
       border-bottom: 0;
     }
 
+    .producer-block {
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .producer-block:last-child {
+      border-bottom: 0;
+    }
+
     .item-name {
       font-weight: 700;
       margin-bottom: 4px;
@@ -197,7 +206,8 @@
       }
 
       .item-row,
-      .total-row {
+      .total-row,
+      .row {
         flex-direction: column;
         align-items: flex-start;
       }
@@ -220,7 +230,7 @@
     </div>
 
     <div class="actions">
-      <a class="btn-secondary" href= "/">Continue Shopping</a>
+      <a class="btn-secondary" href="/">Continue Shopping</a>
     </div>
 
     {% if messages %}
@@ -240,17 +250,27 @@
           {% endif %}
         </div>
 
-        {% if cart.items.all %}
-          {% for item in cart.items.all %}
-            <div class="item-row">
-              <div>
-                <div class="item-name">{{ item.product.name }}</div>
-                <div class="item-meta">Quantity: {{ item.quantity }}</div>
+        {% if producer_sections %}
+          {% for section in producer_sections %}
+            <div class="producer-block">
+              <div class="row" style="margin-bottom: 10px;">
+                <div>
+                  <div class="item-name">{{ section.producer_name }}</div>
+                  <div class="item-meta">Grouped by producer</div>
+                </div>
+                <div class="amount">£{{ section.subtotal }}</div>
               </div>
-              <div class="amount">£{{ item.line_total }}</div>
+
+              {% for item in section.items %}
+                <div class="item-row" style="padding-left: 12px;">
+                  <div>
+                    <div class="item-name">{{ item.product.name }}</div>
+                    <div class="item-meta">Quantity: {{ item.quantity }}</div>
+                  </div>
+                  <div class="amount">£{{ item.line_total }}</div>
+                </div>
+              {% endfor %}
             </div>
-          {% empty %}
-            <div class="empty">Your cart is empty.</div>
           {% endfor %}
         {% else %}
           <div class="empty">Your cart is empty.</div>
@@ -278,7 +298,7 @@
         </div>
 
         <div class="stack">
-          <a class="btn" href="{% url 'market_payments:payment' %}">Go to Payment</a>
+          <a class="btn" href="{% url 'market_payments:payment' %}">Proceed to Checkout</a>
 
           <form method="post" action="{% url 'market_payments:clear_cart' %}">
             {% csrf_token %}

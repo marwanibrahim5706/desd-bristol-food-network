@@ -111,6 +111,30 @@
       border-top: 1px solid #e5e7eb;
     }
 
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+      margin-bottom: 18px;
+    }
+
+    .meta-card {
+      padding: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fafafa;
+    }
+
+    .producer-block {
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .producer-block:last-child {
+      border-bottom: 0;
+    }
+
     .grand-total {
       font-size: 20px;
       font-weight: 800;
@@ -145,10 +169,7 @@
     }
 
     @media (max-width: 640px) {
-      .top {
-        flex-direction: column;
-      }
-
+      .top,
       .item-row,
       .total-row {
         flex-direction: column;
@@ -157,6 +178,10 @@
 
       .amount {
         white-space: normal;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -185,6 +210,49 @@
 
     <div class="card">
       <h2 class="section-title">Items purchased</h2>
+
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="muted">Customer</div>
+          <div>{{ request.user.username }}</div>
+        </div>
+        <div class="meta-card">
+          <div class="muted">Payment provider</div>
+          <div>{{ payment.provider }}</div>
+        </div>
+      </div>
+
+      {% if producer_sections %}
+        <h2 class="section-title">Producer breakdown</h2>
+        {% for section in producer_sections %}
+          <div class="producer-block">
+            <div class="item-row">
+              <div>
+                <div class="item-name">{{ section.producer_name }}</div>
+                <div class="item-meta">Delivery: {{ section.delivery_date }}</div>
+              </div>
+              <div class="amount">£{{ section.subtotal }}</div>
+            </div>
+            {% for item in section.items %}
+              <div class="item-row" style="padding-left: 12px;">
+                <div>
+                  <div class="item-name">{{ item.product_name }}</div>
+                  <div class="item-meta">Quantity: {{ item.quantity }}</div>
+                </div>
+                <div class="amount">£{{ item.line_total }}</div>
+              </div>
+            {% endfor %}
+            <div class="item-row">
+              <div class="muted">Commission</div>
+              <div class="amount">£{{ section.commission }}</div>
+            </div>
+            <div class="item-row">
+              <div class="muted">Producer payout</div>
+              <div class="amount">£{{ section.payout }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
 
       <div class="items">
         {% if items %}

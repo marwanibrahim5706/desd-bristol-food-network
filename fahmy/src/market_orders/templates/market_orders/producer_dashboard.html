@@ -36,21 +36,18 @@
       overflow-x:hidden;
     }
 
-    /* subtle page enter animation */
     .page { animation: fadeUp .45s ease-out both; }
     @keyframes fadeUp {
       from { opacity:0; transform: translateY(10px); }
       to   { opacity:1; transform: translateY(0); }
     }
 
-    /* Layout */
     .layout{
       min-height:100vh;
       display:grid;
       grid-template-columns: 280px 1fr;
     }
 
-    /* Sidebar */
     .sidebar{
       position:sticky;
       top:0;
@@ -135,7 +132,6 @@
     }
     .profile small{ color:var(--muted); display:block; margin-top:2px; }
 
-    /* Main */
     .main{
       padding: 22px 22px 36px;
     }
@@ -166,7 +162,6 @@
     .stat .k{ color:var(--muted); font-size:12px; }
     .stat .v{ font-size:18px; font-weight:700; margin-top:2px; }
 
-    /* Filters */
     .filters{
       display:flex;
       gap:10px;
@@ -179,7 +174,8 @@
       margin-bottom:14px;
     }
     .filters label{ color:var(--muted); font-size:12px; }
-    select, input[type="search"], button{
+
+    select, input[type="search"], input[type="text"], button{
       appearance:none;
       border-radius: 14px;
       border:1px solid rgba(255,255,255,.10);
@@ -191,6 +187,7 @@
     }
     input[type="search"]{ min-width:240px; }
     select:focus, input:focus{ border-color: rgba(124,58,237,.6); }
+
     button{
       cursor:pointer;
       background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(99,102,241,.85));
@@ -198,20 +195,24 @@
       font-weight:600;
     }
     button:hover{ transform: translateY(-1px); }
+
+    button:disabled,
+    select:disabled,
+    input:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+
     .ghost{
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.10);
       font-weight:600;
     }
 
-    /* Cards grid */
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-    }
-    @media (min-width: 1020px){
-      .grid{ grid-template-columns: 1fr 1fr; }
+    .ordersList{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
     }
 
     .card{
@@ -220,8 +221,8 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
-      transform: translateZ(0);
       transition: transform .18s ease, border-color .18s ease;
+      scroll-margin-top: 20px;
     }
     .card:hover{
       transform: translateY(-2px);
@@ -230,13 +231,14 @@
 
     .cardHeader{
       padding:14px 16px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:flex-start;
+      display:grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, .7fr);
+      gap:16px;
+      align-items:start;
       border-bottom:1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.10);
     }
+
     .meta{ line-height:1.25; }
     .meta .id{
       font-weight:800;
@@ -247,9 +249,17 @@
       margin-top:4px;
       color:var(--muted);
       font-size:12px;
+      line-height:1.6;
     }
 
-    .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .chips{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+      margin-top:12px;
+    }
+
     .chip{
       padding:6px 10px;
       border-radius: 999px;
@@ -270,14 +280,52 @@
     .chip.status[data-s="DELIVERED"]{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
     .chip.status[data-s="CANCELLED"]{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
 
+    .headerRight{
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      justify-content:flex-start;
+    }
+
+    .miniBox{
+      background: rgba(0,0,0,.12);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding:12px;
+    }
+
+    .miniTitle{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+      letter-spacing:.2px;
+    }
+
+    .inlineForm{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:end;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:180px;
+      flex:1;
+    }
+    .field label{
+      font-size:12px;
+      color:var(--muted);
+    }
+
     .cardBody{
       padding:14px 16px 16px;
       display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-    }
-    @media (min-width: 640px){
-      .cardBody{ grid-template-columns: 1.2fr .8fr; }
+      grid-template-columns: 1fr 340px;
+      gap:14px;
+      align-items:start;
     }
 
     .sectionTitle{
@@ -286,6 +334,7 @@
       margin-bottom:6px;
       letter-spacing:.2px;
     }
+
     .items{
       margin:0;
       padding-left:18px;
@@ -300,14 +349,18 @@
       border-radius: 16px;
       padding:12px;
     }
+
     .row{
-      display:flex; justify-content:space-between; gap:10px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
       font-size:13px;
       padding:6px 0;
       border-bottom:1px dashed rgba(255,255,255,.10);
     }
     .row:last-child{ border-bottom:none; }
     .row b{ font-weight:800; }
+
     .money{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     }
@@ -318,9 +371,12 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
       background: rgba(0,0,0,.10);
     }
-    .link{
+
+    .linkBtn{
       text-decoration:none;
       color: var(--text);
       padding:10px 12px;
@@ -328,10 +384,91 @@
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.06);
       transition: transform .15s ease, border-color .15s ease;
-      display:inline-flex; align-items:center; gap:8px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
     }
-    .link:hover{ transform: translateY(-1px); border-color: rgba(124,58,237,.35); }
+    .linkBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,58,237,.35);
+    }
+
     .hint{ color:var(--muted); font-size:12px; }
+
+    .detailsPanel{
+      max-height:0;
+      overflow:hidden;
+      transition:max-height .35s ease;
+      border-top:1px solid rgba(255,255,255,.08);
+      background: rgba(2, 10, 22, .45);
+    }
+    .card.open .detailsPanel{
+      max-height:2500px;
+    }
+
+    .detailsInner{
+      padding:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+
+    .box{
+      background: rgba(0,0,0,.14);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding:14px;
+    }
+
+    .box h3{
+      margin:0 0 10px;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .historyList{
+      margin:0;
+      padding-left:18px;
+    }
+    .historyList li{
+      margin:8px 0;
+    }
+
+    .messagesWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .msg{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:13px;
+    }
+    .msg.success{
+      background: rgba(34,197,94,.10);
+      border-color: rgba(34,197,94,.35);
+    }
+    .msg.error{
+      background: rgba(239,68,68,.10);
+      border-color: rgba(239,68,68,.35);
+    }
+    .msg.warning{
+      background: rgba(245,158,11,.10);
+      border-color: rgba(245,158,11,.35);
+    }
+    .msg.info{
+      background: rgba(59,130,246,.10);
+      border-color: rgba(59,130,246,.35);
+    }
 
     .empty{
       padding:20px;
@@ -342,7 +479,18 @@
       color:var(--muted);
     }
 
-    /* Mobile */
+    @media (max-width: 1180px){
+      .cardHeader{
+        grid-template-columns: 1fr;
+      }
+      .cardBody{
+        grid-template-columns: 1fr;
+      }
+      .detailsInner{
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 980px){
       .layout{ grid-template-columns: 1fr; }
       .sidebar{ height:auto; position:relative; }
@@ -354,7 +502,6 @@
 <body>
   <div class="layout page">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo"></div>
@@ -384,7 +531,6 @@
       </div>
     </aside>
 
-    <!-- MAIN -->
     <main class="main">
 
       <div class="topbar">
@@ -405,7 +551,16 @@
         </div>
       </div>
 
-      <!-- FILTER BAR (backend compatible: GET params only) -->
+      {% if messages %}
+        <div class="messagesWrap">
+          {% for message in messages %}
+            <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <form class="filters" method="get">
         <div>
           <label><b>Status</b></label><br>
@@ -424,71 +579,180 @@
 
         <div style="display:flex; gap:10px; align-items:flex-end;">
           <button type="submit">Apply</button>
-          <a class="link ghost" href="/orders/producer/dashboard/">Reset</a>
+          <a class="linkBtn ghost" href="/orders/producer/dashboard/">Reset</a>
         </div>
 
-        <div class="hint">Tip: Click “View details” to see full customer + delivery info.</div>
+        <div class="hint">Tip: Click “Order details” to expand the full order information below.</div>
       </form>
 
       {% if suborders %}
-        <section class="grid">
-          {% for suborder, lead_ok in suborders %}
+        <section class="ordersList">
+          {% for suborder_data in suborders %}
+            {% with suborder=suborder_data.0 lead_ok=suborder_data.1 %}
+              <article class="card" id="suborder-card-{{ suborder.id }}">
+                <div class="cardHeader">
+                  <div>
+                    <div class="meta">
+                      <div class="id">SubOrder #{{ suborder.id }} • Order #{{ suborder.order.id }}</div>
+                      <div class="sub">
+                        Customer: <b>{{ suborder.order.customer }}</b><br>
+                        Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }}<br>
+                        Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
+                      </div>
+                    </div>
 
+                    <div class="chips">
+                      <span class="chip status" data-s="{{ suborder.status }}">● {{ suborder.status }}</span>
+                      {% if lead_ok %}
+                        <span class="chip ok">✅ 48h OK</span>
+                      {% else %}
+                        <span class="chip bad">❌ Lead time</span>
+                      {% endif %}
+                    </div>
+                  </div>
 
+                  <div class="headerRight">
+                    <div class="miniBox">
+                      <div class="miniTitle">Change status</div>
 
-            <article class="card">
-              <div class="cardHeader">
-                <div class="meta">
-                  <div class="id">SubOrder #{{ suborder.id }} • Order #{{ suborder.order.id }}</div>
-                  <div class="sub">
-                    Customer: <b>{{ suborder.order.customer }}</b> •
-                    Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }} •
-                    Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
+                      <form method="post" action="{% url 'producer_suborder_change_status' suborder.id %}">
+                        {% csrf_token %}
+
+                        <div class="inlineForm">
+                          <div class="field">
+                            <label for="new_status_{{ suborder.id }}">New status</label>
+                            <select
+                              name="new_status"
+                              id="new_status_{{ suborder.id }}"
+                              {% if suborder.allowed_next %}required{% else %}disabled{% endif %}
+                            >
+                              {% if suborder.allowed_next %}
+                                {% for s in suborder.allowed_next %}
+                                  <option value="{{ s }}">{{ s }}</option>
+                                {% endfor %}
+                              {% else %}
+                                <option value="">No transitions available</option>
+                              {% endif %}
+                            </select>
+                          </div>
+
+                          <div class="field">
+                            <label for="note_{{ suborder.id }}">Note</label>
+                            <input
+                              type="text"
+                              name="note"
+                              id="note_{{ suborder.id }}"
+                              placeholder="e.g. Packed and ready"
+                              {% if not suborder.allowed_next %}disabled{% endif %}
+                            >
+                          </div>
+
+                          <button type="submit" {% if not suborder.allowed_next %}disabled{% endif %}>
+                            Update status
+                          </button>
+                        </div>
+
+                        {% if not suborder.allowed_next %}
+                          <div class="hint" style="margin-top:10px;">
+                            This suborder is <b>{{ suborder.status }}</b> and cannot be changed further.
+                          </div>
+                        {% endif %}
+                      </form>
+                    </div>
                   </div>
                 </div>
 
-                <div class="chips">
-                  <span class="chip status" data-s="{{ suborder.status }}">● {{ suborder.status }}</span>
-                  {% if lead_ok %}
-                    <span class="chip ok">✅ 48h OK</span>
-                  {% else %}
-                    <span class="chip bad">❌ Lead time</span>
-                  {% endif %}
-                </div>
-              </div>
+                <div class="cardBody">
+                  <div>
+                    <div class="sectionTitle">ITEMS</div>
+                    <ul class="items">
+                      {% for item in suborder.items.all %}
+                        <li>
+                          {{ item.product_name }} —
+                          Qty: <b>{{ item.quantity }}</b>
+                          <span class="muted">• Unit £{{ item.unit_price }}</span>
+                        </li>
+                      {% empty %}
+                        <li class="muted">No items.</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
 
-              <div class="cardBody">
-                <div>
-                  <div class="sectionTitle">ITEMS</div>
-                  <ul class="items">
-                    {% for item in suborder.items.all %}
-                      <li>
-                        {{ item.product_name }} —
-                        Qty: <b>{{ item.quantity }}</b>
-                        <span class="muted">• Unit £{{ item.unit_price }}</span>
-                      </li>
-                    {% empty %}
-                      <li class="muted">No items.</li>
-                    {% endfor %}
-                  </ul>
-                </div>
-
-                <div>
-                  <div class="sectionTitle">TOTALS</div>
-                  <div class="totals">
-                    <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal }}</span></div>
-                    <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount }}</span></div>
-                    <div class="row"><b>Payout</b><b class="money">£{{ suborder.producer_payout_amount }}</b></div>
+                  <div>
+                    <div class="sectionTitle">TOTALS</div>
+                    <div class="totals">
+                      <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal }}</span></div>
+                      <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount }}</span></div>
+                      <div class="row"><b>Payout</b><b class="money">£{{ suborder.producer_payout_amount }}</b></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="cardFooter">
-                <span class="hint">Only your items are shown for multi-vendor orders.</span>
-                <a class="link" href="/orders/producer/suborders/{{ suborder.id }}/">View details <span>→</span></a>
-              </div>
-            </article>
+                <div class="cardFooter">
+                  <span class="hint">Only your items are shown for multi-vendor orders.</span>
+                  <button type="button" class="linkBtn toggleDetailsBtn" data-target="details-{{ suborder.id }}">
+                    Order details <span>↓</span>
+                  </button>
+                </div>
 
+                <div class="detailsPanel" id="details-{{ suborder.id }}">
+                  <div class="detailsInner">
+                    <div class="box">
+                      <h3>Customer Contact</h3>
+                      <div class="row"><span>Email</span><span>{{ suborder.order.customer.email }}</span></div>
+                      <div class="row"><span>Phone</span><span>{{ suborder.order.customer_phone|default:"—" }}</span></div>
+                    </div>
+
+                    <div class="box">
+                      <h3>Delivery</h3>
+                      <div class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"—" }}</div>
+
+                      <div style="margin-top:12px;">
+                        <h3>Special Instructions</h3>
+                        <div class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"—" }}</div>
+                      </div>
+                    </div>
+
+                    <div class="box">
+                      <h3>Items</h3>
+                      <ul class="items">
+                        {% for item in suborder.items.all %}
+                          <li>
+                            {{ item.product_name }} — Qty: <b>{{ item.quantity }}</b>
+                            <span class="muted">• Unit £{{ item.unit_price }} • Line £{{ item.line_total }}</span>
+                          </li>
+                        {% empty %}
+                          <li class="muted">No items.</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+
+                    <div class="box">
+                      <h3>Totals</h3>
+                      <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal }}</span></div>
+                      <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount }}</span></div>
+                      <div class="row"><b>Payout</b><b class="money">£{{ suborder.producer_payout_amount }}</b></div>
+                    </div>
+
+                    <div class="box" style="grid-column: 1 / -1;">
+                      <h3>Status History</h3>
+                      <ul class="historyList">
+                        {% for ev in suborder.status_events.all %}
+                          <li>
+                            <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span> —
+                            <b>{{ ev.old_status }}</b> → <b>{{ ev.new_status }}</b>
+                            <span class="muted">by {{ ev.changed_by.username }}</span>
+                            {% if ev.note %}<span class="muted">• “{{ ev.note }}”</span>{% endif %}
+                          </li>
+                        {% empty %}
+                          <li class="muted">No status changes yet.</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            {% endwith %}
           {% endfor %}
         </section>
       {% else %}
@@ -497,8 +761,38 @@
           <p style="margin:0;">Create demo orders (3 different delivery dates) to satisfy TC9 preconditions.</p>
         </div>
       {% endif %}
-
     </main>
   </div>
+
+  <script>
+    document.querySelectorAll('.toggleDetailsBtn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const targetId = btn.getAttribute('data-target');
+        const card = btn.closest('.card');
+        const isOpen = card.classList.contains('open');
+
+        if (isOpen) {
+          card.classList.remove('open');
+          btn.innerHTML = 'Order details <span>↓</span>';
+        } else {
+          card.classList.add('open');
+          btn.innerHTML = 'Hide details <span>↑</span>';
+        }
+      });
+    });
+
+    window.addEventListener('load', function() {
+      if (window.location.hash) {
+        const card = document.querySelector(window.location.hash);
+        if (card && card.classList.contains('card')) {
+          const btn = card.querySelector('.toggleDetailsBtn');
+          if (btn) {
+            card.classList.add('open');
+            btn.innerHTML = 'Hide details <span>↑</span>';
+          }
+        }
+      }
+    });
+  </script>
 </body>
 </html>

@@ -4,6 +4,7 @@ from django.conf import settings
 class Notification(models.Model):
     class Type(models.TextChoices):
         LOW_STOCK = "LOW_STOCK", "Low Stock"
+        NEW_ORDER = "NEW_ORDER", "New Order"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
