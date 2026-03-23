@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Register as Producer</title>
+  <title>Register as Customer</title>
   <style>{% include "accounts/includes/auth_theme_styles.html" %}</style>
 </head>
 <body>
@@ -14,28 +14,28 @@
           <div class="logo"></div>
           <div>
             <h1>DESD Bristol Food Network</h1>
-            <p>Producer Registration</p>
+            <p>Customer Registration</p>
           </div>
         </div>
 
-        <div class="eyebrow">Producer Account</div>
-        <h2>Register as a producer on the network.</h2>
+        <div class="eyebrow">Customer Account</div>
+        <h2>Register as a customer for local food ordering.</h2>
         <p class="lede">
-          This route is intended for producers and food businesses who need to publish products, receive customer orders, and manage fulfilment.
+          This route is intended for shoppers who want to browse products, place orders, review receipts, and reorder from previous purchases.
         </p>
 
         <ul class="featureList">
-          <li><span class="featureIndex">1</span><div>Business and contact details are stored on the account for ongoing order handling.</div></li>
-          <li><span class="featureIndex">2</span><div>After sign-in, producers are redirected to the incoming orders dashboard.</div></li>
-          <li><span class="featureIndex">3</span><div>Validation rules and backend behaviour are unchanged; only the interface now matches the rest of the product.</div></li>
+          <li><span class="featureIndex">1</span><div>Customer details are stored so delivery and checkout data can be reused across orders.</div></li>
+          <li><span class="featureIndex">2</span><div>After sign-in, customers are redirected to product discovery and shopping flows.</div></li>
+          <li><span class="featureIndex">3</span><div>Validation rules and backend behaviour are unchanged; only the interface now matches the product design.</div></li>
         </ul>
       </aside>
 
       <section class="authCardWrap">
         <div class="authCard">
-          <p class="kicker">Business Registration</p>
-          <h3>Register as Producer</h3>
-          <p class="subtext">Create a producer account for product management and order operations.</p>
+          <p class="kicker">Customer Registration</p>
+          <h3>Register as Customer</h3>
+          <p class="subtext">Create a customer account to shop, check out, and review previous orders.</p>
 
           {% if messages %}
             <div class="messageStack">
@@ -50,21 +50,21 @@
 
             <div class="fieldGrid">
               <div class="field full">
-                <label for="{{ form.business_name.id_for_label }}">Business Name</label>
-                {{ form.business_name }}
-                {% for error in form.business_name.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
-              </div>
-
-              <div class="field">
-                <label for="{{ form.contact_name.id_for_label }}">Contact Name</label>
-                {{ form.contact_name }}
-                {% for error in form.contact_name.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
+                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
+                {{ form.full_name }}
+                {% for error in form.full_name.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
               </div>
 
               <div class="field">
                 <label for="{{ form.phone.id_for_label }}">Phone</label>
                 {{ form.phone }}
                 {% for error in form.phone.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
+              </div>
+
+              <div class="field">
+                <label for="{{ form.postcode.id_for_label }}">Postcode</label>
+                {{ form.postcode }}
+                {% for error in form.postcode.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
               </div>
 
               <div class="field full">
@@ -77,12 +77,6 @@
                 <label for="{{ form.address.id_for_label }}">Address</label>
                 {{ form.address }}
                 {% for error in form.address.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
-              </div>
-
-              <div class="field">
-                <label for="{{ form.postcode.id_for_label }}">Postcode</label>
-                {{ form.postcode }}
-                {% for error in form.postcode.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
               </div>
 
               <div class="field passwordField">
@@ -139,12 +133,12 @@
 
             {% for error in form.non_field_errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
 
-            <button class="submit" type="submit">Create Producer Account</button>
+            <button class="submit" type="submit">Create Customer Account</button>
           </form>
 
           <div class="inlineLinks">
             <a href="/accounts/login/">Back to Sign In</a>
-            <a href="/accounts/register/customer/">Register as Customer</a>
+            <a href="/accounts/register/producer/">Register as Producer</a>
           </div>
         </div>
       </section>
