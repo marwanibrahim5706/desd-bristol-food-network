@@ -8,6 +8,9 @@
     .wrap { max-width: 900px; margin: 0 auto; padding: 24px; }
     .card { background:white; border:1px solid #e5e7eb; border-radius:16px; padding:18px; }
     .muted { color:#6b7280; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; margin-right:6px; }
+    .ok { background:#dcfce7; }
+    .danger { background:#fee2e2; }
     a { text-decoration:none; color:inherit; }
   </style>
 </head>
@@ -17,8 +20,24 @@
     <div class="card" style="margin-top:12px;">
       <h1 style="margin:0 0 8px;">{{ product.name }}</h1>
       <div class="muted">Producer: {{ product.producer.username }}</div>
+
+      <p><strong>Category:</strong> {{ product.get_category_display }}</p>
       <p><strong>Price:</strong> £{{ product.price }}</p>
       <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
+
+      {% if product.stock_quantity > 0 %}
+        <span class="pill ok">In stock</span>
+      {% else %}
+        <span class="pill danger">Out of stock</span>
+      {% endif %}
+
+      {% if product.description %}
+        <p><strong>Description:</strong><br>{{ product.description }}</p>
+      {% endif %}
+
+      {% if product.allergens %}
+        <p><strong>Allergens:</strong> {{ product.allergens }}</p>
+      {% endif %}
     </div>
   </div>
 </body>

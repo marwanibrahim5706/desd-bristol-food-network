@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ page_title }}</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      margin: 0;
+      background: #f6f7fb;
+      color: #111827;
+    }
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 600;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      background: white;
+      box-sizing: border-box;
+    }
+    .checkbox-row {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .checkbox-row input {
+      width: auto;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .btn {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #111827;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      background: white;
+      color: #111827;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .errorlist {
+      color: #b91c1c;
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="muted" href="{% url 'producer_product_list' %}">← Back to My Products</a>
+
+    <div class="card" style="margin-top:12px;">
+      <h1 style="margin:0 0 8px;">{{ page_title }}</h1>
+      <div class="muted">Create or update your product details and inventory.</div>
+
+      <form method="post" style="margin-top:18px;">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <label for="{{ form.name.id_for_label }}">Product name</label>
+        {{ form.name }}
+        {{ form.name.errors }}
+
+        <label for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+        {{ form.description.errors }}
+
+        <label for="{{ form.category.id_for_label }}">Category</label>
+        {{ form.category }}
+        {{ form.category.errors }}
+
+        <label for="{{ form.price.id_for_label }}">Price</label>
+        {{ form.price }}
+        {{ form.price.errors }}
+
+        <label for="{{ form.stock_quantity.id_for_label }}">Stock quantity</label>
+        {{ form.stock_quantity }}
+        {{ form.stock_quantity.errors }}
+
+        <label for="{{ form.low_stock_threshold.id_for_label }}">Low stock threshold</label>
+        {{ form.low_stock_threshold }}
+        {{ form.low_stock_threshold.errors }}
+
+        <label for="{{ form.allergens.id_for_label }}">Allergens</label>
+        {{ form.allergens }}
+        {{ form.allergens.errors }}
+
+        <div class="checkbox-row">
+          {{ form.is_active }}
+          <label for="{{ form.is_active.id_for_label }}" style="margin:0;">Active / visible to customers</label>
+        </div>
+        {{ form.is_active.errors }}
+
+        <div class="btn-row">
+          <button class="btn" type="submit">{{ submit_label }}</button>
+          <a class="btn-secondary" href="{% url 'producer_product_list' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

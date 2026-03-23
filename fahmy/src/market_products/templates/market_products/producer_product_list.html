@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Products</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      margin: 0;
+      background: #f6f7fb;
+      color: #111827;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #111827;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-right: 6px;
+    }
+    .ok { background: #dcfce7; }
+    .danger { background: #fee2e2; }
+    .warn { background: #fef3c7; }
+    .actions {
+      margin-top: 14px;
+    }
+    .actions a {
+      text-decoration: none;
+      font-weight: 600;
+      color: #111827;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+      .top { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1 style="margin:0;">My Products</h1>
+        <div class="muted">Manage your product catalogue and inventory.</div>
+      </div>
+      <a class="btn" href="{% url 'producer_product_create' %}">+ Add Product</a>
+    </div>
+
+    {% if products %}
+      <div class="grid">
+        {% for product in products %}
+          <div class="card">
+            <h3 style="margin:0 0 8px;">{{ product.name }}</h3>
+            <div class="muted" style="margin-bottom:10px;">
+              {{ product.get_category_display }}
+            </div>
+
+            <p><strong>Price:</strong> £{{ product.price }}</p>
+            <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
+            <p><strong>Threshold:</strong> {{ product.low_stock_threshold }}</p>
+
+            <div style="margin:10px 0;">
+              {% if product.is_active %}
+                <span class="pill ok">Active</span>
+              {% else %}
+                <span class="pill danger">Inactive</span>
+              {% endif %}
+
+              {% if product.is_low_stock %}
+                <span class="pill warn">Low stock</span>
+              {% endif %}
+            </div>
+
+            {% if product.allergens %}
+              <p><strong>Allergens:</strong> {{ product.allergens }}</p>
+            {% endif %}
+
+            <div class="actions">
+              <a href="{% url 'producer_product_edit' product.id %}">Edit product</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card">
+        <h3 style="margin-top:0;">No products yet</h3>
+        <p class="muted">Start by adding your first product.</p>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
