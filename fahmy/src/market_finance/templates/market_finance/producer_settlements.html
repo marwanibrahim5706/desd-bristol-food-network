@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Producer Settlements</title>
+  <style>
+    :root{
+      --bg:#04070c;
+      --text:#e8eefc;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.08);
+      --accent:#7c3aed;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 15% -10%, rgba(124,58,237,.35), transparent 55%),
+        radial-gradient(1000px 600px at 95% 5%, rgba(34,197,94,.22), transparent 55%),
+        var(--bg);
+    }
+    .wrap{ max-width:1280px; margin:0 auto; padding:24px; }
+    .topbar, .filters, .card{ background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .topbar{ padding:20px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .topbar h1{ margin:0; font-size:24px; }
+    .muted{ color:var(--muted); }
+    .stats{ display:flex; gap:12px; flex-wrap:wrap; }
+    .stat{ min-width:170px; padding:12px 14px; border-radius:16px; background:rgba(0,0,0,.14); border:1px solid var(--line); }
+    .stat .k{ font-size:12px; color:var(--muted); }
+    .stat .v{ margin-top:4px; font-size:20px; font-weight:700; }
+    .filters{ padding:14px; margin-top:16px; display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+    .filters label{ display:block; margin-bottom:6px; color:var(--muted); font-size:12px; }
+    input, button, a.button{ appearance:none; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(15,27,51,.55); color:var(--text); padding:10px 12px; text-decoration:none; }
+    button{ cursor:pointer; background:linear-gradient(135deg, rgba(124,58,237,.95), rgba(99,102,241,.85)); }
+    .button.secondary{ background:rgba(255,255,255,.06); }
+    .grid{ display:grid; grid-template-columns:1fr; gap:14px; margin-top:18px; }
+    @media (min-width: 1080px){ .grid{ grid-template-columns:1fr 1fr; } }
+    .cardHeader{ padding:14px 16px; display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line); background:rgba(0,0,0,.10); }
+    .cardBody{ padding:16px; display:grid; gap:14px; grid-template-columns:1fr 1fr; }
+    @media (max-width: 760px){ .cardBody{ grid-template-columns:1fr; } }
+    .totals{ border:1px solid var(--line); border-radius:16px; padding:12px; background:rgba(0,0,0,.12); }
+    .row{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,.10); }
+    .row:last-child{ border-bottom:none; }
+    .chip{ padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06); }
+    .chip.ok{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.12); }
+    .chip.warn{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.12); }
+    .actions{ padding:14px 16px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; align-items:center; }
+    ul{ margin:0; padding-left:18px; }
+    li{ margin:6px 0; }
+    .money{ font-family:ui-monospace, Menlo, Consolas, monospace; }
+    .empty{ margin-top:18px; padding:24px; border-radius:18px; border:1px dashed rgba(255,255,255,.18); text-align:center; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="topbar">
+      <div>
+        <h1>Weekly Settlements</h1>
+        <p class="muted" style="margin:8px 0 0;">Delivered orders only. Each weekly report shows your gross sales, the 5% platform commission, and your net payout.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Gross sales</div><div class="v money">£{{ gross_sales|floatformat:2 }}</div></div>
+        <div class="stat"><div class="k">Commission</div><div class="v money">£{{ total_commission|floatformat:2 }}</div></div>
+        <div class="stat"><div class="k">Payouts</div><div class="v money">£{{ total_payouts|floatformat:2 }}</div></div>
+      </div>
+    </section>
+
+    <form class="filters" method="get">
+      <div>
+        <label><b>Settlement week</b></label>
+        <select name="settlement_week">
+          <option value="">All weeks</option>
+          {% for week in available_weeks %}
+            <option value="{{ week.value }}" {% if settlement_week == week.value %}selected{% endif %}>{{ week.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label><b>Date from</b></label>
+        <input type="date" name="date_from" value="{{ date_from }}">
+      </div>
+      <div>
+        <label><b>Date to</b></label>
+        <input type="date" name="date_to" value="{{ date_to }}">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit">Apply</button>
+        <a class="button secondary" href="/finance/producer/settlements/">Reset</a>
+      </div>
+      <div class="muted">Downloadable settlement reports are available for each weekly payout period.</div>
+    </form>
+
+    {% if settlement_week %}
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        {% if previous_week_query %}
+          <a class="button secondary" href="/finance/producer/settlements/{{ previous_week_query }}">Previous week</a>
+        {% endif %}
+        {% if next_week_query %}
+          <a class="button secondary" href="/finance/producer/settlements/{{ next_week_query }}">Next week</a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if settlements %}
+      <section class="grid">
+        {% for settlement in settlements %}
+          <article class="card">
+            <div class="cardHeader">
+              <div>
+                <div style="font-weight:800;">Week of {{ settlement.week_start|date:"d M Y" }}</div>
+                <div class="muted">Settlement window ends {{ settlement.week_end|date:"d M Y" }}</div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                {% if settlement.record and settlement.record.status == "PAID" %}
+                  <span class="chip ok">Paid</span>
+                {% elif settlement.record %}
+                  <span class="chip warn">Generated</span>
+                {% else %}
+                  <span class="chip">Awaiting generation</span>
+                {% endif %}
+                <span class="chip">{{ settlement.suborder_count }} delivered suborders</span>
+              </div>
+            </div>
+
+            <div class="cardBody">
+              <div>
+                <div class="muted" style="margin-bottom:8px;">Included orders</div>
+                <ul>
+                  {% for suborder in settlement.suborders %}
+                    <li>
+                      Order #{{ suborder.order.id }} / SubOrder #{{ suborder.id }}
+                      <span class="muted">• {{ suborder.delivery_date|date:"M d, Y H:i" }}</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              <div>
+                <div class="muted" style="margin-bottom:8px;">Payment summary</div>
+                <div class="totals">
+                  <div class="row"><span>Gross sales</span><span class="money">£{{ settlement.gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission (5%)</span><span class="money">£{{ settlement.commission|floatformat:2 }}</span></div>
+                  <div class="row"><strong>Net payout</strong><strong class="money">£{{ settlement.payout|floatformat:2 }}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <div class="muted">
+                {% if settlement.record %}
+                  Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}
+                  {% if settlement.record.paid_at %}• Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}{% endif %}
+                {% else %}
+                  This weekly report is ready once admin generates the settlement record.
+                {% endif %}
+              </div>
+              <a class="button secondary" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ request.user.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download CSV</a>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+    {% else %}
+      <div class="empty">
+        <h3 style="margin:0 0 8px; color:var(--text);">No weekly settlements yet</h3>
+        <p style="margin:0;">Delivered orders will appear here once your suborders complete the delivery lifecycle.</p>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

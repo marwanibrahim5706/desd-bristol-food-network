@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "market_cart",
     "market_orders",
     "market_payments",
+    "market_finance",
     "market_alerts",
 ]
 

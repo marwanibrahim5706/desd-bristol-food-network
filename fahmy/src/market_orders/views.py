@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from accounts.permissions import is_admin
+from accounts.permissions import is_producer
 from .models import ProducerSubOrder, SubOrderStatusEvent
 from .services import get_allowed_next_statuses, transition_suborder
 
@@ -27,16 +27,13 @@ def producer_dashboard(request):
     - Prefetches status history for inline details display
     """
 
-    # GET params
+    if not is_producer(request.user):
+        raise PermissionDenied("Producer access required.")
+
     status_filter = (request.GET.get("status") or "").strip()
     q = (request.GET.get("q") or "").strip()
 
-    # Base queryset: ONLY this producer unless admin
-    qs = (
-        ProducerSubOrder.objects.all()
-        if is_admin(request.user)
-        else ProducerSubOrder.objects.filter(producer=request.user)
-    )
+    qs = ProducerSubOrder.objects.filter(producer=request.user)
 
     # Optional status filter
     if status_filter:
@@ -94,15 +91,15 @@ def producer_suborder_detail(request, suborder_id):
     - Still kept for compatibility, even though dashboard is now single-page
     """
 
+    if not is_producer(request.user):
+        raise PermissionDenied("Producer access required.")
+
     base_qs = (
         ProducerSubOrder.objects.select_related("order", "order__customer")
         .prefetch_related("items", "status_events")
     )
 
-    if is_admin(request.user):
-        suborder = get_object_or_404(base_qs, id=suborder_id)
-    else:
-        suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
+    suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
 
     lead_ok = (suborder.delivery_date - suborder.order.created_at) >= timedelta(hours=48)
     allowed_next = get_allowed_next_statuses(suborder.status)
@@ -134,12 +131,11 @@ def producer_suborder_change_status(request, suborder_id):
     if request.method != "POST":
         raise PermissionDenied("POST required")
 
-    base_qs = ProducerSubOrder.objects.select_related("order", "order__customer")
+    if not is_producer(request.user):
+        raise PermissionDenied("Producer access required.")
 
-    if is_admin(request.user):
-        suborder = get_object_or_404(base_qs, id=suborder_id)
-    else:
-        suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
+    base_qs = ProducerSubOrder.objects.select_related("order", "order__customer")
+    suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
 
     new_status = (request.POST.get("new_status") or "").strip()
     note = (request.POST.get("note") or "").strip()

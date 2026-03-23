@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Finance Dashboard</title>
+
+  <style>
+    :root{
+      --bg:#04070c;
+      --panel:#030f25;
+      --card:#101f3d;
+      --text:#e8eefc;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.08);
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 15% -10%, rgba(124,58,237,.35), transparent 55%),
+        radial-gradient(1000px 600px at 95% 5%, rgba(34,197,94,.22), transparent 55%),
+        radial-gradient(900px 600px at 60% 110%, rgba(59,130,246,.18), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    .page { animation: fadeUp .45s ease-out both; }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(10px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+
+    .layout{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns:280px 1fr;
+    }
+
+    .sidebar{
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:18px 14px;
+      background:linear-gradient(180deg, rgba(209,19,19,.06), rgba(255,255,255,.02));
+      border-right:1px solid var(--line);
+      backdrop-filter:blur(12px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px 12px 16px;
+      border-bottom:1px solid var(--line);
+      margin-bottom:14px;
+    }
+    .logo{
+      width:40px;
+      height:40px;
+      border-radius:14px;
+      background:
+        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.55), transparent 60%),
+        linear-gradient(135deg, rgba(124,58,237,1), rgba(34,197,94,1));
+      box-shadow:0 10px 30px rgba(124,58,237,.22);
+    }
+    .brand h1{ font-size:14px; margin:0; letter-spacing:.3px; }
+    .brand p{ margin:2px 0 0; color:var(--muted); font-size:12px; }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:8px 6px;
+    }
+    .nav a{
+      text-decoration:none;
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid transparent;
+      transition:transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .nav a:hover{
+      transform:translateY(-1px);
+      background:rgba(255,255,255,.05);
+      border-color:rgba(255,255,255,.08);
+    }
+    .nav .active{
+      background:rgba(124,58,237,.18);
+      border-color:rgba(124,58,237,.35);
+      box-shadow:0 10px 28px rgba(124,58,237,.16);
+    }
+    .icon{
+      width:28px;
+      height:28px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:14px;
+    }
+
+    .profile{
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:14px;
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .avatar{
+      width:36px;
+      height:36px;
+      border-radius:14px;
+      background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.10);
+      display:grid;
+      place-items:center;
+      font-weight:700;
+    }
+    .profile small{ color:var(--muted); display:block; margin-top:2px; }
+
+    .main{ padding:22px 22px 36px; }
+
+    .topbar{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-bottom:16px;
+    }
+    .headline h2{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .headline p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+    .stats{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .stat{
+      min-width:160px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:10px 12px;
+      transition:transform .15s ease;
+    }
+    .stat:hover{ transform:translateY(-1px); }
+    .stat .k{ color:var(--muted); font-size:12px; }
+    .stat .v{ font-size:18px; font-weight:700; margin-top:2px; }
+
+    .filters{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      padding:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      margin-bottom:16px;
+    }
+    .filters label{ color:var(--muted); font-size:12px; }
+    select, input, button{
+      appearance:none;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(15,27,51,.55);
+      color:var(--text);
+      padding:10px 12px;
+      outline:none;
+    }
+    input[type="search"]{ min-width:240px; }
+    button{
+      cursor:pointer;
+      background:linear-gradient(135deg, rgba(124,58,237,.95), rgba(99,102,241,.85));
+      border-color:rgba(124,58,237,.45);
+      font-weight:600;
+    }
+    .link{
+      text-decoration:none;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .inlineForm{ display:inline; }
+    .ghostButton{
+      cursor:pointer;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:600;
+    }
+    .hint{ color:var(--muted); font-size:12px; }
+    .messages{ display:grid; gap:10px; margin-bottom:16px; }
+    .message{ padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06); }
+    .message.success{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.12); }
+    .message.error{ border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); }
+
+    .section{
+      margin-top:18px;
+    }
+    .section h3{
+      margin:0 0 12px;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+    }
+    @media (min-width: 1100px){
+      .grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.10);
+    }
+    .meta .id{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:14px;
+    }
+    .meta .sub{
+      margin-top:4px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.4;
+    }
+
+    .chips{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+    .chip.ok{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.12); }
+    .chip.warn{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.12); }
+    .chip.bad{ border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); }
+
+    .cardBody{
+      padding:14px 16px 16px;
+      display:grid;
+      gap:12px;
+      grid-template-columns:1.1fr .9fr;
+    }
+    @media (max-width: 760px){
+      .cardBody{ grid-template-columns:1fr; }
+    }
+    .sectionTitle{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:6px;
+      letter-spacing:.2px;
+    }
+    .items{
+      margin:0;
+      padding-left:18px;
+    }
+    .items li{ margin:6px 0; }
+
+    .totals{
+      background:rgba(0,0,0,.12);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:12px;
+    }
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size:13px;
+      padding:6px 0;
+      border-bottom:1px dashed rgba(255,255,255,.10);
+    }
+    .row:last-child{ border-bottom:none; }
+    .money{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .empty{
+      padding:20px;
+      border-radius:18px;
+      border:1px dashed rgba(255,255,255,.18);
+      background:rgba(255,255,255,.04);
+      text-align:center;
+      color:var(--muted);
+    }
+
+    @media (max-width: 980px){
+      .layout{ grid-template-columns:1fr; }
+      .sidebar{ height:auto; position:relative; }
+      .profile{ position:relative; margin-top:10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout page">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Market Finance</h1>
+          <p>Platform Administration</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="active" href="/finance/admin/dashboard/">
+          <span class="icon">£</span>
+          <span>Finance Dashboard</span>
+        </a>
+        <a href="/admin/">
+          <span class="icon">⚙️</span>
+          <span>Django Admin</span>
+        </a>
+      </nav>
+
+      <div class="profile">
+        <div class="avatar">{{ request.user.username|default:"A"|slice:":1"|upper }}</div>
+        <div>
+          <div style="font-weight:700;">{{ request.user }}</div>
+          <small>Admin finance session</small>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="topbar">
+        <div class="headline">
+          <h2>Admin Commission Dashboard</h2>
+          <p>Monitor platform-level commission, export financial reports, and manage weekly producer settlements.</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Gross sales</div>
+            <div class="v money">£{{ gross_sales|floatformat:2 }}</div>
+          </div>
+          <div class="stat">
+            <div class="k">Platform commission</div>
+            <div class="v money">£{{ total_commission|floatformat:2 }}</div>
+          </div>
+          <div class="stat">
+            <div class="k">Producer payouts</div>
+            <div class="v money">£{{ total_payouts|floatformat:2 }}</div>
+          </div>
+          <div class="stat">
+            <div class="k">Delivered suborders</div>
+            <div class="v">{{ delivered_count }}</div>
+          </div>
+        </div>
+      </div>
+
+      <form class="filters" method="get">
+        <div>
+          <label><b>Settlement week</b></label><br>
+          <select name="settlement_week">
+            <option value="">All weeks</option>
+            {% for week in available_weeks %}
+              <option value="{{ week.value }}" {% if settlement_week == week.value %}selected{% endif %}>{{ week.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label><b>Status</b></label><br>
+          <select name="status">
+            <option value="">All</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label><b>Producer</b></label><br>
+          <select name="producer">
+            <option value="">All producers</option>
+            {% for producer in producers %}
+              <option value="{{ producer.producer_id }}" {% if producer_filter == producer.producer_id|stringformat:"s" %}selected{% endif %}>
+                {{ producer.producer__business_name|default:producer.producer__username }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label><b>Date from</b></label><br>
+          <input type="date" name="date_from" value="{{ date_from }}">
+        </div>
+
+        <div>
+          <label><b>Date to</b></label><br>
+          <input type="date" name="date_to" value="{{ date_to }}">
+        </div>
+
+        <div>
+          <label><b>Search</b></label><br>
+          <input type="search" name="q" placeholder="producer, customer, order id" value="{{ q }}">
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button type="submit">Apply</button>
+          <a class="link" href="/finance/admin/dashboard/">Reset</a>
+          <a class="link" href="{% url 'market_finance:export_admin_finance_csv' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download CSV</a>
+        </div>
+
+        <div class="hint">Settlement summaries below only include delivered suborders.</div>
+      </form>
+
+      {% if settlement_week %}
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:-4px 0 16px;">
+          {% if previous_week_query %}
+            <a class="link" href="/finance/admin/dashboard/{{ previous_week_query }}">Previous week</a>
+          {% endif %}
+          {% if next_week_query %}
+            <a class="link" href="/finance/admin/dashboard/{{ next_week_query }}">Next week</a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <section class="section">
+        <h3>Weekly Settlements</h3>
+        {% if settlements %}
+          <div class="grid">
+            {% for settlement in settlements %}
+              <article class="card">
+                <div class="cardHeader">
+                  <div class="meta">
+                    <div class="id">{{ settlement.producer.business_name|default:settlement.producer.username }}</div>
+                    <div class="sub">
+                      Settlement week: <b>{{ settlement.week_start|date:"M d, Y" }}</b> to <b>{{ settlement.week_end|date:"M d, Y" }}</b>
+                    </div>
+                  </div>
+
+                  <div class="chips">
+                    {% if settlement.record %}
+                      {% if settlement.record.status == "PAID" %}
+                        <span class="chip ok">Paid</span>
+                      {% else %}
+                        <span class="chip warn">Generated</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="chip warn">Not generated</span>
+                    {% endif %}
+                    <span class="chip">{{ settlement.suborder_count }} suborders</span>
+                  </div>
+                </div>
+
+                <div class="cardBody">
+                  <div>
+                    <div class="sectionTitle">SETTLEMENT SUMMARY</div>
+                    <ul class="items">
+                      <li>Producer: <b>{{ settlement.producer.business_name|default:settlement.producer.username }}</b></li>
+                      <li>Week start: <b>{{ settlement.week_start|date:"d M Y" }}</b></li>
+                      <li>Week end: <b>{{ settlement.week_end|date:"d M Y" }}</b></li>
+                      <li>Included suborders: <b>{{ settlement.suborder_count }}</b></li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <div class="sectionTitle">TOTALS</div>
+                    <div class="totals">
+                      <div class="row"><span>Gross sales</span><span class="money">£{{ settlement.gross_sales|floatformat:2 }}</span></div>
+                      <div class="row"><span>Commission</span><span class="money">£{{ settlement.commission|floatformat:2 }}</span></div>
+                      <div class="row"><b>Producer payout</b><b class="money">£{{ settlement.payout|floatformat:2 }}</b></div>
+                      {% if settlement.record %}
+                        <div class="row"><span>Record status</span><span>{{ settlement.record.get_status_display }}</span></div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="cardHeader" style="border-top:1px solid rgba(255,255,255,.08); border-bottom:none; align-items:center;">
+                  <div class="hint">
+                    {% if settlement.record %}
+                      Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}
+                      {% if settlement.record.paid_at %}
+                        • Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}
+                      {% endif %}
+                    {% else %}
+                      Create a settlement record for this producer-week.
+                    {% endif %}
+                  </div>
+
+                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <form class="inlineForm" method="post" action="{% url 'market_finance:generate_settlement' %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
+                      <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
+                      <button type="submit" class="ghostButton">
+                        {% if settlement.record %}Refresh record{% else %}Generate record{% endif %}
+                      </button>
+                    </form>
+
+                    <a class="link" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ settlement.producer.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download report</a>
+
+                    {% if settlement.record and settlement.record.status != "PAID" %}
+                      <form class="inlineForm" method="post" action="{% url 'market_finance:mark_settlement_paid' settlement.record.id %}">
+                        {% csrf_token %}
+                        <button type="submit">Mark paid</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty">
+            <h3 style="margin:0 0 8px; color:var(--text);">No settlement-ready records</h3>
+            <p style="margin:0;">Delivered suborders will appear here once producer orders move through the full lifecycle.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="section">
+        <h3>Commission Records</h3>
+        {% if suborders %}
+          <div class="grid">
+            {% for suborder in suborders %}
+              <article class="card">
+                <div class="cardHeader">
+                  <div class="meta">
+                    <div class="id">SubOrder #{{ suborder.id }} • Order #{{ suborder.order.id }}</div>
+                    <div class="sub">
+                      Producer: <b>{{ suborder.producer.business_name|default:suborder.producer.username }}</b><br>
+                      Customer: <b>{{ suborder.order.customer.username }}</b> • Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
+                    </div>
+                  </div>
+
+                  <div class="chips">
+                    {% if suborder.status == "DELIVERED" %}
+                      <span class="chip ok">{{ suborder.status }}</span>
+                    {% elif suborder.status == "CANCELLED" %}
+                      <span class="chip bad">{{ suborder.status }}</span>
+                    {% else %}
+                      <span class="chip warn">{{ suborder.status }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="cardBody">
+                  <div>
+                    <div class="sectionTitle">ITEMS</div>
+                    <ul class="items">
+                      {% for item in suborder.items.all %}
+                        <li>{{ item.product_name }} - Qty: <b>{{ item.quantity }}</b> <span class="hint">at £{{ item.unit_price }}</span></li>
+                      {% empty %}
+                        <li>No items recorded.</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <div class="sectionTitle">TOTALS</div>
+                    <div class="totals">
+                      <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal|floatformat:2 }}</span></div>
+                      <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount|floatformat:2 }}</span></div>
+                      <div class="row"><span>Payout</span><span class="money">£{{ suborder.producer_payout_amount|floatformat:2 }}</span></div>
+                      <div class="row"><span>Status</span><span>{{ suborder.get_status_display }}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty">
+            <h3 style="margin:0 0 8px; color:var(--text);">No finance records found</h3>
+            <p style="margin:0;">Try widening the filters or seed some demo producer suborders first.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -13,6 +13,7 @@ from market_orders.models import (
     OrderItem as MarketOrderItem,
     ProducerSubOrder,
 )
+
 from .models import Cart, CartItem, Order, OrderItem, Payment
 from market_products.models import Product
 
@@ -353,3 +354,4 @@ def receipt_page(request, payment_id: int):
             "producer_sections": producer_sections,
         },
     )
+

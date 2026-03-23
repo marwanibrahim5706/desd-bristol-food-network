@@ -15,6 +15,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("orders/", include("market_orders.urls")),
     path("payments/", include("market_payments.urls")),
+    path("finance/", include("market_finance.urls")),
 
     # ✅ your discovery + product detail as homepage
     path("", include("market_products.urls")),

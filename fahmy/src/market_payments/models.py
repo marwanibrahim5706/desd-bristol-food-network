@@ -96,3 +96,41 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment #{self.id} - {self.status}"
+
+
+class Settlement(models.Model):
+    class Status(models.TextChoices):
+        GENERATED = "GENERATED", "Generated"
+        PAID = "PAID", "Paid"
+
+    producer = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="settlements",
+    )
+    week_start = models.DateField()
+    week_end = models.DateField()
+    gross_sales = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    commission_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payout_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    suborder_count = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.GENERATED)
+    generated_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="generated_settlements",
+    )
+    generated_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-week_start", "producer__username"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["producer", "week_start"],
+                name="unique_settlement_per_producer_week",
+            )
+        ]
+
+    def __str__(self):
+        return f"Settlement #{self.id} - {self.producer} - {self.week_start}"

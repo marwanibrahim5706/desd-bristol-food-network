@@ -52,16 +52,16 @@ def _safe_redirect_or_default(request, next_url, user):
     ):
         return redirect(next_url)
 
-    # Django admin flags first
+    # Admin users land on the finance dashboard.
     if user.is_superuser or user.is_staff:
-        return redirect("/admin/")
+        return redirect("/finance/admin/dashboard/")
 
     if getattr(user, "role", None) == User.Role.PRODUCER:
         return redirect("/orders/producer/dashboard/")
     if getattr(user, "role", None) == User.Role.CUSTOMER:
         return redirect("/")
     if getattr(user, "role", None) == User.Role.ADMIN:
-        return redirect("/admin/")
+        return redirect("/finance/admin/dashboard/")
 
     return redirect("/")
 
