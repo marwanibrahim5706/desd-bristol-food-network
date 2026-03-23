@@ -1,8 +1,12 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Product
+from .services import average_product_rating, create_verified_review, user_can_review_product
 
 
 def discovery(request):
@@ -40,8 +44,45 @@ def discovery(request):
 
 def product_detail(request, pk: int):
     product = get_object_or_404(
-        Product.objects.select_related("producer"),
+        Product.objects.select_related("producer").prefetch_related("reviews__user"),
         pk=pk,
         is_active=True,
     )
-    return render(request, "market_products/product_detail.html", {"product": product})
+    existing_review = None
+    can_review = False
+    if request.user.is_authenticated:
+        existing_review = product.reviews.filter(user=request.user).first()
+        can_review = existing_review is None and user_can_review_product(request.user, product)
+
+    return render(
+        request,
+        "market_products/product_detail.html",
+        {
+            "product": product,
+            "reviews": product.reviews.all(),
+            "average_rating": average_product_rating(product),
+            "can_review": can_review,
+            "existing_review": existing_review,
+        },
+    )
+
+
+@login_required
+def submit_review(request, pk: int):
+    if request.method != "POST":
+        return redirect("product_detail", pk=pk)
+
+    product = get_object_or_404(Product, pk=pk, is_active=True)
+    try:
+        rating = int((request.POST.get("rating") or "").strip())
+        create_verified_review(
+            user=request.user,
+            product=product,
+            rating=rating,
+            comment=(request.POST.get("comment") or "").strip(),
+        )
+    except (ValueError, ValidationError) as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Review submitted.")
+    return redirect("product_detail", pk=pk)

@@ -1,28 +1,46 @@
 services:
-  db:
-    image: postgres:16
-    container_name: project_db
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT}:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
   web:
-    build: .
-    container_name: project_web
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: python src/manage.py runserver 0.0.0.0:8000
     env_file:
       - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      PAYMENTS_SERVICE_URL: http://payments:8001
+      PAYMENTS_BROWSER_URL: http://localhost:8001
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
+      - payments
+
+  db:
+    image: postgres:16
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+  payments:
+    build:
+      context: ./payments
+      dockerfile: Dockerfile
+    environment:
+      PAYMENTS_HOST: 0.0.0.0
+      PAYMENTS_PORT: 8001
+    ports:
+      - "8001:8001"
 
 volumes:
   db_data:

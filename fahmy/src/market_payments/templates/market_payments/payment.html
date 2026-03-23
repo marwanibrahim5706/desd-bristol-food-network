@@ -245,7 +245,7 @@
     <div class="top">
       <div>
         <h1>Payment</h1>
-        <div class="muted">Review your order and confirm payment.</div>
+        <div class="muted">Review your order, then continue to the hosted card payment page.</div>
       </div>
 
       <a class="muted" href="/admin/">Admin</a>
@@ -295,20 +295,6 @@
           <div class="empty">No items to display.</div>
         {% endif %}
 
-        <div class="form-grid">
-          <div class="full">
-            <label for="delivery_address_preview">Delivery address</label>
-            <textarea id="delivery_address_preview" readonly>{{ delivery_address }}</textarea>
-          </div>
-          <div>
-            <label for="delivery_date_preview">Minimum delivery date</label>
-            <input id="delivery_date_preview" type="datetime-local" value="{{ min_delivery_at }}" readonly />
-          </div>
-          <div>
-            <label for="single_producer_status">Checkout scope</label>
-            <input id="single_producer_status" value="{% if single_producer_only %}Single producer{% else %}Multiple producers detected{% endif %}" readonly />
-          </div>
-        </div>
       </div>
 
       <div class="card">
@@ -349,20 +335,7 @@
                   <input id="delivery_date" name="delivery_date" type="datetime-local" min="{{ min_delivery_at }}" required />
                 </div>
               {% endif %}
-              <div>
-                <label for="payment_method">Payment method</label>
-                <select id="payment_method" name="payment_method">
-                  <option value="demo_card">Demo card</option>
-                </select>
-              </div>
-              <div>
-                <label for="card_number">Card number</label>
-                <input id="card_number" name="card_number" value="4242 4242 4242 4242" />
-              </div>
-              <div>
-                <label for="card_expiry">Expiry</label>
-                <input id="card_expiry" name="card_expiry" value="12/34" />
-              </div>
+              <input type="hidden" name="payment_method" value="demo_card" />
               {% if not single_producer_only %}
                 {% for section in producer_sections %}
                   <div class="full">
@@ -381,7 +354,7 @@
               {% endif %}
             </div>
             <button type="submit" class="btn">
-              {% if single_producer_only %}Pay now{% else %}Confirm multi-vendor order{% endif %}
+              Continue to Card Payment
             </button>
           </form>
 

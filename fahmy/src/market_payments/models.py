@@ -90,12 +90,21 @@ class Payment(models.Model):
         on_delete=models.CASCADE,
         related_name="payments",
     )
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    commission_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    producer_payout_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     provider = models.CharField(max_length=50, default="demo")
+    transaction_reference = models.CharField(max_length=120, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Payment #{self.id} - {self.status}"
+
+    @property
+    def payment_status(self):
+        """Compatibility alias for reporting language."""
+        return self.status
 
 
 class Settlement(models.Model):
@@ -134,3 +143,18 @@ class Settlement(models.Model):
 
     def __str__(self):
         return f"Settlement #{self.id} - {self.producer} - {self.week_start}"
+
+    @property
+    def total_orders_value(self):
+        """Compatibility alias for gross settlement value before commission."""
+        return self.gross_sales
+
+    @property
+    def total_commission(self):
+        """Compatibility alias for total platform commission."""
+        return self.commission_amount
+
+    @property
+    def total_payout(self):
+        """Compatibility alias for total producer payout."""
+        return self.payout_amount

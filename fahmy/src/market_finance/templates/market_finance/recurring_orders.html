@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Recurring Orders</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; background: #f5f7fb; color: #111827; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 24px; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    .muted { color: #6b7280; }
+    textarea { width: 100%; min-height: 100px; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #111827; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Recurring Orders</h1>
+    <p class="muted">Manage weekly recurring orders and one-off changes for the next generated order.</p>
+    {% for recurring_order in recurring_orders %}
+      <div class="card">
+        <h2 style="margin-top:0;">Recurring Order #{{ recurring_order.id }}</h2>
+        <p class="muted">
+          Next run: {{ recurring_order.next_run_date }}.
+          {% if recurring_order.active %}Active{% else %}Paused{% endif %}
+        </p>
+        <p><strong>Template:</strong> {{ recurring_order.template_order_data }}</p>
+        <p><strong>Next instance overrides:</strong> {{ recurring_order.next_instance_overrides }}</p>
+
+        <form method="post" action="{% url 'market_finance:update_recurring_order_next_instance' recurring_order.id %}">
+          {% csrf_token %}
+          <label for="overrides_{{ recurring_order.id }}">Overrides JSON</label>
+          <textarea id="overrides_{{ recurring_order.id }}" name="overrides_json" placeholder='{"special_instructions": "Leave by the back door"}'></textarea>
+          <div style="margin-top:12px;">
+            <button type="submit">Save next instance changes</button>
+          </div>
+        </form>
+
+        <form method="post" action="{% url 'market_finance:run_recurring_order_now' recurring_order.id %}" style="margin-top:12px;">
+          {% csrf_token %}
+          <button type="submit">Generate next order now</button>
+        </form>
+      </div>
+    {% empty %}
+      <div class="card">
+        <p>No recurring orders yet.</p>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

@@ -66,6 +66,45 @@
       color: #166534;
     }
 
+    .success-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 1000;
+    }
+
+    .success-modal[hidden] {
+      display: none;
+    }
+
+    .success-modal-card {
+      width: min(100%, 460px);
+      background: #ffffff;
+      border: 1px solid #bbf7d0;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+      padding: 24px;
+      text-align: center;
+    }
+
+    .success-modal-title {
+      margin: 0 0 10px;
+      color: #166534;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .success-modal-copy {
+      margin: 0 0 18px;
+      color: #374151;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
     .pill.danger {
       background: #fee2e2;
       color: #991b1b;
@@ -187,6 +226,16 @@
   </style>
 </head>
 <body>
+  {% if payment_api_status %}
+    <div class="success-modal" id="payment-success-modal">
+      <div class="success-modal-card" role="dialog" aria-modal="true" aria-labelledby="payment-success-title">
+        <h2 class="success-modal-title" id="payment-success-title">Payment Complete</h2>
+        <p class="success-modal-copy">{{ payment_api_status }}</p>
+        <button type="button" class="btn" id="close-payment-success">Continue</button>
+      </div>
+    </div>
+  {% endif %}
+
   <div class="wrap">
     <div class="top">
       <div>
@@ -297,5 +346,25 @@
       </div>
     </div>
   </div>
+  {% if payment_api_status %}
+    <script>
+      (function () {
+        const modal = document.getElementById("payment-success-modal");
+        const closeButton = document.getElementById("close-payment-success");
+        if (!modal || !closeButton) return;
+
+        function closeModal() {
+          modal.setAttribute("hidden", "");
+        }
+
+        closeButton.addEventListener("click", closeModal);
+        modal.addEventListener("click", function (event) {
+          if (event.target === modal) {
+            closeModal();
+          }
+        });
+      }());
+    </script>
+  {% endif %}
 </body>
 </html>

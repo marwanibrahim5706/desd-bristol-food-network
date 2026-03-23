@@ -1,6 +1,6 @@
 import csv
+import json
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,14 +10,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from accounts.permissions import is_admin, is_producer
-from market_orders.models import ProducerSubOrder
+from market_orders.models import Order, ProducerSubOrder
 from market_payments.models import Settlement
+from .models import RecurringOrder
 from .services import (
     aggregate_finance_totals,
     apply_finance_filters,
     base_finance_queryset,
+    build_recurring_template_from_order,
     build_settlement_summaries,
+    generate_order_from_recurring,
+    generate_weekly_settlements,
     settlement_week_bounds,
+    update_next_instance_overrides,
 )
 
 
@@ -163,27 +168,17 @@ def generate_settlement(request):
         messages.error(request, "No delivered suborders found for that producer/week.")
         return redirect("market_finance:admin_finance_dashboard")
 
-    producer = matching[0].producer
     start_date = datetime.fromisoformat(week_start).date()
-    end_date = start_date + timedelta(days=6)
-    gross_sales = sum((suborder.subtotal for suborder in matching), Decimal("0.00"))
-    commission = sum((suborder.commission_amount for suborder in matching), Decimal("0.00"))
-    payout = sum((suborder.producer_payout_amount for suborder in matching), Decimal("0.00"))
-
-    settlement, created = Settlement.objects.update_or_create(
+    producer = matching[0].producer
+    existing_ids = set(
+        Settlement.objects.filter(producer=producer, week_start=start_date).values_list("id", flat=True)
+    )
+    settlement = generate_weekly_settlements(
+        actor=request.user,
         producer=producer,
         week_start=start_date,
-        defaults={
-            "week_end": end_date,
-            "gross_sales": gross_sales,
-            "commission_amount": commission,
-            "payout_amount": payout,
-            "suborder_count": len(matching),
-            "generated_by": request.user,
-            "status": Settlement.Status.GENERATED,
-            "paid_at": None,
-        },
-    )
+    )[0]
+    created = settlement.id not in existing_ids
 
     if created:
         messages.success(request, f"Settlement created for {producer} ({start_date}).")
@@ -350,3 +345,64 @@ def export_settlement_csv(request):
     writer.writerow(["commission_amount", sum(s.commission_amount for s in matching)])
     writer.writerow(["payout_amount", sum(s.producer_payout_amount for s in matching)])
     return response
+
+
+@login_required
+def recurring_orders_dashboard(request):
+    recurring_orders = RecurringOrder.objects.filter(customer=request.user).order_by("next_run_date", "id")
+    return render(
+        request,
+        "market_finance/recurring_orders.html",
+        {"recurring_orders": recurring_orders},
+    )
+
+
+@login_required
+def create_recurring_order_from_order(request, order_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("producer_suborders__items"),
+        id=order_id,
+        customer=request.user,
+    )
+    recurring_order = RecurringOrder.objects.create(
+        customer=request.user,
+        template_order_data=build_recurring_template_from_order(order),
+        next_run_date=timezone.localdate() + timedelta(days=7),
+    )
+    messages.success(request, f"Recurring order #{recurring_order.id} created.")
+    return redirect("market_finance:recurring_orders_dashboard")
+
+
+@login_required
+def update_recurring_order_next_instance(request, recurring_order_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
+    raw_overrides = (request.POST.get("overrides_json") or "").strip()
+    try:
+        overrides = json.loads(raw_overrides or "{}")
+        update_next_instance_overrides(recurring_order, overrides)
+    except Exception as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Next instance updated for recurring order #{recurring_order.id}.")
+    return redirect("market_finance:recurring_orders_dashboard")
+
+
+@login_required
+def run_recurring_order_now(request, recurring_order_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
+    try:
+        order = generate_order_from_recurring(recurring_order)
+    except Exception as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Recurring order generated as order #{order.id}.")
+    return redirect("market_finance:recurring_orders_dashboard")

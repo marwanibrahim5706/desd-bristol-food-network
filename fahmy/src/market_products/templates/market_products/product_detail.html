@@ -9,6 +9,9 @@
     .card { background:white; border:1px solid #e5e7eb; border-radius:16px; padding:18px; }
     .muted { color:#6b7280; }
     a { text-decoration:none; color:inherit; }
+    textarea { width: 100%; min-height: 100px; }
+    select, textarea, button { font: inherit; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #d1d5db; background: #111827; color: white; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -19,6 +22,60 @@
       <div class="muted">Producer: {{ product.producer.username }}</div>
       <p><strong>Price:</strong> £{{ product.price }}</p>
       <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
+      <p><strong>Average rating:</strong>
+        {% if average_rating %}{{ average_rating|floatformat:1 }}/5{% else %}No reviews yet{% endif %}
+      </p>
+    </div>
+
+    {% if messages %}
+      <div class="card" style="margin-top:12px;">
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="card" style="margin-top:12px;">
+      <h2 style="margin-top:0;">Verified Reviews</h2>
+      {% if can_review %}
+        <form method="post" action="{% url 'submit_review' product.id %}">
+          {% csrf_token %}
+          <div style="margin-bottom:12px;">
+            <label for="rating">Rating</label>
+            <select id="rating" name="rating">
+              <option value="5">5</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label for="comment">Comment</label>
+            <textarea id="comment" name="comment"></textarea>
+          </div>
+          <button type="submit">Submit verified review</button>
+        </form>
+      {% elif existing_review %}
+        <p>You have already reviewed this product.</p>
+      {% elif request.user.is_authenticated %}
+        <p class="muted">Reviews unlock after your order is marked as delivered.</p>
+      {% else %}
+        <p class="muted">Sign in after purchase to leave a verified review.</p>
+      {% endif %}
+
+      <div style="margin-top:18px;">
+        {% for review in reviews %}
+          <div style="border-top:1px solid #e5e7eb; padding-top:12px; margin-top:12px;">
+            <strong>{{ review.user.username }}</strong>
+            <span class="muted">{{ review.created_at }}</span>
+            <div>{{ review.rating }}/5</div>
+            <p style="margin-bottom:0;">{{ review.comment }}</p>
+          </div>
+        {% empty %}
+          <p class="muted">No reviews yet.</p>
+        {% endfor %}
+      </div>
     </div>
   </div>
 </body>

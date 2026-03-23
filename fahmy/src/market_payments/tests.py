@@ -10,6 +10,7 @@ from market_alerts.models import Notification
 from market_orders.models import Order as MarketOrder
 from market_orders.models import ProducerSubOrder
 from market_payments.models import Cart, Payment
+from market_payments.services import calculate_commission_breakdown, request_checkout_breakdown
 from market_products.models import Product
 
 
@@ -88,6 +89,10 @@ class SingleProducerCheckoutTestCase(TestCase):
         payment = Payment.objects.get()
         self.assertEqual(payment.status, Payment.Status.PAID)
         self.assertEqual(payment.provider, "demo_card")
+        self.assertEqual(payment.subtotal, Decimal("32.00"))
+        self.assertEqual(payment.commission_amount, Decimal("1.60"))
+        self.assertEqual(payment.producer_payout_amount, Decimal("30.40"))
+        self.assertEqual(payment.transaction_reference, f"demo-{payment.order_id}")
 
         market_order = MarketOrder.objects.get(customer=self.customer)
         self.assertEqual(market_order.status, MarketOrder.Status.CREATED)
@@ -230,6 +235,9 @@ class MultiProducerCheckoutTestCase(TestCase):
         payment = Payment.objects.get()
         self.assertEqual(payment.status, Payment.Status.PAID)
         self.assertEqual(payment.provider, "demo_card")
+        self.assertEqual(payment.subtotal, Decimal("40.00"))
+        self.assertEqual(payment.commission_amount, Decimal("2.00"))
+        self.assertEqual(payment.producer_payout_amount, Decimal("38.00"))
 
         market_order = MarketOrder.objects.get(customer=self.customer)
         self.assertEqual(market_order.status, MarketOrder.Status.CREATED)
@@ -287,3 +295,45 @@ class MultiProducerCheckoutTestCase(TestCase):
         self.assertContains(producer_two_dashboard, "Hillside Cheese")
         self.assertNotContains(producer_two_dashboard, "Bristol Apples")
         self.assertNotContains(producer_two_dashboard, "Bristol Kale")
+
+
+class PaymentCalculationServiceTests(TestCase):
+    def test_commission_breakdown_is_rounded_to_two_decimal_places(self):
+        breakdown = calculate_commission_breakdown(Decimal("150.00"))
+        self.assertEqual(
+            breakdown,
+            {
+                "subtotal": Decimal("150.00"),
+                "commission_amount": Decimal("7.50"),
+                "producer_payout_amount": Decimal("142.50"),
+            },
+        )
+
+    def test_checkout_breakdown_falls_back_safely_when_api_is_unavailable(self):
+        breakdown = request_checkout_breakdown(
+            Decimal("150.00"),
+            {
+                10: Decimal("80.00"),
+                11: Decimal("70.00"),
+            },
+        )
+        self.assertEqual(breakdown["subtotal"], Decimal("150.00"))
+        self.assertEqual(breakdown["commission_amount"], Decimal("7.50"))
+        self.assertEqual(breakdown["producer_payout_amount"], Decimal("142.50"))
+        self.assertEqual(
+            breakdown["producer_breakdown"],
+            [
+                {
+                    "producer_id": 10,
+                    "subtotal": Decimal("80.00"),
+                    "commission_amount": Decimal("4.00"),
+                    "producer_payout_amount": Decimal("76.00"),
+                },
+                {
+                    "producer_id": 11,
+                    "subtotal": Decimal("70.00"),
+                    "commission_amount": Decimal("3.50"),
+                    "producer_payout_amount": Decimal("66.50"),
+                },
+            ],
+        )

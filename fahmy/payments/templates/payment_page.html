@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Card Payment</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, Arial, sans-serif; background: #f5f7fb; color: #111827; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px; }
+    .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 18px; padding: 24px; }
+    .muted { color: #6b7280; }
+    .section-title { margin: 0 0 16px; font-size: 22px; font-weight: 800; }
+    label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+    input { width: 100%; border: 1px solid #d1d5db; border-radius: 12px; padding: 12px; font: inherit; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .full { grid-column: 1 / -1; }
+    .summary-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+    .summary-row:last-child { border-bottom: 0; }
+    .amount { font-weight: 700; white-space: nowrap; }
+    .actions { display: flex; gap: 12px; margin-top: 18px; }
+    .btn { display: inline-block; padding: 12px 16px; border-radius: 12px; border: 1px solid #111827; background: #111827; color: #fff; font-weight: 700; cursor: pointer; }
+    .btn.secondary { background: #fff; color: #111827; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div style="margin-bottom: 18px;">
+      <h1 style="margin: 0 0 8px;">Card Payment</h1>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 class="section-title">Enter card details</h2>
+        <form method="post" action="/pay/{{ payment_id }}">
+          <input type="hidden" name="success_url" value="{{ success_url }}" />
+          <input type="hidden" name="cancel_url" value="{{ cancel_url }}" />
+          <div class="form-grid">
+            <div class="full">
+              <label for="cardholder_name">Cardholder name</label>
+              <input id="cardholder_name" name="cardholder_name" value="{{ customer_name }}" required />
+            </div>
+            <div class="full">
+              <label for="card_number">Card number</label>
+              <input id="card_number" name="card_number" value="4242 4242 4242 4242" required />
+            </div>
+            <div>
+              <label for="expiry">Expiry</label>
+              <input id="expiry" name="expiry" value="12/34" required />
+            </div>
+            <div>
+              <label for="cvv">CVV</label>
+              <input id="cvv" name="cvv" value="123" required />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn" name="action" value="pay">Pay Now</button>
+            <button type="submit" class="btn secondary" name="action" value="cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Payment summary</h2>
+        <div class="summary-row">
+          <div class="muted">Order</div>
+          <div class="amount">#{{ order_id }}</div>
+        </div>
+        <div class="summary-row">
+          <div class="muted">Subtotal</div>
+          <div class="amount">GBP {{ subtotal }}</div>
+        </div>
+        <div class="summary-row">
+          <div class="muted">Commission</div>
+          <div class="amount">GBP {{ commission_amount }}</div>
+        </div>
+        <div class="summary-row">
+          <div style="font-weight: 800;">Total payable</div>
+          <div class="amount">GBP {{ total_payable }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

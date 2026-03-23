@@ -12,6 +12,8 @@ urlpatterns = [
     path("admin/dashboard/settlements/<int:settlement_id>/paid/", RedirectView.as_view(url="/finance/admin/dashboard/", permanent=False)),
     path("payment/", views.payment_page, name="payment"),
     path("pay-now/", views.pay_now, name="pay_now"),
+    path("payment/complete/<int:payment_id>/", views.payment_complete, name="payment_complete"),
+    path("payment/cancel/<int:payment_id>/", views.payment_cancel, name="payment_cancel"),
     path("receipt/<int:payment_id>/", views.receipt_page, name="receipt"),
     path("clear-cart/", views.clear_cart, name="clear_cart"),
     path("cart/add/<int:product_id>/", views.add_to_cart, name="add_to_cart"),

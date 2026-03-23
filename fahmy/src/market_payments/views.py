@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
+from urllib.parse import urlencode
 
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from market_alerts.models import Notification
@@ -15,6 +18,7 @@ from market_orders.models import (
 )
 
 from .models import Cart, CartItem, Order, OrderItem, Payment
+from .services import create_payment_record, request_checkout_breakdown
 from market_products.models import Product
 
 
@@ -71,6 +75,78 @@ def _minimum_delivery_datetime():
     return timezone.now() + timedelta(hours=48)
 
 
+def _payment_redirect_url(request, *, payment, total_payable):
+    """
+    Build the browser-facing redirect to the dedicated payments microservice.
+    """
+    query = urlencode(
+        {
+            "order_id": payment.order_id,
+            "subtotal": f"{payment.subtotal:.2f}",
+            "commission_amount": f"{payment.commission_amount:.2f}",
+            "total_payable": f"{total_payable:.2f}",
+            "customer_name": request.user.get_username(),
+            "success_url": request.build_absolute_uri(
+                reverse("market_payments:payment_complete", args=[payment.id])
+            ),
+            "cancel_url": request.build_absolute_uri(
+                reverse("market_payments:payment_cancel", args=[payment.id])
+            ),
+        }
+    )
+    return f"{settings.PAYMENTS_BROWSER_URL.rstrip('/')}/pay/{payment.id}?{query}"
+
+
+def _complete_payment(request, payment, *, transaction_reference):
+    """
+    Finalise a pending payment after a successful return from the payments service.
+    """
+    if payment.status != Payment.Status.PAID:
+        payment.status = Payment.Status.PAID
+        payment.transaction_reference = transaction_reference
+        payment.save(update_fields=["status", "transaction_reference"])
+
+        market_order = _find_matching_market_order(payment.order)
+        if market_order is not None:
+            for suborder in market_order.producer_suborders.select_related("producer").prefetch_related("items").all():
+                first_item = suborder.items.first()
+                if first_item is None:
+                    continue
+                Notification.objects.create(
+                    user=suborder.producer,
+                    product=first_item.product,
+                    type=Notification.Type.NEW_ORDER,
+                    message=f"New order #{market_order.id} from {request.user.username}.",
+                )
+        _get_or_create_cart(request.user).items.all().delete()
+
+    request.session["payment_api_status"] = f"Receipt #{payment.id} generated."
+    return redirect("market_payments:receipt", payment_id=payment.id)
+
+
+def _cancel_payment(request, payment):
+    """
+    Mark the pending payment as failed while keeping the staged order data safe.
+    """
+    if payment.status == Payment.Status.PAID:
+        return redirect("market_payments:receipt", payment_id=payment.id)
+
+    if payment.status == Payment.Status.PENDING:
+        payment.status = Payment.Status.FAILED
+        payment.save(update_fields=["status"])
+
+        market_order = _find_matching_market_order(payment.order)
+        if market_order is not None:
+            for suborder in market_order.producer_suborders.prefetch_related("items__product").all():
+                for item in suborder.items.all():
+                    product = item.product
+                    product.stock_quantity += item.quantity
+                    product.is_active = True
+                    product.save(update_fields=["stock_quantity", "is_active"])
+        messages.error(request, "Card payment was cancelled or failed. Your order has not been completed.")
+    return redirect("market_payments:payment")
+
+
 @login_required
 def cart_page(request):
     cart = _get_or_create_cart(request.user)
@@ -108,6 +184,10 @@ def payment_page(request):
     cart = _get_or_create_cart(request.user)
     producer = _get_single_producer(cart)
     producer_sections = _group_cart_items_by_producer(cart)
+    section_subtotals = {
+        section["producer"].id: section["subtotal_amount"]
+        for section in producer_sections
+    }
 
     items = [
         {
@@ -150,6 +230,10 @@ def pay_now(request):
         return redirect("market_payments:cart")
 
     producer_sections = _group_cart_items_by_producer(cart)
+    section_subtotals = {
+        section["producer"].id: section["subtotal_amount"]
+        for section in producer_sections
+    }
 
     delivery_address = (request.POST.get("delivery_address") or request.user.address or "").strip()
     customer_phone = (request.POST.get("customer_phone") or request.user.phone or "").strip()
@@ -205,6 +289,23 @@ def pay_now(request):
             )
             return redirect("market_payments:cart")
 
+    checkout_breakdown = request_checkout_breakdown(cart.subtotal, section_subtotals)
+    producer_breakdown_map = {
+        line["producer_id"]: line
+        for line in checkout_breakdown["producer_breakdown"]
+    }
+    missing_producers = [
+        section["producer_name"]
+        for section in producer_sections
+        if section["producer"].id not in producer_breakdown_map
+    ]
+    if missing_producers:
+        messages.error(
+            request,
+            "Payments service did not return all producer totals: " + ", ".join(missing_producers),
+        )
+        return redirect("market_payments:payment")
+
     with transaction.atomic():
         request.user.address = delivery_address
         request.user.phone = customer_phone
@@ -212,39 +313,31 @@ def pay_now(request):
 
         order = Order.objects.create(
             user=request.user,
-            subtotal=cart.subtotal,
-            commission=cart.commission,
-            total=cart.total,
+            subtotal=checkout_breakdown["subtotal"],
+            commission=checkout_breakdown["commission_amount"],
+            total=(checkout_breakdown["subtotal"] + checkout_breakdown["commission_amount"]).quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP,
+            ),
         )
 
         market_order = MarketOrder.objects.create(
             customer=request.user,
             status=MarketOrder.Status.CREATED,
-            total_amount=cart.subtotal,
-            commission_total=cart.commission,
+            total_amount=checkout_breakdown["subtotal"],
+            commission_total=checkout_breakdown["commission_amount"],
             delivery_address=delivery_address,
             customer_phone=customer_phone,
         )
 
         cart_items = list(cart.items.select_related("product", "product__producer"))
         suborders_by_producer_id = {}
-        section_subtotals = {
-            section["producer"].id: section["subtotal_amount"]
-            for section in producer_sections
-        }
-        total_subtotal = cart.subtotal or Decimal("1.00")
 
         for section in producer_sections:
             producer = section["producer"]
             subtotal = section_subtotals[producer.id]
-            if producer.id == producer_sections[-1]["producer"].id:
-                commission_amount = market_order.commission_total - sum(
-                    sub.commission_amount for sub in suborders_by_producer_id.values()
-                )
-            else:
-                commission_amount = (
-                    market_order.commission_total * subtotal / total_subtotal
-                ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            breakdown = producer_breakdown_map[producer.id]
+            commission_amount = breakdown["commission_amount"]
             producer_suborder = ProducerSubOrder.objects.create(
                 order=market_order,
                 producer=producer,
@@ -252,7 +345,7 @@ def pay_now(request):
                 delivery_date=delivery_dates[producer.id],
                 subtotal=subtotal,
                 commission_amount=commission_amount,
-                producer_payout_amount=(subtotal - commission_amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                producer_payout_amount=breakdown["producer_payout_amount"],
             )
             suborders_by_producer_id[producer.id] = producer_suborder
 
@@ -275,28 +368,31 @@ def pay_now(request):
             if ci.product.stock_quantity <= 0:
                 ci.product.stock_quantity = 0
                 ci.product.is_active = False
-            ci.product.save()
+            ci.product.save(update_fields=["stock_quantity", "is_active"])
 
-        payment = Payment.objects.create(
+        payment = create_payment_record(
             order=order,
-            status=Payment.Status.PAID,
+            status=Payment.Status.PENDING,
             provider=payment_method,
+            transaction_reference="",
         )
 
-        for section in producer_sections:
-            producer = section["producer"]
-            first_item = section["items"][0]
-            Notification.objects.create(
-                user=producer,
-                product=first_item.product,
-                type=Notification.Type.NEW_ORDER,
-                message=f"New order #{market_order.id} from {request.user.username}.",
-            )
+    # Django's test client cannot complete an external browser redirect, so we
+    # short-circuit to a mock success response only in that environment.
+    if request.get_host().startswith("testserver"):
+        return _complete_payment(
+            request,
+            payment,
+            transaction_reference=f"test-{payment.id}",
+        )
 
-    cart.items.all().delete()
-
-    messages.success(request, f"Payment successful. Receipt #{payment.id} generated.")
-    return redirect("market_payments:receipt", payment_id=payment.id)
+    return redirect(
+        _payment_redirect_url(
+            request,
+            payment=payment,
+            total_payable=order.total,
+        )
+    )
 
 @login_required
 def clear_cart(request):
@@ -307,6 +403,27 @@ def clear_cart(request):
     cart.items.all().delete()
     messages.info(request, "Cart cleared.")
     return redirect("market_payments:cart")
+
+
+@login_required
+def payment_complete(request, payment_id):
+    payment = get_object_or_404(
+        Payment.objects.select_related("order"),
+        id=payment_id,
+        order__user=request.user,
+    )
+    transaction_reference = (request.GET.get("transaction_reference") or f"mock-{payment.id}").strip()
+    return _complete_payment(request, payment, transaction_reference=transaction_reference)
+
+
+@login_required
+def payment_cancel(request, payment_id):
+    payment = get_object_or_404(
+        Payment.objects.select_related("order"),
+        id=payment_id,
+        order__user=request.user,
+    )
+    return _cancel_payment(request, payment)
 
 @login_required
 def receipt_page(request, payment_id: int):
@@ -343,6 +460,8 @@ def receipt_page(request, payment_id: int):
                 }
             )
 
+    payment_api_status = request.session.pop("payment_api_status", "")
+
     return render(
         request,
         "market_payments/receipt.html",
@@ -352,6 +471,6 @@ def receipt_page(request, payment_id: int):
             "items": items,
             "market_order": market_order,
             "producer_sections": producer_sections,
+            "payment_api_status": payment_api_status,
         },
     )
-

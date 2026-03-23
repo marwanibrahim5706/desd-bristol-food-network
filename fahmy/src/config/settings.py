@@ -142,3 +142,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "market_accounts.User"
 
 LOGIN_URL = "/accounts/login/"
+
+# Internal URL for the dedicated payments microservice container.
+PAYMENTS_SERVICE_URL = os.getenv("PAYMENTS_SERVICE_URL", "http://payments:8001")
+
+# Browser-facing URL used when redirecting customers to the payments page.
+PAYMENTS_BROWSER_URL = os.getenv("PAYMENTS_BROWSER_URL", "http://localhost:8001")
