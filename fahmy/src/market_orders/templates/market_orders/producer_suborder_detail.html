@@ -5,105 +5,108 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SubOrder Details</title>
   <style>
-    body{ margin:0; font-family: Arial, sans-serif; background:#0b1220; color:#e8eefc; }
-    a{ color:#c7d2fe; text-decoration:none; }
-    .wrap{ max-width: 980px; margin: 26px auto; padding: 0 16px; animation: fade .35s ease-out both; }
-    @keyframes fade{ from{opacity:.2; transform:translateY(8px)} to{opacity:1; transform:none} }
+    {% include "market_orders/includes/producer_theme_styles.html" %}
+
+    .wrap{
+      max-width:980px;
+      margin:26px auto;
+      padding:0 16px;
+      animation:fade .35s ease-out both;
+    }
+
+    @keyframes fade{
+      from{ opacity:.2; transform:translateY(8px); }
+      to{ opacity:1; transform:none; }
+    }
+
     .card{
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      background:linear-gradient(180deg, rgba(30,41,59,.74), rgba(17,24,39,.92));
+      border:1px solid rgba(55,65,81,.9);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
       overflow:hidden;
     }
-    .head{ padding:16px 18px; border-bottom:1px solid rgba(255,255,255,.10); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-    .muted{ color:#9fb0d0; font-size:13px; }
-    .pill{ padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); font-size:12px; }
-    .ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
-    .bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
 
-    .grid{ display:grid; gap:12px; padding:18px; grid-template-columns: 1fr; }
-    @media(min-width:860px){ .grid{ grid-template-columns: 1fr 1fr; } }
+    .head{
+      padding:16px 18px;
+      border-bottom:1px solid rgba(55,65,81,.82);
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      background:rgba(30,41,59,.84);
+    }
+
+    .grid{
+      display:grid;
+      gap:12px;
+      padding:18px;
+      grid-template-columns:1fr;
+    }
+
+    @media(min-width:860px){
+      .grid{ grid-template-columns:1fr 1fr; }
+    }
 
     .box{
-      background: rgba(0,0,0,.14);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius: 16px;
+      background:rgba(17,24,39,.78);
+      border:1px solid rgba(55,65,81,.82);
+      border-radius:16px;
       padding:14px;
     }
+
     h1{ margin:0; font-size:18px; }
     h3{ margin:0 0 10px; font-size:14px; letter-spacing:.2px; }
-
-    .row{ display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.10); font-size:13px; }
-    .row:last-child{ border-bottom:none; }
 
     ul{ margin:0; padding-left:18px; }
     li{ margin:6px 0; }
 
-    .actions{ padding:14px 18px; border-top:1px solid rgba(255,255,255,.10); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+    .actions{
+      padding:14px 18px;
+      border-top:1px solid rgba(55,65,81,.82);
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      background:rgba(15,23,42,.62);
+    }
+
     .btn{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:10px 12px; border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
     }
-    .btn:hover{ border-color: rgba(124,58,237,.35); transform: translateY(-1px); transition:.15s; }
-    .money{ font-family: ui-monospace, Menlo, Consolas, monospace; }
 
-    /* Messages */
     .msgs{ padding:12px 18px 0; }
-    .msg{
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      border-radius: 14px;
-      padding:10px 12px;
-      font-size:13px;
-      margin-bottom:10px;
-    }
-    .msg.success{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
-    .msg.error{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
-
-    /* Status form */
     .field{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-    label{ font-size:12px; color:#9fb0d0; }
-    select, input[type="text"]{
-      padding:10px 12px;
-      border-radius: 12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color:#e8eefc;
-      outline:none;
-    }
-    select:disabled, input:disabled{ opacity:.6; cursor:not-allowed; }
     .inline{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-    .small-muted{ color:#9fb0d0; font-size:12px; }
+    .small-muted{ color:var(--muted); font-size:12px; }
   </style>
 </head>
 <body>
+  {% include "includes/logout_button.html" %}
   <div class="wrap">
     <div class="card">
       <div class="head">
         <div>
-          <h1>SubOrder #{{ suborder.id }} • Order #{{ suborder.order.id }}</h1>
+          <h1>SubOrder #{{ suborder.id }} &bull; Order #{{ suborder.order.id }}</h1>
           <div class="muted">
-            Customer: <b>{{ suborder.order.customer }}</b> •
-            Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }} •
+            Customer: <b>{{ suborder.order.customer }}</b> &bull;
+            Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }} &bull;
             Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
           </div>
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <span class="pill">{{ suborder.status }}</span>
+          <span class="pill info">{{ suborder.status }}</span>
           {% if lead_ok %}
-            <span class="pill ok">✅ 48h OK</span>
+            <span class="pill ok">&#10003; 48h OK</span>
           {% else %}
-            <span class="pill bad">❌ Lead time</span>
+            <span class="pill bad">&#10005; Lead time</span>
           {% endif %}
         </div>
       </div>
 
-      <!-- Django messages (success/error after status change) -->
       {% if messages %}
       <div class="msgs">
         {% for message in messages %}
@@ -118,15 +121,15 @@
         <div class="box">
           <h3>Customer Contact</h3>
           <div class="row"><span>Email</span><span>{{ suborder.order.customer.email }}</span></div>
-          <div class="row"><span>Phone</span><span>{{ suborder.order.customer_phone|default:"—" }}</span></div>
+          <div class="row"><span>Phone</span><span>{{ suborder.order.customer_phone|default:"&mdash;" }}</span></div>
         </div>
 
         <div class="box">
           <h3>Delivery</h3>
-          <div class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"—" }}</div>
+          <div class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"&mdash;" }}</div>
           <div style="margin-top:10px;">
             <h3>Special Instructions</h3>
-            <div class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"—" }}</div>
+            <div class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"&mdash;" }}</div>
           </div>
         </div>
 
@@ -135,8 +138,8 @@
           <ul>
             {% for item in suborder.items.all %}
               <li>
-                {{ item.product_name }} — Qty: <b>{{ item.quantity }}</b>
-                <span class="muted">• Unit £{{ item.unit_price }} • Line £{{ item.line_total }}</span>
+                {{ item.product_name }} &mdash; Qty: <b>{{ item.quantity }}</b>
+                <span class="muted">&bull; Unit &pound;{{ item.unit_price }} &bull; Line &pound;{{ item.line_total }}</span>
               </li>
             {% empty %}
               <li class="muted">No items.</li>
@@ -146,14 +149,13 @@
 
         <div class="box">
           <h3>Totals</h3>
-          <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal }}</span></div>
-          <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount }}</span></div>
-          <div class="row"><b>Payout</b><b class="money">£{{ suborder.producer_payout_amount }}</b></div>
+          <div class="row"><span>Subtotal</span><span class="money">&pound;{{ suborder.subtotal }}</span></div>
+          <div class="row"><span>Commission</span><span class="money">&pound;{{ suborder.commission_amount }}</span></div>
+          <div class="row"><b>Payout</b><b class="money">&pound;{{ suborder.producer_payout_amount }}</b></div>
         </div>
 
-        <!-- TC-010: Controlled status transitions -->
         <div class="box">
-          <h3>Change Status </h3>
+          <h3>Change Status</h3>
           <div class="small-muted">
             Allowed next steps depend on current status. Every change is logged.
           </div>
@@ -191,16 +193,15 @@
           </form>
         </div>
 
-        <!-- TC-010: Status history -->
         <div class="box">
           <h3>Status History</h3>
           <ul>
             {% for ev in status_events %}
               <li>
-                <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span> —
-                <b>{{ ev.old_status }}</b> → <b>{{ ev.new_status }}</b>
+                <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span> &mdash;
+                <b>{{ ev.old_status }}</b> &rarr; <b>{{ ev.new_status }}</b>
                 <span class="muted">by {{ ev.changed_by.username }}</span>
-                {% if ev.note %}<span class="muted">• “{{ ev.note }}”</span>{% endif %}
+                {% if ev.note %}<span class="muted">&bull; &ldquo;{{ ev.note }}&rdquo;</span>{% endif %}
               </li>
             {% empty %}
               <li class="muted">No status changes yet.</li>
@@ -210,8 +211,8 @@
       </div>
 
       <div class="actions">
-        <a class="btn" href="/orders/producer/dashboard/">← Back to dashboard</a>
-        <a class="btn" href="/admin/">Admin</a>
+        <a class="linkBtn ghost btn" href="/orders/producer/dashboard/">&larr; Back to dashboard</a>
+        <a class="linkBtn ghost btn" href="/admin/">Admin</a>
       </div>
     </div>
   </div>

@@ -3,11 +3,11 @@ services:
     image: postgres:16
     container_name: project_db
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-market_db}
+      POSTGRES_USER: ${POSTGRES_USER:-market_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-market_pass}
     ports:
-      - "${DB_PORT}:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
 
@@ -17,6 +17,9 @@ services:
     command: python src/manage.py runserver 0.0.0.0:8000
     env_file:
       - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
     volumes:
       - .:/app
     ports:

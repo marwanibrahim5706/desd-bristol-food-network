@@ -6,9 +6,14 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from accounts.permissions import is_admin
+from accounts.permissions import can_manage_producer_orders, is_admin
 from .models import ProducerSubOrder, SubOrderStatusEvent
 from .services import get_allowed_next_statuses, transition_suborder
+
+
+def _ensure_producer_access(user):
+    if not can_manage_producer_orders(user):
+        raise PermissionDenied("Producer access required.")
 
 
 @login_required
@@ -28,6 +33,8 @@ def producer_dashboard(request):
     """
 
     # GET params
+    _ensure_producer_access(request.user)
+
     status_filter = (request.GET.get("status") or "").strip()
     q = (request.GET.get("q") or "").strip()
 
@@ -94,6 +101,8 @@ def producer_suborder_detail(request, suborder_id):
     - Still kept for compatibility, even though dashboard is now single-page
     """
 
+    _ensure_producer_access(request.user)
+
     base_qs = (
         ProducerSubOrder.objects.select_related("order", "order__customer")
         .prefetch_related("items", "status_events")
@@ -133,6 +142,8 @@ def producer_suborder_change_status(request, suborder_id):
     """
     if request.method != "POST":
         raise PermissionDenied("POST required")
+
+    _ensure_producer_access(request.user)
 
     base_qs = ProducerSubOrder.objects.select_related("order", "order__customer")
 

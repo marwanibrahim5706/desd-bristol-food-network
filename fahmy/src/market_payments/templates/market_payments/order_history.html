@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Order History</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #f6f7fb;
+      color: #111827;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .top h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 14px 0 0;
+    }
+
+    .btn,
+    .btn-secondary {
+      display: inline-block;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      text-align: center;
+      font-size: 14px;
+      border: 1px solid #111827;
+    }
+
+    .btn {
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #111827;
+      border-color: #d1d5db;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .order-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr 0.9fr auto;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid #e5e7eb;
+      align-items: center;
+    }
+
+    .order-row:last-child {
+      border-bottom: 0;
+    }
+
+    .order-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .empty {
+      color: #6b7280;
+      padding: 8px 0 4px;
+    }
+
+    form {
+      margin: 0;
+    }
+
+    button {
+      border: 1px solid #111827;
+      background: #111827;
+      color: #fff;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .msg-wrap {
+      margin-top: 16px;
+    }
+
+    .msg {
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    @media (max-width: 860px) {
+      .order-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% include "includes/logout_button.html" %}
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Order History</h1>
+        <div class="muted">Review previous orders and add available items back to your cart.</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn-secondary" href="{% url 'market_payments:cart' %}">View Cart</a>
+      <a class="btn-secondary" href="/">Continue Shopping</a>
+    </div>
+
+    {% if messages %}
+      <div class="msg-wrap">
+        {% for m in messages %}
+          <div class="msg">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="card">
+      {% if orders %}
+        {% for entry in orders %}
+          <div class="order-row">
+            <div>
+              <div class="order-title">Order #{{ entry.order.id }}</div>
+              <div class="muted">{{ entry.item_count }} item{{ entry.item_count|pluralize }} • {{ entry.order.created_at|date:"d M Y, H:i" }}</div>
+              <div class="muted">
+                {% for item in entry.order.items.all %}
+                  {{ item.product_name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            <div>
+              <div class="muted">Total</div>
+              <div>£{{ entry.order.total }}</div>
+            </div>
+            <div>
+              <div class="muted">Payment status</div>
+              <div>
+                {% if entry.latest_payment %}
+                  <span class="pill">{{ entry.latest_payment.get_status_display }}</span>
+                {% else %}
+                  <span class="pill">No payment</span>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <div class="muted">Order status</div>
+              <div>
+                {% if entry.market_order %}
+                  <span class="pill">{{ entry.market_order.get_status_display }}</span>
+                {% else %}
+                  <span class="muted">Unavailable</span>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <div class="muted">Receipt</div>
+              <div>
+                {% if entry.latest_payment %}
+                  <a href="{% url 'market_payments:receipt' entry.latest_payment.id %}">Open receipt</a>
+                {% else %}
+                  <span class="muted">Unavailable</span>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <form method="post" action="{% url 'market_payments:reorder_order' entry.order.id %}">
+                {% csrf_token %}
+                <button type="submit">Reorder</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">You have not placed any orders yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

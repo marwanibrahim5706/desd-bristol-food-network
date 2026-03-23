@@ -187,6 +187,7 @@
   </style>
 </head>
 <body>
+  {% include "includes/logout_button.html" %}
   <div class="wrap">
     <div class="top">
       <div>
@@ -294,6 +295,7 @@
       <div class="actions">
         <a class="btn" href="/">Continue Shopping</a>
         <a class="btn secondary" href="{% url 'market_payments:cart' %}">View Cart</a>
+        <a class="btn secondary" href="{% url 'market_payments:order_history' %}">Order History</a>
       </div>
     </div>
   </div>
