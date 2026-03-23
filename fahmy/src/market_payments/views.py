@@ -21,6 +21,16 @@ from .models import Cart, CartItem, Order, OrderItem, Payment
 from .services import create_payment_record, request_checkout_breakdown
 from market_products.models import Product
 
+PAYMENT_PROVIDER_LABELS = {
+    "demo_card": "Test Sandbox Card",
+    "visa_debit": "Visa Debit",
+    "visa_credit": "Visa Credit",
+    "mastercard_debit": "Mastercard Debit",
+    "mastercard_credit": "Mastercard Credit",
+    "amex": "American Express",
+    "maestro": "Maestro",
+}
+
 
 def _get_or_create_cart(user):
     cart, _ = Cart.objects.get_or_create(user=user)
@@ -97,14 +107,18 @@ def _payment_redirect_url(request, *, payment, total_payable):
     return f"{settings.PAYMENTS_BROWSER_URL.rstrip('/')}/pay/{payment.id}?{query}"
 
 
-def _complete_payment(request, payment, *, transaction_reference):
+def _complete_payment(request, payment, *, transaction_reference, payment_method=None):
     """
     Finalise a pending payment after a successful return from the payments service.
     """
     if payment.status != Payment.Status.PAID:
         payment.status = Payment.Status.PAID
         payment.transaction_reference = transaction_reference
-        payment.save(update_fields=["status", "transaction_reference"])
+        if payment_method:
+            payment.provider = payment_method
+            payment.save(update_fields=["status", "transaction_reference", "provider"])
+        else:
+            payment.save(update_fields=["status", "transaction_reference"])
 
         market_order = _find_matching_market_order(payment.order)
         if market_order is not None:
@@ -178,6 +192,49 @@ def add_to_cart(request, product_id):
 
     messages.success(request, f"{product.name} added to cart.")
     return redirect(request.POST.get("next") or "/")
+
+
+@login_required
+def update_cart_item(request, item_id):
+    if request.method != "POST":
+        return redirect("market_payments:cart")
+
+    cart = _get_or_create_cart(request.user)
+    item = get_object_or_404(
+        CartItem.objects.select_related("product"),
+        id=item_id,
+        cart=cart,
+    )
+
+    try:
+        quantity = int((request.POST.get("quantity") or "").strip())
+    except ValueError:
+        messages.error(request, "Quantity must be a whole number.")
+        return redirect("market_payments:cart")
+
+    if quantity <= 0:
+        product_name = item.product.name
+        item.delete()
+        messages.info(request, f"{product_name} removed from your cart.")
+        return redirect("market_payments:cart")
+
+    if not item.product.is_active:
+        messages.error(request, f"{item.product.name} is no longer available.")
+        item.delete()
+        return redirect("market_payments:cart")
+
+    if quantity > item.product.stock_quantity:
+        messages.error(
+            request,
+            f"Only {item.product.stock_quantity} unit(s) of {item.product.name} are available.",
+        )
+        return redirect("market_payments:cart")
+
+    item.quantity = quantity
+    item.save(update_fields=["quantity"])
+    messages.success(request, f"Updated {item.product.name} quantity to {quantity}.")
+    return redirect("market_payments:cart")
+
 
 @login_required
 def payment_page(request):
@@ -413,7 +470,13 @@ def payment_complete(request, payment_id):
         order__user=request.user,
     )
     transaction_reference = (request.GET.get("transaction_reference") or f"mock-{payment.id}").strip()
-    return _complete_payment(request, payment, transaction_reference=transaction_reference)
+    payment_method = (request.GET.get("payment_method") or "").strip()
+    return _complete_payment(
+        request,
+        payment,
+        transaction_reference=transaction_reference,
+        payment_method=payment_method,
+    )
 
 
 @login_required
@@ -472,5 +535,9 @@ def receipt_page(request, payment_id: int):
             "market_order": market_order,
             "producer_sections": producer_sections,
             "payment_api_status": payment_api_status,
+            "payment_provider_label": PAYMENT_PROVIDER_LABELS.get(
+                payment.provider,
+                payment.provider.replace("_", " ").title(),
+            ),
         },
     )

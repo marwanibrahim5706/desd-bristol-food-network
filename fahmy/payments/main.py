@@ -115,6 +115,7 @@ def pay_submit(
     payment_id: int,
     success_url: str = Form(...),
     cancel_url: str = Form(...),
+    payment_method: str = Form("demo_card"),
     cardholder_name: str = Form(""),
     card_number: str = Form(...),
     expiry: str = Form(...),
@@ -131,16 +132,22 @@ def pay_submit(
         {
             "return_url": success_url,
             "transaction_reference": transaction_reference,
+            "payment_method": payment_method,
         }
     )
     return RedirectResponse(url=f"/success/{payment_id}?{query}", status_code=303)
 
 
 @app.get("/success/{payment_id}")
-def success(payment_id: int, return_url: str = Query(...), transaction_reference: str = Query(...)):
+def success(
+    payment_id: int,
+    return_url: str = Query(...),
+    transaction_reference: str = Query(...),
+    payment_method: str = Query("demo_card"),
+):
     separator = "&" if "?" in return_url else "?"
     return RedirectResponse(
-        url=f"{return_url}{separator}{urlencode({'transaction_reference': transaction_reference})}",
+        url=f"{return_url}{separator}{urlencode({'transaction_reference': transaction_reference, 'payment_method': payment_method})}",
         status_code=303,
     )
 

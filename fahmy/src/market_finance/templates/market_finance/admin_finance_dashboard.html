@@ -405,23 +405,13 @@
             <div class="v money">£{{ total_payouts|floatformat:2 }}</div>
           </div>
           <div class="stat">
-            <div class="k">Delivered suborders</div>
-            <div class="v">{{ delivered_count }}</div>
+            <div class="k">Orders in report</div>
+            <div class="v">{{ order_count }}</div>
           </div>
         </div>
       </div>
 
       <form class="filters" method="get">
-        <div>
-          <label><b>Settlement week</b></label><br>
-          <select name="settlement_week">
-            <option value="">All weeks</option>
-            {% for week in available_weeks %}
-              <option value="{{ week.value }}" {% if settlement_week == week.value %}selected{% endif %}>{{ week.label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
         <div>
           <label><b>Status</b></label><br>
           <select name="status">
@@ -463,24 +453,141 @@
           <button type="submit">Apply</button>
           <a class="link" href="/finance/admin/dashboard/">Reset</a>
           <a class="link" href="{% url 'market_finance:export_admin_finance_csv' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download CSV</a>
+          <a class="link" href="{% url 'market_finance:export_admin_finance_excel' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download Excel</a>
+          <a class="link" href="{% url 'market_finance:export_admin_finance_pdf' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download PDF</a>
         </div>
 
-        <div class="hint">Settlement summaries below only include delivered suborders.</div>
+        <div class="hint">These filters affect the running totals, order summaries, and commission records.</div>
       </form>
 
-      {% if settlement_week %}
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:-4px 0 16px;">
-          {% if previous_week_query %}
-            <a class="link" href="/finance/admin/dashboard/{{ previous_week_query }}">Previous week</a>
-          {% endif %}
-          {% if next_week_query %}
-            <a class="link" href="/finance/admin/dashboard/{{ next_week_query }}">Next week</a>
-          {% endif %}
+      <section class="section">
+        <h3>Running Totals</h3>
+        <div class="grid">
+          <article class="card">
+            <div class="cardHeader">
+              <div class="meta">
+                <div class="id">Monthly Summary</div>
+                <div class="sub">{{ month_summary.label }}</div>
+              </div>
+            </div>
+            <div class="cardBody">
+              <div class="totals">
+                <div class="row"><span>Gross sales</span><span class="money">£{{ month_summary.gross_sales|floatformat:2 }}</span></div>
+                <div class="row"><span>Commission</span><span class="money">£{{ month_summary.total_commission|floatformat:2 }}</span></div>
+                <div class="row"><span>Producer payouts</span><span class="money">£{{ month_summary.total_payouts|floatformat:2 }}</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="cardHeader">
+              <div class="meta">
+                <div class="id">Year To Date</div>
+                <div class="sub">{{ ytd_summary.label }}</div>
+              </div>
+            </div>
+            <div class="cardBody">
+              <div class="totals">
+                <div class="row"><span>Gross sales</span><span class="money">£{{ ytd_summary.gross_sales|floatformat:2 }}</span></div>
+                <div class="row"><span>Commission</span><span class="money">£{{ ytd_summary.total_commission|floatformat:2 }}</span></div>
+                <div class="row"><span>Producer payouts</span><span class="money">£{{ ytd_summary.total_payouts|floatformat:2 }}</span></div>
+              </div>
+            </div>
+          </article>
         </div>
-      {% endif %}
+      </section>
+
+      <section class="section">
+        <h3>Order Summaries</h3>
+        {% if order_summaries %}
+          <div class="grid">
+            {% for summary in order_summaries %}
+              <article class="card">
+                <div class="cardHeader">
+                  <div class="meta">
+                    <div class="id">Order #{{ summary.order.id }}</div>
+                    <div class="sub">
+                      Customer: <b>{{ summary.customer.username }}</b> • Created <b>{{ summary.order.created_at|date:"M d, Y H:i" }}</b>
+                    </div>
+                  </div>
+                  <div class="chips">
+                    <span class="chip">{{ summary.supplier_count }} supplier{{ summary.supplier_count|pluralize }}</span>
+                    <span class="chip">{{ summary.status_summary }}</span>
+                  </div>
+                </div>
+                <div class="cardBody">
+                  <div>
+                    <div class="sectionTitle">SUPPLIER BREAKDOWN</div>
+                    <ul class="items">
+                      {% for suborder in summary.suborders %}
+                        <li>
+                          {{ suborder.producer.business_name|default:suborder.producer.username }}
+                          <span class="hint">subtotal £{{ suborder.subtotal|floatformat:2 }}, payout £{{ suborder.producer_payout_amount|floatformat:2 }}</span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  <div>
+                    <div class="sectionTitle">TOTALS</div>
+                    <div class="totals">
+                      <div class="row"><span>Order total</span><span class="money">£{{ summary.order_total|floatformat:2 }}</span></div>
+                      <div class="row"><span>Commission</span><span class="money">£{{ summary.commission_total|floatformat:2 }}</span></div>
+                      <div class="row"><span>Producer payouts</span><span class="money">£{{ summary.producer_payout_total|floatformat:2 }}</span></div>
+                    </div>
+                    <div style="margin-top:12px;">
+                      <a class="link" href="{% url 'market_finance:admin_order_finance_detail' summary.order.id %}">View order detail</a>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty">
+            <h3 style="margin:0 0 8px; color:var(--text);">No order summaries found</h3>
+            <p style="margin:0;">Try widening the current filters to include more orders.</p>
+          </div>
+        {% endif %}
+      </section>
 
       <section class="section">
         <h3>Weekly Settlements</h3>
+        <form class="filters" method="get" style="margin-bottom:16px;">
+          <input type="hidden" name="status" value="{{ status_filter }}">
+          <input type="hidden" name="producer" value="{{ producer_filter }}">
+          <input type="hidden" name="date_from" value="{{ date_from }}">
+          <input type="hidden" name="date_to" value="{{ date_to }}">
+          <input type="hidden" name="q" value="{{ q }}">
+
+          <div>
+            <label><b>Settlement week</b></label><br>
+            <select name="settlement_week">
+              <option value="">All weeks</option>
+              {% for week in available_weeks %}
+                <option value="{{ week.value }}" {% if settlement_week == week.value %}selected{% endif %}>{{ week.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <button type="submit">Apply week</button>
+            <a class="link" href="/finance/admin/dashboard/?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Show all weeks</a>
+          </div>
+
+          <div class="hint">This filter only affects the weekly settlement cards below.</div>
+        </form>
+
+        {% if settlement_week %}
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin:-4px 0 16px;">
+            {% if previous_week_query %}
+              <a class="link" href="/finance/admin/dashboard/{{ previous_week_query }}">Previous week</a>
+            {% endif %}
+            {% if next_week_query %}
+              <a class="link" href="/finance/admin/dashboard/{{ next_week_query }}">Next week</a>
+            {% endif %}
+          </div>
+        {% endif %}
+
         {% if settlements %}
           <div class="grid">
             {% for settlement in settlements %}
@@ -500,6 +607,8 @@
                       {% else %}
                         <span class="chip warn">Generated</span>
                       {% endif %}
+                    {% elif not settlement.has_data %}
+                      <span class="chip">No orders</span>
                     {% else %}
                       <span class="chip warn">Not generated</span>
                     {% endif %}
@@ -538,28 +647,32 @@
                       {% if settlement.record.paid_at %}
                         • Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}
                       {% endif %}
+                    {% elif not settlement.has_data %}
+                      No delivered suborders for this settlement period.
                     {% else %}
                       Create a settlement record for this producer-week.
                     {% endif %}
                   </div>
 
                   <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <form class="inlineForm" method="post" action="{% url 'market_finance:generate_settlement' %}">
-                      {% csrf_token %}
-                      <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
-                      <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
-                      <button type="submit" class="ghostButton">
-                        {% if settlement.record %}Refresh record{% else %}Generate record{% endif %}
-                      </button>
-                    </form>
-
-                    <a class="link" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ settlement.producer.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download report</a>
-
-                    {% if settlement.record and settlement.record.status != "PAID" %}
-                      <form class="inlineForm" method="post" action="{% url 'market_finance:mark_settlement_paid' settlement.record.id %}">
+                    {% if settlement.has_data %}
+                      <form class="inlineForm" method="post" action="{% url 'market_finance:generate_settlement' %}">
                         {% csrf_token %}
-                        <button type="submit">Mark paid</button>
+                        <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
+                        <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
+                        <button type="submit" class="ghostButton">
+                          {% if settlement.record %}Refresh record{% else %}Generate record{% endif %}
+                        </button>
                       </form>
+
+                      <a class="link" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ settlement.producer.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download report</a>
+
+                      {% if settlement.record and settlement.record.status != "PAID" %}
+                        <form class="inlineForm" method="post" action="{% url 'market_finance:mark_settlement_paid' settlement.record.id %}">
+                          {% csrf_token %}
+                          <button type="submit">Mark paid</button>
+                        </form>
+                      {% endif %}
                     {% endif %}
                   </div>
                 </div>

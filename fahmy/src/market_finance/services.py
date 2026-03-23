@@ -9,7 +9,7 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 
 from market_orders.models import Order, OrderItem, ProducerSubOrder
-from market_payments.models import Settlement
+from market_payments.models import Payment as PaymentSnapshot, Settlement
 from market_products.models import Product
 
 def apply_finance_filters(queryset, *, status_filter="", producer_filter="", q="", date_from="", date_to=""):
@@ -56,6 +56,152 @@ def aggregate_finance_totals(queryset):
         "total_commission": aggregates["total_commission"] or Decimal("0.00"),
         "total_payouts": aggregates["total_payouts"] or Decimal("0.00"),
     }
+
+
+def build_order_finance_summaries(suborders):
+    """
+    Group producer suborders into order-level finance summaries for audit views.
+    """
+    grouped = {}
+    for suborder in suborders:
+        summary = grouped.setdefault(
+            suborder.order_id,
+            {
+                "order": suborder.order,
+                "customer": suborder.order.customer,
+                "suborders": [],
+                "order_total": Decimal("0.00"),
+                "commission_total": Decimal("0.00"),
+                "producer_payout_total": Decimal("0.00"),
+                "supplier_count": 0,
+                "statuses": set(),
+            },
+        )
+        summary["suborders"].append(suborder)
+        summary["order_total"] += suborder.subtotal
+        summary["commission_total"] += suborder.commission_amount
+        summary["producer_payout_total"] += suborder.producer_payout_amount
+        summary["supplier_count"] += 1
+        summary["statuses"].add(suborder.status)
+
+    summaries = list(grouped.values())
+    for summary in summaries:
+        summary["suborders"].sort(key=lambda suborder: (suborder.producer.username.lower(), suborder.id))
+        summary["status_summary"] = ", ".join(sorted(summary["statuses"]))
+    return sorted(summaries, key=lambda summary: (summary["order"].created_at, summary["order"].id), reverse=True)
+
+
+def find_payment_snapshot_for_market_order(order):
+    """
+    Match a marketplace order to the stored payment snapshot for admin tracing.
+    """
+    return (
+        PaymentSnapshot.objects.select_related("order")
+        .filter(
+            order__user=order.customer,
+            subtotal=order.total_amount,
+            commission_amount=order.commission_total,
+            order__created_at__gte=order.created_at - timedelta(minutes=5),
+            order__created_at__lte=order.created_at + timedelta(minutes=5),
+        )
+        .order_by("-created_at", "-id")
+        .first()
+    )
+
+
+def calculate_running_period_summaries(reference=None):
+    """
+    Return explicit current-month and year-to-date totals for finance reporting.
+    """
+    reference = timezone.localtime(reference or timezone.now())
+    delivered = base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED)
+
+    month_start = reference.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+    ytd_start = reference.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0).date()
+
+    month_totals = aggregate_finance_totals(delivered.filter(delivery_date__date__gte=month_start))
+    ytd_totals = aggregate_finance_totals(delivered.filter(delivery_date__date__gte=ytd_start))
+
+    return {
+        "month": {
+            "label": reference.strftime("%B %Y"),
+            **month_totals,
+        },
+        "ytd": {
+            "label": f"{reference.year} year to date",
+            **ytd_totals,
+        },
+    }
+
+
+def build_admin_report_rows(suborders):
+    """
+    Flatten suborder finance rows for export in audit-friendly formats.
+    """
+    rows = []
+    for suborder in suborders:
+        rows.append(
+            {
+                "suborder_id": suborder.id,
+                "order_id": suborder.order.id,
+                "producer": suborder.producer.business_name or suborder.producer.username,
+                "customer": suborder.order.customer.username,
+                "delivery_date": timezone.localtime(suborder.delivery_date).strftime("%Y-%m-%d %H:%M"),
+                "status": suborder.status,
+                "subtotal": suborder.subtotal,
+                "commission_amount": suborder.commission_amount,
+                "producer_payout_amount": suborder.producer_payout_amount,
+            }
+        )
+    return rows
+
+
+def build_finance_pdf(lines):
+    """
+    Generate a lightweight PDF document without external dependencies.
+
+    This keeps the demo self-contained while still offering a downloadable PDF.
+    """
+    escaped_lines = []
+    for line in lines:
+        escaped_lines.append(
+            str(line).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        )
+
+    content_lines = ["BT", "/F1 11 Tf", "40 800 Td"]
+    first = True
+    for line in escaped_lines:
+        if not first:
+            content_lines.append("T*")
+        content_lines.append(f"({line}) Tj")
+        first = False
+    content_lines.append("ET")
+    content = "\n".join(content_lines).encode("latin-1", "replace")
+
+    objects = [
+        b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+        b"2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+        b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >> endobj",
+        b"4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+        b"5 0 obj << /Length " + str(len(content)).encode("ascii") + b" >> stream\n" + content + b"\nendstream endobj",
+    ]
+
+    pdf = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for obj in objects:
+        offsets.append(len(pdf))
+        pdf.extend(obj)
+        pdf.extend(b"\n")
+
+    xref_offset = len(pdf)
+    pdf.extend(f"xref\n0 {len(offsets)}\n".encode("ascii"))
+    pdf.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        pdf.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    pdf.extend(
+        f"trailer << /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF".encode("ascii")
+    )
+    return bytes(pdf)
 
 
 def settlement_week_bounds(delivery_dt):

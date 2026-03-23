@@ -13,7 +13,7 @@
     .muted { color: #6b7280; }
     .section-title { margin: 0 0 16px; font-size: 22px; font-weight: 800; }
     label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
-    input { width: 100%; border: 1px solid #d1d5db; border-radius: 12px; padding: 12px; font: inherit; }
+    input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 12px; padding: 12px; font: inherit; background: #fff; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .full { grid-column: 1 / -1; }
     .summary-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
@@ -39,6 +39,18 @@
           <input type="hidden" name="success_url" value="{{ success_url }}" />
           <input type="hidden" name="cancel_url" value="{{ cancel_url }}" />
           <div class="form-grid">
+            <div class="full">
+              <label for="payment_method">Choose payment method</label>
+              <select id="payment_method" name="payment_method" required>
+                <option value="demo_card">Demo Test Card</option>
+                <option value="visa_debit" selected>Visa Debit</option>
+                <option value="visa_credit">Visa Credit</option>
+                <option value="mastercard_debit">Mastercard Debit</option>
+                <option value="mastercard_credit">Mastercard Credit</option>
+                <option value="amex">American Express</option>
+                <option value="maestro">Maestro</option>
+              </select>
+            </div>
             <div class="full">
               <label for="cardholder_name">Cardholder name</label>
               <input id="cardholder_name" name="cardholder_name" value="{{ customer_name }}" required />
