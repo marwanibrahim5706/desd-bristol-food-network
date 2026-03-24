@@ -10,6 +10,8 @@ urlpatterns = [
     path("admin/dashboard/", RedirectView.as_view(url="/finance/admin/dashboard/", permanent=False)),
     path("admin/dashboard/settlements/generate/", RedirectView.as_view(url="/finance/admin/dashboard/", permanent=False)),
     path("admin/dashboard/settlements/<int:settlement_id>/paid/", RedirectView.as_view(url="/finance/admin/dashboard/", permanent=False)),
+    path("orders/", views.order_history_page, name="order_history"),
+    path("orders/<int:order_id>/reorder/", views.reorder_order, name="reorder_order"),
     path("payment/", views.payment_page, name="payment"),
     path("pay-now/", views.pay_now, name="pay_now"),
     path("payment/complete/<int:payment_id>/", views.payment_complete, name="payment_complete"),

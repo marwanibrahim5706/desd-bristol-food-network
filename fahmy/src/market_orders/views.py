@@ -6,40 +6,28 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from accounts.permissions import is_producer
+from accounts.permissions import can_manage_producer_orders
 from .models import ProducerSubOrder, SubOrderStatusEvent
 from .services import get_allowed_next_statuses, transition_suborder
 
 
+def _ensure_producer_access(user):
+    if not can_manage_producer_orders(user):
+        raise PermissionDenied("Producer access required.")
+
+
 @login_required
 def producer_dashboard(request):
-    """
-    TC9:
-    - Producer views ONLY their incoming ProducerSubOrders
-    - Can filter by status
-    - Can search by customer username/email or order id
-    - Sorted by delivery_date
-    - Shows whether each suborder respects 48h lead time from
-      order.created_at to delivery_date
-
-    Extended for single-page dashboard:
-    - Includes allowed next statuses per suborder
-    - Prefetches status history for inline details display
-    """
-
-    if not is_producer(request.user):
-        raise PermissionDenied("Producer access required.")
+    _ensure_producer_access(request.user)
 
     status_filter = (request.GET.get("status") or "").strip()
     q = (request.GET.get("q") or "").strip()
 
     qs = ProducerSubOrder.objects.filter(producer=request.user)
 
-    # Optional status filter
     if status_filter:
         qs = qs.filter(status=status_filter)
 
-    # Optional search
     if q:
         qs = qs.filter(
             Q(order__id__icontains=q)
@@ -47,7 +35,6 @@ def producer_dashboard(request):
             | Q(order__customer__email__icontains=q)
         )
 
-    # Performance + sorting
     qs = (
         qs.select_related("order", "order__customer")
         .prefetch_related(
@@ -60,14 +47,12 @@ def producer_dashboard(request):
         .order_by("delivery_date")
     )
 
-    # 48-hour lead time check + attach allowed transitions
     min_lead = timedelta(hours=48)
     suborders = []
-
-    for s in qs:
-        lead_ok = (s.delivery_date - s.order.created_at) >= min_lead
-        s.allowed_next = get_allowed_next_statuses(s.status)
-        suborders.append((s, lead_ok))
+    for suborder in qs:
+        lead_ok = (suborder.delivery_date - suborder.order.created_at) >= min_lead
+        suborder.allowed_next = get_allowed_next_statuses(suborder.status)
+        suborders.append((suborder, lead_ok))
 
     return render(
         request,
@@ -83,22 +68,12 @@ def producer_dashboard(request):
 
 @login_required
 def producer_suborder_detail(request, suborder_id):
-    """
-    Legacy detail page:
-    - Producer can open ONLY their own suborder
-    - Shows customer + delivery info + items + totals
-    - Shows 48h lead time check
-    - Still kept for compatibility, even though dashboard is now single-page
-    """
-
-    if not is_producer(request.user):
-        raise PermissionDenied("Producer access required.")
+    _ensure_producer_access(request.user)
 
     base_qs = (
         ProducerSubOrder.objects.select_related("order", "order__customer")
         .prefetch_related("items", "status_events")
     )
-
     suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
 
     lead_ok = (suborder.delivery_date - suborder.order.created_at) >= timedelta(hours=48)
@@ -120,19 +95,10 @@ def producer_suborder_detail(request, suborder_id):
 
 @login_required
 def producer_suborder_change_status(request, suborder_id):
-    """
-    TC-010:
-    - Only POST
-    - Producer can change ONLY their own suborder
-    - Must follow allowed transitions
-    - Must create SubOrderStatusEvent
-    - Redirects back to dashboard anchor for same suborder
-    """
     if request.method != "POST":
         raise PermissionDenied("POST required")
 
-    if not is_producer(request.user):
-        raise PermissionDenied("Producer access required.")
+    _ensure_producer_access(request.user)
 
     base_qs = ProducerSubOrder.objects.select_related("order", "order__customer")
     suborder = get_object_or_404(base_qs, id=suborder_id, producer=request.user)
@@ -148,9 +114,9 @@ def producer_suborder_change_status(request, suborder_id):
             note=note,
         )
         messages.success(request, f"Status updated to {new_status}.")
-    except ValidationError as e:
-        messages.error(request, str(e))
-    except Exception as e:
-        messages.error(request, f"Failed to update status: {e}")
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    except Exception as exc:
+        messages.error(request, f"Failed to update status: {exc}")
 
     return redirect(f"/orders/producer/dashboard/#suborder-card-{suborder.id}")

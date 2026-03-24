@@ -18,3 +18,15 @@ def is_producer(user) -> bool:
         and getattr(user, "role", None) == User.Role.PRODUCER
         and not is_admin(user)
     )
+
+
+def is_customer(user) -> bool:
+    return user.is_authenticated and getattr(user, "role", None) == User.Role.CUSTOMER
+
+
+def can_manage_producer_orders(user) -> bool:
+    return is_admin(user) or is_producer(user)
+
+
+def can_use_customer_checkout(user) -> bool:
+    return is_admin(user) or is_customer(user)

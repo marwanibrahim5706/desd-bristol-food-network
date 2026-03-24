@@ -1,22 +1,36 @@
 from django.contrib import admin
-from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.urls import include, path
 
-def home(_request):
-    return HttpResponse("Home OK (customer landing page)")
+from market_accounts.models import User
+
+
+def home(request):
+    if not request.user.is_authenticated:
+        return redirect("accounts:login")
+
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect("/admin/")
+
+    if getattr(request.user, "role", None) == User.Role.PRODUCER:
+        return redirect("/orders/producer/dashboard/")
+
+    if getattr(request.user, "role", None) == User.Role.CUSTOMER:
+        return redirect("/discover/")
+
+    if getattr(request.user, "role", None) == User.Role.ADMIN:
+        return redirect("/admin/")
+
+    return redirect("accounts:login")
+
 
 urlpatterns = [
-    # keep the health/home check but don’t steal the homepage
     path("health/", home),
-
+    path("", home),
     path("admin/", admin.site.urls),
-
-    # teammate routes
     path("accounts/", include("accounts.urls")),
     path("orders/", include("market_orders.urls")),
     path("payments/", include("market_payments.urls")),
     path("finance/", include("market_finance.urls")),
-
-    # ✅ your discovery + product detail as homepage
     path("", include("market_products.urls")),
 ]

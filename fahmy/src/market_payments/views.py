@@ -5,11 +5,13 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.permissions import can_use_customer_checkout
 from market_alerts.models import Notification
 from market_orders.models import (
     Order as MarketOrder,
@@ -69,15 +71,51 @@ def _get_single_producer(cart):
 
 
 def _find_matching_market_order(payment_order):
-    return (
+    payment_signature = sorted(
+        (item.product_name, str(item.unit_price), item.quantity)
+        for item in payment_order.items.all()
+    )
+
+    candidates = list(
         MarketOrder.objects.filter(
             customer=payment_order.user,
             total_amount=payment_order.subtotal,
             commission_total=payment_order.commission,
             created_at__gte=payment_order.created_at - timedelta(minutes=1),
+            created_at__lte=payment_order.created_at + timedelta(minutes=5),
         )
-        .order_by("-id")
-        .first()
+        .prefetch_related("producer_suborders__items")
+        .order_by("-created_at", "-id")
+    )
+
+    if not candidates:
+        return None
+
+    if not payment_signature:
+        return min(
+            candidates,
+            key=lambda order: abs((order.created_at - payment_order.created_at).total_seconds()),
+        )
+
+    exact_matches = []
+    for candidate in candidates:
+        candidate_signature = sorted(
+            (item.product_name, str(item.unit_price), item.quantity)
+            for suborder in candidate.producer_suborders.all()
+            for item in suborder.items.all()
+        )
+        if candidate_signature == payment_signature:
+            exact_matches.append(candidate)
+
+    if exact_matches:
+        return min(
+            exact_matches,
+            key=lambda order: abs((order.created_at - payment_order.created_at).total_seconds()),
+        )
+
+    return min(
+        candidates,
+        key=lambda order: abs((order.created_at - payment_order.created_at).total_seconds()),
     )
 
 
@@ -161,8 +199,26 @@ def _cancel_payment(request, payment):
     return redirect("market_payments:payment")
 
 
+def _ensure_customer_access(user):
+    if not can_use_customer_checkout(user):
+        raise PermissionDenied("Customer access required.")
+
+
+def _get_customer_order_queryset(user):
+    return (
+        Order.objects.filter(user=user)
+        .prefetch_related("items", "payments")
+        .order_by("-created_at", "-id")
+    )
+
+
+def _get_market_order_for_history(payment_order):
+    return _find_matching_market_order(payment_order)
+
+
 @login_required
 def cart_page(request):
+    _ensure_customer_access(request.user)
     cart = _get_or_create_cart(request.user)
     producer_sections = _group_cart_items_by_producer(cart)
     return render(
@@ -173,7 +229,32 @@ def cart_page(request):
 
 
 @login_required
+def order_history_page(request):
+    _ensure_customer_access(request.user)
+
+    orders = []
+    for order in _get_customer_order_queryset(request.user):
+        latest_payment = order.payments.order_by("-created_at", "-id").first()
+        market_order = _get_market_order_for_history(order)
+        orders.append(
+            {
+                "order": order,
+                "latest_payment": latest_payment,
+                "market_order": market_order,
+                "item_count": sum(item.quantity for item in order.items.all()),
+            }
+        )
+
+    return render(
+        request,
+        "market_payments/order_history.html",
+        {"orders": orders},
+    )
+
+
+@login_required
 def add_to_cart(request, product_id):
+    _ensure_customer_access(request.user)
     if request.method != "POST":
         return redirect("market_payments:cart")
 
@@ -237,7 +318,67 @@ def update_cart_item(request, item_id):
 
 
 @login_required
+def reorder_order(request, order_id):
+    _ensure_customer_access(request.user)
+    if request.method != "POST":
+        raise PermissionDenied("POST required.")
+
+    order = get_object_or_404(
+        Order.objects.filter(user=request.user).prefetch_related("items", "payments"),
+        id=order_id,
+    )
+    market_order = _get_market_order_for_history(order)
+    if market_order is None:
+        messages.error(request, "This order cannot be reordered because its original items are unavailable.")
+        return redirect("market_payments:order_history")
+
+    market_items = list(
+        market_order.producer_suborders.prefetch_related("items__product").all()
+    )
+
+    requested_items = []
+    unavailable = []
+    for suborder in market_items:
+        for item in suborder.items.all():
+            product = item.product
+            if (not product.is_active) or product.stock_quantity <= 0:
+                unavailable.append(item.product_name)
+                continue
+            quantity = min(item.quantity, product.stock_quantity)
+            requested_items.append((product, quantity, item.quantity))
+            if quantity < item.quantity:
+                unavailable.append(
+                    f"{item.product_name} (requested {item.quantity}, only {product.stock_quantity} available)"
+                )
+
+    if not requested_items:
+        messages.error(request, "No items from this order are currently available to reorder.")
+        return redirect("market_payments:order_history")
+
+    cart = _get_or_create_cart(request.user)
+    added_count = 0
+    for product, quantity, _original_quantity in requested_items:
+        cart_item, _created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={"quantity": 0},
+        )
+        cart_item.quantity += quantity
+        cart_item.save(update_fields=["quantity"])
+        added_count += quantity
+
+    if unavailable:
+        messages.warning(
+            request,
+            "Reorder completed with adjustments. Unavailable items: " + ", ".join(unavailable),
+        )
+    else:
+        messages.success(request, f"Reordered {added_count} item(s) into your cart.")
+
+    return redirect("market_payments:cart")
+@login_required
 def payment_page(request):
+    _ensure_customer_access(request.user)
     cart = _get_or_create_cart(request.user)
     producer = _get_single_producer(cart)
     producer_sections = _group_cart_items_by_producer(cart)
@@ -277,6 +418,7 @@ def payment_page(request):
 
 @login_required
 def pay_now(request):
+    _ensure_customer_access(request.user)
     if request.method != "POST":
         return redirect("market_payments:payment")
 
@@ -453,6 +595,7 @@ def pay_now(request):
 
 @login_required
 def clear_cart(request):
+    _ensure_customer_access(request.user)
     if request.method != "POST":
         return redirect("market_payments:cart")
 
@@ -490,6 +633,7 @@ def payment_cancel(request, payment_id):
 
 @login_required
 def receipt_page(request, payment_id: int):
+    _ensure_customer_access(request.user)
     payment = get_object_or_404(
         Payment.objects.select_related("order").prefetch_related("order__items"),
         id=payment_id,

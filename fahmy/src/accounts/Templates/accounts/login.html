@@ -1,39 +1,103 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Login</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial;background:#0b1220;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .card{width:420px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px}
-    h1{margin:0 0 16px;font-size:22px}
-    label{display:block;margin-top:12px;font-size:14px;opacity:.9}
-    input{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#fff}
-    button{width:100%;margin-top:18px;padding:12px;border-radius:10px;border:0;background:#7c3aed;color:#fff;font-weight:700;cursor:pointer}
-    .msg{margin-top:12px;color:#ffb4b4;font-size:14px}
-  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign In</title>
+  <style>{% include "accounts/includes/auth_theme_styles.html" %}</style>
 </head>
 <body>
-  <div class="card">
-    <h1>Sign in</h1>
+  <main class="authPage">
+    <section class="authShell">
+      <aside class="authBrand">
+        <div class="brandTop">
+          <div class="logo"></div>
+          <div>
+            <h1>DESD Bristol Food Network</h1>
+            <p>Authentication Portal</p>
+          </div>
+        </div>
 
-    {% if messages %}
-      {% for m in messages %}
-        <div class="msg">{{ m }}</div>
-      {% endfor %}
-    {% endif %}
+        <div class="eyebrow">Account Access</div>
+        <h2>Sign in to continue using the network.</h2>
+        <p class="lede">
+          Access producer dashboards, customer ordering tools, and the wider marketplace from the same platform.
+        </p>
 
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{{ next }}">
-      <label>Email or Username</label>
-      <input name="identifier" placeholder="e.g. marwan@test.com" required />
+        <ul class="featureList">
+          <li><span class="featureIndex">1</span><div>Use your username or registered email address to sign in.</div></li>
+          <li><span class="featureIndex">2</span><div>Customers are redirected to discovery and checkout, while producers are sent to incoming orders.</div></li>
+          <li><span class="featureIndex">3</span><div>Registration links remain available if you need a customer or producer account.</div></li>
+        </ul>
+      </aside>
 
-      <label>Password</label>
-      <input type="password" name="password" placeholder="••••••••" required />
+      <section class="authCardWrap">
+        <div class="authCard">
+          <p class="kicker">Welcome Back</p>
+          <h3>Sign in</h3>
+          <p class="subtext">Enter your login details to access the Bristol Food Network.</p>
 
-      <button type="submit">Login</button>
-    </form>
-  </div>
+          {% if messages %}
+            <div class="messageStack">
+              {% for m in messages %}
+                <div class="msgBox error">{{ m }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <div class="field">
+              <label for="identifier">Email or Username</label>
+              <input id="identifier" name="identifier" placeholder="e.g. customer@test.com" required />
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="passwordInputWrap">
+                <input id="password" type="password" name="password" placeholder="Enter your password" required />
+                <button
+                  class="passwordToggle"
+                  type="button"
+                  data-password-toggle
+                  data-target="password"
+                  data-show-aria="Show password"
+                  data-hide-aria="Hide password"
+                  aria-controls="password"
+                  aria-label="Show password"
+                  aria-pressed="false"
+                >
+                  Show
+                </button>
+              </div>
+            </div>
+
+            <button class="submit" type="submit">Sign In</button>
+          </form>
+
+          <div class="linkGrid">
+            <a class="linkCard" href="/accounts/register/customer/">
+              <div>
+                <strong>Register as Customer</strong>
+                <small>Create a shopping account for discovery, checkout, receipts, and reorder flows.</small>
+              </div>
+              <span class="linkArrow">Open</span>
+            </a>
+
+            <a class="linkCard" href="/accounts/register/producer/">
+              <div>
+                <strong>Register as Producer</strong>
+                <small>Create a producer account for product management and incoming order handling.</small>
+              </div>
+              <span class="linkArrow">Open</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+  {% include "accounts/includes/auth_password_script.html" %}
 </body>
 </html>

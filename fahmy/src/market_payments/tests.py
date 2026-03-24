@@ -8,8 +8,9 @@ from django.utils import timezone
 
 from market_alerts.models import Notification
 from market_orders.models import Order as MarketOrder
+from market_orders.models import OrderItem as MarketOrderItem
 from market_orders.models import ProducerSubOrder
-from market_payments.models import Cart, Payment
+from market_payments.models import Cart, CartItem, Order as PaymentOrder, OrderItem as PaymentOrderItem, Payment
 from market_payments.services import calculate_commission_breakdown, request_checkout_breakdown
 from market_products.models import Product
 
@@ -337,3 +338,203 @@ class PaymentCalculationServiceTests(TestCase):
                 },
             ],
         )
+
+
+class OrderHistoryAndReorderTests(TestCase):
+    def setUp(self):
+        self.user_model = get_user_model()
+        self.customer = self.user_model.objects.create_user(
+            username="history_customer",
+            email="history_customer@test.com",
+            password="secret123",
+            role=self.user_model.Role.CUSTOMER,
+            address="7 History Road, Bristol",
+            phone="07000111000",
+        )
+        self.other_customer = self.user_model.objects.create_user(
+            username="other_customer",
+            email="other_customer@test.com",
+            password="secret123",
+            role=self.user_model.Role.CUSTOMER,
+        )
+        self.producer = self.user_model.objects.create_user(
+            username="history_producer",
+            email="history_producer@test.com",
+            password="secret123",
+            role=self.user_model.Role.PRODUCER,
+            business_name="History Farm",
+        )
+        self.product_one = Product.objects.create(
+            name="History Apples",
+            producer=self.producer,
+            price=Decimal("6.00"),
+            stock_quantity=10,
+            is_active=True,
+        )
+        self.product_two = Product.objects.create(
+            name="History Pears",
+            producer=self.producer,
+            price=Decimal("4.00"),
+            stock_quantity=6,
+            is_active=True,
+        )
+        self.product_three = Product.objects.create(
+            name="History Plums",
+            producer=self.producer,
+            price=Decimal("6.00"),
+            stock_quantity=8,
+            is_active=True,
+        )
+
+    def _create_previous_order(self, *, customer, product_specs):
+        subtotal = sum(product.price * quantity for product, quantity in product_specs)
+        subtotal = subtotal.quantize(Decimal("0.01"))
+        commission = (subtotal * Decimal("0.05")).quantize(Decimal("0.01"))
+        total = (subtotal + commission).quantize(Decimal("0.01"))
+
+        payment_order = PaymentOrder.objects.create(
+            user=customer,
+            subtotal=subtotal,
+            commission=commission,
+            total=total,
+        )
+        Payment.objects.create(
+            order=payment_order,
+            status=Payment.Status.PAID,
+            provider="demo_card",
+        )
+
+        market_order = MarketOrder.objects.create(
+            customer=customer,
+            status=MarketOrder.Status.CREATED,
+            total_amount=subtotal,
+            commission_total=commission,
+            delivery_address=getattr(customer, "address", "") or "Test address",
+            customer_phone=getattr(customer, "phone", "") or "07000000000",
+        )
+        suborder = ProducerSubOrder.objects.create(
+            order=market_order,
+            producer=self.producer,
+            status=ProducerSubOrder.Status.PENDING,
+            delivery_date=timezone.now() + timedelta(days=3),
+            subtotal=subtotal,
+            commission_amount=commission,
+            producer_payout_amount=subtotal - commission,
+        )
+
+        for product, quantity in product_specs:
+            PaymentOrderItem.objects.create(
+                order=payment_order,
+                product_name=product.name,
+                unit_price=product.price,
+                quantity=quantity,
+            )
+            MarketOrderItem.objects.create(
+                suborder=suborder,
+                product=product,
+                product_name=product.name,
+                unit_price=product.price,
+                quantity=quantity,
+            )
+
+        return payment_order
+
+    def test_customer_can_view_own_order_history(self):
+        own_order = self._create_previous_order(
+            customer=self.customer,
+            product_specs=[(self.product_one, 2)],
+        )
+        other_order = self._create_previous_order(
+            customer=self.other_customer,
+            product_specs=[(self.product_two, 1)],
+        )
+
+        self.client.force_login(self.customer)
+        response = self.client.get(reverse("market_payments:order_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"Order #{own_order.id}")
+        self.assertContains(response, "History Apples")
+        self.assertNotContains(response, f"Order #{other_order.id}")
+
+    def test_logged_out_user_is_redirected_from_order_history(self):
+        response = self.client.get(reverse("market_payments:order_history"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response["Location"])
+
+    def test_producer_is_forbidden_from_order_history(self):
+        self.client.force_login(self.producer)
+        response = self.client.get(reverse("market_payments:order_history"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_customer_can_reorder_own_previous_order(self):
+        order = self._create_previous_order(
+            customer=self.customer,
+            product_specs=[(self.product_one, 2), (self.product_two, 1)],
+        )
+
+        self.client.force_login(self.customer)
+        response = self.client.post(
+            reverse("market_payments:reorder_order", args=[order.id]),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Reordered 3 item(s) into your cart.")
+
+        cart = Cart.objects.get(user=self.customer)
+        apples = CartItem.objects.get(cart=cart, product=self.product_one)
+        pears = CartItem.objects.get(cart=cart, product=self.product_two)
+        self.assertEqual(apples.quantity, 2)
+        self.assertEqual(pears.quantity, 1)
+
+    def test_customer_cannot_reorder_another_customers_order(self):
+        order = self._create_previous_order(
+            customer=self.other_customer,
+            product_specs=[(self.product_one, 1)],
+        )
+
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse("market_payments:reorder_order", args=[order.id]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_reorder_matches_correct_previous_order_when_totals_repeat(self):
+        first_order = self._create_previous_order(
+            customer=self.customer,
+            product_specs=[(self.product_one, 1)],
+        )
+        self._create_previous_order(
+            customer=self.customer,
+            product_specs=[(self.product_three, 1)],
+        )
+
+        self.client.force_login(self.customer)
+        response = self.client.post(
+            reverse("market_payments:reorder_order", args=[first_order.id]),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        cart = Cart.objects.get(user=self.customer)
+        self.assertTrue(CartItem.objects.filter(cart=cart, product=self.product_one, quantity=1).exists())
+        self.assertFalse(CartItem.objects.filter(cart=cart, product=self.product_three).exists())
+
+    def test_logged_out_user_is_redirected_from_reorder(self):
+        order = self._create_previous_order(
+            customer=self.customer,
+            product_specs=[(self.product_one, 1)],
+        )
+
+        response = self.client.post(reverse("market_payments:reorder_order", args=[order.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response["Location"])
+
+    def test_producer_is_forbidden_from_reorder(self):
+        order = self._create_previous_order(
+            customer=self.customer,
+            product_specs=[(self.product_one, 1)],
+        )
+
+        self.client.force_login(self.producer)
+        response = self.client.post(reverse("market_payments:reorder_order", args=[order.id]))
+        self.assertEqual(response.status_code, 403)
