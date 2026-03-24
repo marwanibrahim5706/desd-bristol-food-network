@@ -6,6 +6,9 @@ app_name = "market_finance"
 
 urlpatterns = [
     path("admin/dashboard/", views.admin_finance_dashboard, name="admin_finance_dashboard"),
+    path("admin/dashboard/reports/", views.admin_finance_reports, name="admin_finance_reports"),
+    path("admin/dashboard/settlements/", views.admin_finance_settlements, name="admin_finance_settlements"),
+    path("admin/dashboard/exports/", views.admin_finance_exports, name="admin_finance_exports"),
     path("admin/dashboard/export/", views.export_admin_finance_csv, name="export_admin_finance_csv"),
     path("admin/dashboard/export/excel/", views.export_admin_finance_excel, name="export_admin_finance_excel"),
     path("admin/dashboard/export/pdf/", views.export_admin_finance_pdf, name="export_admin_finance_pdf"),

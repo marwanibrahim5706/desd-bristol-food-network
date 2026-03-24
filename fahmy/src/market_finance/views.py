@@ -3,6 +3,7 @@ import json
 import calendar
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -20,17 +21,29 @@ from .services import (
     apply_finance_filters,
     base_finance_queryset,
     build_admin_report_rows,
+    build_producer_finance_summaries,
     build_finance_pdf,
     build_order_finance_summaries,
+    build_recent_finance_activity,
     build_recurring_template_from_order,
+    build_settlement_dashboard_rows,
     build_settlement_summaries,
     calculate_running_period_summaries,
+    count_processed_orders,
     find_payment_snapshot_for_market_order,
     generate_order_from_recurring,
     generate_weekly_settlements,
     settlement_week_bounds,
     update_next_instance_overrides,
 )
+
+
+ADMIN_PERIOD_PRESETS = {
+    "7d": {"label": "Last 7 days", "days": 7},
+    "14d": {"label": "Previous 2 weeks", "days": 14},
+    "month": {"label": "This month", "mode": "month"},
+    "ytd": {"label": "Year to date", "mode": "ytd"},
+}
 
 
 def _settlement_week_navigation(all_settlements, selected_week):
@@ -94,101 +107,69 @@ def _split_settlement_gap(range_start, range_end, *, preserve_full_gap=False):
     return periods
 
 
-def _build_settlement_periods(summaries, producers):
-    if not summaries:
-        return []
+def _resolve_admin_period_filters(request):
+    today = timezone.localdate()
+    period = (request.GET.get("period") or "14d").strip().lower()
+    if period not in ADMIN_PERIOD_PRESETS:
+        period = "14d"
 
-    summary_map = {
-        (summary["producer"].id, summary["week_start"]): summary
-        for summary in summaries
+    date_from = (request.GET.get("date_from") or "").strip()
+    date_to = (request.GET.get("date_to") or "").strip()
+
+    if not date_from and not date_to:
+        preset = ADMIN_PERIOD_PRESETS[period]
+        if preset.get("days"):
+            start = today - timedelta(days=preset["days"] - 1)
+            date_from = start.isoformat()
+            date_to = today.isoformat()
+        elif preset["mode"] == "month":
+            date_from = today.replace(day=1).isoformat()
+            date_to = today.isoformat()
+        elif preset["mode"] == "ytd":
+            date_from = today.replace(month=1, day=1).isoformat()
+            date_to = today.isoformat()
+
+    return period, date_from, date_to
+
+
+def _serialize_report_filters(*, status_filter, producer_filter, q, date_from, date_to, period, settlement_week=""):
+    return {
+        "status": status_filter,
+        "producer": producer_filter,
+        "q": q,
+        "date_from": date_from,
+        "date_to": date_to,
+        "period": period,
+        "settlement_week": settlement_week,
     }
-    represented_months = sorted({_month_start(summary["week_start"]) for summary in summaries})
-    periods = []
-
-    for month_start in represented_months:
-        month_end = _month_end(month_start)
-        month_summaries = [
-            summary for summary in summaries
-            if _month_start(summary["week_start"]) == month_start
-        ]
-        month_starts = sorted({summary["week_start"] for summary in month_summaries})
-        if not month_starts:
-            continue
-
-        cursor = month_start
-        existing_ranges = {summary["week_start"]: summary["week_end"] for summary in month_summaries}
-
-        for index, start in enumerate(month_starts):
-            if cursor < start:
-                gap_end = start - timedelta(days=1)
-                periods.extend(
-                    _split_settlement_gap(
-                        cursor,
-                        gap_end,
-                        preserve_full_gap=(index == 0),
-                    )
-                )
-            periods.append((start, existing_ranges[start]))
-            cursor = existing_ranges[start] + timedelta(days=1)
-
-        if cursor <= month_end:
-            trailing_periods = _split_settlement_gap(cursor, month_end)
-            # A very short trailing fragment at month-end belongs more naturally
-            # to the next month's first full week than as a standalone period.
-            if trailing_periods:
-                last_start, last_end = trailing_periods[-1]
-                if (last_end - last_start).days + 1 < 4:
-                    trailing_periods = trailing_periods[:-1]
-            periods.extend(trailing_periods)
-
-    expanded = []
-    seen = set()
-    for week_start, week_end in periods:
-        if (week_start, week_end) in seen:
-            continue
-        seen.add((week_start, week_end))
-        for producer in producers:
-            existing = summary_map.get((producer.id, week_start))
-            if existing is not None:
-                existing["has_data"] = True
-                expanded.append(existing)
-                continue
-
-            expanded.append(
-                {
-                    "producer": producer,
-                    "week_start": week_start,
-                    "week_end": week_end,
-                    "gross_sales": Decimal("0.00"),
-                    "commission": Decimal("0.00"),
-                    "payout": Decimal("0.00"),
-                    "suborder_count": 0,
-                    "suborders": [],
-                    "has_data": False,
-                }
-            )
-
-    return sorted(
-        expanded,
-        key=lambda settlement: (
-            settlement["week_start"],
-            (getattr(settlement["producer"], "business_name", "") or settlement["producer"].username).lower(),
-        ),
-        reverse=True,
-    )
 
 
-@login_required
-def admin_finance_dashboard(request):
+def _build_querystring(params, exclude=None):
+    exclude = set(exclude or [])
+    filtered = {key: value for key, value in params.items() if value and key not in exclude}
+    if not filtered:
+        return ""
+    return f"?{urlencode(filtered)}"
+
+
+def _build_admin_finance_context(request, *, current_section):
     if not is_admin(request.user):
         raise PermissionDenied("Admin access required.")
 
     status_filter = (request.GET.get("status") or "").strip()
     q = (request.GET.get("q") or "").strip()
     producer_filter = (request.GET.get("producer") or "").strip()
-    date_from = (request.GET.get("date_from") or "").strip()
-    date_to = (request.GET.get("date_to") or "").strip()
+    period, date_from, date_to = _resolve_admin_period_filters(request)
     settlement_week = (request.GET.get("settlement_week") or "").strip()
+    report_filters = _serialize_report_filters(
+        status_filter=status_filter,
+        producer_filter=producer_filter,
+        q=q,
+        date_from=date_from,
+        date_to=date_to,
+        period=period,
+        settlement_week=settlement_week,
+    )
 
     suborders_qs = apply_finance_filters(
         base_finance_queryset(),
@@ -201,8 +182,11 @@ def admin_finance_dashboard(request):
 
     suborders = list(suborders_qs)
     order_summaries = build_order_finance_summaries(suborders)
+    producer_summaries = build_producer_finance_summaries(suborders)
     aggregates = aggregate_finance_totals(suborders_qs)
     order_count = len({suborder.order_id for suborder in suborders})
+    processed_order_count = count_processed_orders(suborders)
+    recent_activity = build_recent_finance_activity(suborders)
     settlement_source_qs = base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED)
     if producer_filter:
         settlement_source_qs = settlement_source_qs.filter(producer_id=producer_filter)
@@ -220,56 +204,79 @@ def admin_finance_dashboard(request):
             seen_producer_ids.add(producer_obj.id)
             producer_users.append(producer_obj)
 
-    settlement_summaries = _build_settlement_periods(
-        build_settlement_summaries(list(settlement_source_qs)),
-        producer_users,
-    )
     running_summaries = calculate_running_period_summaries()
-
-    settlement_map = {
-        (settlement.producer_id, settlement.week_start): settlement
-        for settlement in Settlement.objects.select_related("producer")
-    }
-    all_settlements = []
-    for summary in settlement_summaries:
-        stored_settlement = settlement_map.get((summary["producer"].id, summary["week_start"]))
-        summary["record"] = stored_settlement
-        all_settlements.append(summary)
+    all_settlements = build_settlement_dashboard_rows(
+        list(settlement_source_qs),
+        settlement_week=settlement_week,
+    )
 
     available_weeks, previous_week, next_week = _settlement_week_navigation(all_settlements, settlement_week)
     settlements = all_settlements
-    if settlement_week:
-        settlements = [
-            settlement for settlement in all_settlements
-            if settlement["week_start"].isoformat() == settlement_week
-        ]
 
+    paid_settlement_count = Settlement.objects.count()
+    paid_producer_count = Settlement.objects.values("producer_id").distinct().count()
+
+    return {
+        "suborders": suborders,
+        "settlements": settlements,
+        "status_filter": status_filter,
+        "q": q,
+        "producer_filter": producer_filter,
+        "date_from": date_from,
+        "date_to": date_to,
+        "settlement_week": settlement_week,
+        "status_choices": ProducerSubOrder.Status.choices,
+        "producers": producers,
+        "gross_sales": aggregates["gross_sales"],
+        "total_commission": aggregates["total_commission"],
+        "total_payouts": aggregates["total_payouts"],
+        "order_count": order_count,
+        "processed_order_count": processed_order_count,
+        "paid_settlement_count": paid_settlement_count,
+        "paid_producer_count": paid_producer_count,
+        "available_weeks": available_weeks,
+        "previous_week_query": _querystring_with_week(request, previous_week),
+        "next_week_query": _querystring_with_week(request, next_week),
+        "order_summaries": order_summaries,
+        "producer_summaries": producer_summaries,
+        "recent_activity": recent_activity,
+        "month_summary": running_summaries["month"],
+        "ytd_summary": running_summaries["ytd"],
+        "current_section": current_section,
+        "period": period,
+        "period_choices": [{"value": key, "label": value["label"]} for key, value in ADMIN_PERIOD_PRESETS.items()],
+        "report_query": _build_querystring(report_filters, exclude={"settlement_week"}),
+        "settlement_query": _build_querystring(report_filters),
+        "report_filters": report_filters,
+    }
+
+
+def _render_admin_finance_workspace(request, *, current_section):
     return render(
         request,
         "market_finance/admin_finance_dashboard.html",
-        {
-            "suborders": suborders,
-            "settlements": settlements,
-            "status_filter": status_filter,
-            "q": q,
-            "producer_filter": producer_filter,
-            "date_from": date_from,
-            "date_to": date_to,
-            "settlement_week": settlement_week,
-            "status_choices": ProducerSubOrder.Status.choices,
-            "producers": producers,
-            "gross_sales": aggregates["gross_sales"],
-            "total_commission": aggregates["total_commission"],
-            "total_payouts": aggregates["total_payouts"],
-            "order_count": order_count,
-            "available_weeks": available_weeks,
-            "previous_week_query": _querystring_with_week(request, previous_week),
-            "next_week_query": _querystring_with_week(request, next_week),
-            "order_summaries": order_summaries,
-            "month_summary": running_summaries["month"],
-            "ytd_summary": running_summaries["ytd"],
-        },
+        _build_admin_finance_context(request, current_section=current_section),
     )
+
+
+@login_required
+def admin_finance_dashboard(request):
+    return _render_admin_finance_workspace(request, current_section="overview")
+
+
+@login_required
+def admin_finance_reports(request):
+    return _render_admin_finance_workspace(request, current_section="reports")
+
+
+@login_required
+def admin_finance_settlements(request):
+    return _render_admin_finance_workspace(request, current_section="settlements")
+
+
+@login_required
+def admin_finance_exports(request):
+    return _render_admin_finance_workspace(request, current_section="exports")
 
 
 @login_required
@@ -313,11 +320,11 @@ def generate_settlement(request):
     created = settlement.id not in existing_ids
 
     if created:
-        messages.success(request, f"Settlement created for {producer} ({start_date}).")
+        messages.success(request, f"Settlement record generated for {producer} ({start_date}).")
     else:
-        messages.success(request, f"Settlement refreshed for {producer} ({start_date}).")
+        messages.success(request, f"Settlement record refreshed for {producer} ({start_date}).")
 
-    return redirect("market_finance:admin_finance_dashboard")
+    return redirect("market_finance:admin_finance_settlements")
 
 
 @login_required
@@ -333,7 +340,7 @@ def mark_settlement_paid(request, settlement_id):
     settlement.paid_at = timezone.now()
     settlement.save(update_fields=["status", "paid_at"])
     messages.success(request, f"Settlement #{settlement.id} marked as paid.")
-    return redirect("market_finance:admin_finance_dashboard")
+    return redirect("market_finance:admin_finance_settlements")
 
 
 @login_required
@@ -353,31 +360,19 @@ def producer_settlements_dashboard(request):
     )
     suborders_qs = filtered_delivered_qs
     suborders = list(suborders_qs)
-    all_settlements = _build_settlement_periods(
-        build_settlement_summaries(
-            list(
-                base_finance_queryset().filter(
-                    producer=request.user,
-                    status=ProducerSubOrder.Status.DELIVERED,
-                )
+    all_settlements = build_settlement_dashboard_rows(
+        list(
+            base_finance_queryset().filter(
+                producer=request.user,
+                status=ProducerSubOrder.Status.DELIVERED,
             )
         ),
-        [request.user],
+        producer=request.user,
+        settlement_week=settlement_week,
     )
-    settlement_map = {
-        settlement.week_start: settlement
-        for settlement in Settlement.objects.filter(producer=request.user)
-    }
-    for summary in all_settlements:
-        summary["record"] = settlement_map.get(summary["week_start"])
 
     available_weeks, previous_week, next_week = _settlement_week_navigation(all_settlements, settlement_week)
     settlements = all_settlements
-    if settlement_week:
-        settlements = [
-            settlement for settlement in all_settlements
-            if settlement["week_start"].isoformat() == settlement_week
-        ]
 
     totals = aggregate_finance_totals(suborders_qs)
 
@@ -416,11 +411,24 @@ def export_admin_finance_csv(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="admin_finance_report.csv"'
     writer = csv.writer(response)
+    rows = build_admin_report_rows(list(suborders_qs))
+    totals = aggregate_finance_totals(suborders_qs)
+    writer.writerow(["report_scope", "admin_finance"])
+    writer.writerow(["period", (request.GET.get("period") or "14d").strip() or "14d"])
+    writer.writerow(["date_from", (request.GET.get("date_from") or "").strip()])
+    writer.writerow(["date_to", (request.GET.get("date_to") or "").strip()])
+    writer.writerow(["status_filter", (request.GET.get("status") or "").strip()])
+    writer.writerow(["producer_filter", (request.GET.get("producer") or "").strip()])
+    writer.writerow(["search", (request.GET.get("q") or "").strip()])
+    writer.writerow(["gross_sales", totals["gross_sales"]])
+    writer.writerow(["commission_amount", totals["total_commission"]])
+    writer.writerow(["producer_payout_amount", totals["total_payouts"]])
+    writer.writerow([])
     writer.writerow([
         "suborder_id", "order_id", "producer", "customer", "delivery_date",
-        "status", "subtotal", "commission_amount", "producer_payout_amount",
+        "status", "order_total", "order_commission_total", "subtotal", "commission_amount", "producer_payout_amount",
     ])
-    for row in build_admin_report_rows(list(suborders_qs)):
+    for row in rows:
         writer.writerow([
             row["suborder_id"],
             row["order_id"],
@@ -428,6 +436,8 @@ def export_admin_finance_csv(request):
             row["customer"],
             row["delivery_date"],
             row["status"],
+            row["order_total"],
+            row["order_commission_total"],
             row["subtotal"],
             row["commission_amount"],
             row["producer_payout_amount"],
@@ -456,7 +466,7 @@ def export_admin_finance_excel(request):
 
     html = [
         "<table>",
-        "<tr><th>Suborder ID</th><th>Order ID</th><th>Producer</th><th>Customer</th><th>Delivery date</th><th>Status</th><th>Subtotal</th><th>Commission</th><th>Producer payout</th></tr>",
+        "<tr><th>Suborder ID</th><th>Order ID</th><th>Producer</th><th>Customer</th><th>Delivery date</th><th>Status</th><th>Order total</th><th>Order commission</th><th>Subtotal</th><th>Commission</th><th>Producer payout</th></tr>",
     ]
     for row in rows:
         html.append(
@@ -467,6 +477,8 @@ def export_admin_finance_excel(request):
             f"<td>{row['customer']}</td>"
             f"<td>{row['delivery_date']}</td>"
             f"<td>{row['status']}</td>"
+            f"<td>{row['order_total']}</td>"
+            f"<td>{row['order_commission_total']}</td>"
             f"<td>{row['subtotal']}</td>"
             f"<td>{row['commission_amount']}</td>"
             f"<td>{row['producer_payout_amount']}</td>"
@@ -499,6 +511,8 @@ def export_admin_finance_pdf(request):
         f"Gross sales: GBP {totals['gross_sales']:.2f}",
         f"Commission: GBP {totals['total_commission']:.2f}",
         f"Producer payouts: GBP {totals['total_payouts']:.2f}",
+        f"Status filter: {(request.GET.get('status') or '').strip() or 'All'}",
+        f"Producer filter: {(request.GET.get('producer') or '').strip() or 'All'}",
         "",
     ]
     for row in build_admin_report_rows(suborders)[:30]:

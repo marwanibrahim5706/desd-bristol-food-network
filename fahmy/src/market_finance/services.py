@@ -12,6 +12,13 @@ from market_orders.models import Order, OrderItem, ProducerSubOrder
 from market_payments.models import Payment as PaymentSnapshot, Settlement
 from market_products.models import Product
 
+FINANCE_PROCESSED_STATUSES = {
+    ProducerSubOrder.Status.CONFIRMED,
+    ProducerSubOrder.Status.READY,
+    ProducerSubOrder.Status.DELIVERED,
+}
+
+
 def apply_finance_filters(queryset, *, status_filter="", producer_filter="", q="", date_from="", date_to=""):
     if status_filter:
         queryset = queryset.filter(status=status_filter)
@@ -58,6 +65,16 @@ def aggregate_finance_totals(queryset):
     }
 
 
+def count_processed_orders(suborders):
+    return len(
+        {
+            suborder.order_id
+            for suborder in suborders
+            if suborder.status in FINANCE_PROCESSED_STATUSES
+        }
+    )
+
+
 def build_order_finance_summaries(suborders):
     """
     Group producer suborders into order-level finance summaries for audit views.
@@ -88,7 +105,102 @@ def build_order_finance_summaries(suborders):
     for summary in summaries:
         summary["suborders"].sort(key=lambda suborder: (suborder.producer.username.lower(), suborder.id))
         summary["status_summary"] = ", ".join(sorted(summary["statuses"]))
+        summary["settlement_status"] = _summarize_order_settlement_status(summary["suborders"])
     return sorted(summaries, key=lambda summary: (summary["order"].created_at, summary["order"].id), reverse=True)
+
+
+def _summarize_order_settlement_status(suborders):
+    delivered_suborders = [suborder for suborder in suborders if suborder.status == ProducerSubOrder.Status.DELIVERED]
+    if not delivered_suborders:
+        return "Awaiting delivered suborders"
+
+    settlement_keys = {
+        (settlement.producer_id, settlement.week_start): settlement
+        for settlement in Settlement.objects.filter(
+            producer_id__in={suborder.producer_id for suborder in delivered_suborders}
+        )
+    }
+
+    statuses = []
+    for suborder in delivered_suborders:
+        week_start, _ = settlement_week_bounds(suborder.delivery_date)
+        settlement = settlement_keys.get((suborder.producer_id, week_start))
+        if settlement is None:
+            statuses.append("Pending record")
+        elif settlement.status == Settlement.Status.PAID:
+            statuses.append("Paid")
+        else:
+            statuses.append("Generated")
+
+    unique_statuses = sorted(set(statuses))
+    return ", ".join(unique_statuses)
+
+
+def build_recent_finance_activity(suborders, *, limit=6):
+    activity = []
+    for suborder in suborders:
+        activity.append(
+            {
+                "kind": "suborder",
+                "title": f"Order #{suborder.order_id} for {suborder.producer.business_name or suborder.producer.username}",
+                "timestamp": suborder.delivery_date,
+                "detail": f"{suborder.get_status_display()} • payout {suborder.producer_payout_amount:.2f}",
+                "amount": suborder.commission_amount,
+                "order_id": suborder.order_id,
+            }
+        )
+
+    settlement_qs = Settlement.objects.select_related("producer").order_by("-generated_at", "-id")[:limit]
+    for settlement in settlement_qs:
+        activity.append(
+            {
+                "kind": "settlement",
+                "title": f"Settlement for {settlement.producer.business_name or settlement.producer.username}",
+                "timestamp": settlement.paid_at or settlement.generated_at,
+                "detail": settlement.get_status_display(),
+                "amount": settlement.payout_amount,
+                "settlement_id": settlement.id,
+            }
+        )
+
+    activity.sort(key=lambda item: item["timestamp"], reverse=True)
+    return activity[:limit]
+
+
+def build_producer_finance_summaries(suborders):
+    grouped = {}
+    for suborder in suborders:
+        summary = grouped.setdefault(
+            suborder.producer_id,
+            {
+                "producer": suborder.producer,
+                "gross_sales": Decimal("0.00"),
+                "commission_total": Decimal("0.00"),
+                "payout_total": Decimal("0.00"),
+                "suborder_count": 0,
+                "order_ids": set(),
+                "latest_delivery": suborder.delivery_date,
+            },
+        )
+        summary["gross_sales"] += suborder.subtotal
+        summary["commission_total"] += suborder.commission_amount
+        summary["payout_total"] += suborder.producer_payout_amount
+        summary["suborder_count"] += 1
+        summary["order_ids"].add(suborder.order_id)
+        if suborder.delivery_date > summary["latest_delivery"]:
+            summary["latest_delivery"] = suborder.delivery_date
+
+    summaries = list(grouped.values())
+    for summary in summaries:
+        summary["order_count"] = len(summary["order_ids"])
+    return sorted(
+        summaries,
+        key=lambda summary: (
+            summary["commission_total"],
+            (summary["producer"].business_name or summary["producer"].username).lower(),
+        ),
+        reverse=True,
+    )
 
 
 def find_payment_snapshot_for_market_order(order):
@@ -148,6 +260,8 @@ def build_admin_report_rows(suborders):
                 "customer": suborder.order.customer.username,
                 "delivery_date": timezone.localtime(suborder.delivery_date).strftime("%Y-%m-%d %H:%M"),
                 "status": suborder.status,
+                "order_total": suborder.order.total_amount,
+                "order_commission_total": suborder.order.commission_total,
                 "subtotal": suborder.subtotal,
                 "commission_amount": suborder.commission_amount,
                 "producer_payout_amount": suborder.producer_payout_amount,
@@ -162,29 +276,74 @@ def build_finance_pdf(lines):
 
     This keeps the demo self-contained while still offering a downloadable PDF.
     """
-    escaped_lines = []
-    for line in lines:
-        escaped_lines.append(
-            str(line).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-        )
+    def escape_pdf_text(value):
+        return str(value).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
-    content_lines = ["BT", "/F1 11 Tf", "40 800 Td"]
-    first = True
-    for line in escaped_lines:
-        if not first:
-            content_lines.append("T*")
-        content_lines.append(f"({line}) Tj")
-        first = False
-    content_lines.append("ET")
-    content = "\n".join(content_lines).encode("latin-1", "replace")
+    def wrap_line(value, width=92):
+        words = str(value).split()
+        if not words:
+            return [""]
+
+        wrapped = []
+        current = words[0]
+        for word in words[1:]:
+            candidate = f"{current} {word}"
+            if len(candidate) <= width:
+                current = candidate
+            else:
+                wrapped.append(current)
+                current = word
+        wrapped.append(current)
+        return wrapped
+
+    wrapped_lines = []
+    for line in lines:
+        wrapped_lines.extend(wrap_line(line))
+
+    page_height = 842
+    top_margin = 800
+    bottom_margin = 48
+    leading = 16
+    lines_per_page = max(1, int((top_margin - bottom_margin) / leading))
+    line_chunks = [
+        wrapped_lines[index:index + lines_per_page]
+        for index in range(0, len(wrapped_lines), lines_per_page)
+    ] or [[""]]
 
     objects = [
         b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-        b"2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-        b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >> endobj",
-        b"4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-        b"5 0 obj << /Length " + str(len(content)).encode("ascii") + b" >> stream\n" + content + b"\nendstream endobj",
     ]
+
+    page_ids = []
+    content_ids = []
+    font_id = 3 + (2 * len(line_chunks))
+    next_object_id = 3
+
+    for page_lines in line_chunks:
+        page_id = next_object_id
+        content_id = next_object_id + 1
+        next_object_id += 2
+        page_ids.append(page_id)
+        content_ids.append(content_id)
+
+        content_lines = ["BT", "/F1 11 Tf", f"{leading} TL", f"40 {top_margin} Td"]
+        for index, line in enumerate(page_lines):
+            if index > 0:
+                content_lines.append("T*")
+            content_lines.append(f"({escape_pdf_text(line)}) Tj")
+        content_lines.append("ET")
+        content = "\n".join(content_lines).encode("latin-1", "replace")
+
+        objects.append(
+            f"{page_id} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 {page_height}] /Contents {content_id} 0 R /Resources << /Font << /F1 {font_id} 0 R >> >> >> endobj".encode("ascii")
+        )
+        objects.append(
+            f"{content_id} 0 obj << /Length {len(content)} >> stream\n".encode("ascii") + content + b"\nendstream endobj"
+        )
+
+    kids = " ".join(f"{page_id} 0 R" for page_id in page_ids)
+    objects.insert(1, f"2 0 obj << /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >> endobj".encode("ascii"))
+    objects.append(f"{font_id} 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj".encode("ascii"))
 
     pdf = bytearray(b"%PDF-1.4\n")
     offsets = [0]
@@ -242,6 +401,63 @@ def build_settlement_summaries(suborders):
     return sorted(
         settlement_groups.values(),
         key=lambda settlement: (settlement["week_start"], settlement["producer"].username.lower()),
+        reverse=True,
+    )
+
+
+def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week=""):
+    candidate_summaries = build_settlement_summaries(suborders)
+    if producer is not None:
+        settlement_records = Settlement.objects.filter(producer=producer)
+    else:
+        settlement_records = Settlement.objects.all()
+
+    settlement_records = settlement_records.select_related("producer").order_by("-week_start", "producer__username")
+    if settlement_week:
+        settlement_records = settlement_records.filter(week_start=settlement_week)
+
+    candidate_map = {
+        (summary["producer"].id, summary["week_start"]): summary
+        for summary in candidate_summaries
+    }
+
+    rows = []
+    for record in settlement_records:
+        summary = candidate_map.pop((record.producer_id, record.week_start), None)
+        rows.append(
+            {
+                "producer": record.producer,
+                "week_start": record.week_start,
+                "week_end": record.week_end,
+                "gross_sales": record.gross_sales,
+                "commission": record.commission_amount,
+                "payout": record.payout_amount,
+                "suborder_count": record.suborder_count,
+                "suborders": summary["suborders"] if summary else [],
+                "has_data": bool(summary) or record.suborder_count > 0,
+                "record": record,
+                "is_pending": False,
+            }
+        )
+
+    for summary in candidate_map.values():
+        if settlement_week and summary["week_start"].isoformat() != settlement_week:
+            continue
+        rows.append(
+            {
+                **summary,
+                "has_data": True,
+                "record": None,
+                "is_pending": True,
+            }
+        )
+
+    return sorted(
+        rows,
+        key=lambda settlement: (
+            settlement["week_start"],
+            (getattr(settlement["producer"], "business_name", "") or settlement["producer"].username).lower(),
+        ),
         reverse=True,
     )
 

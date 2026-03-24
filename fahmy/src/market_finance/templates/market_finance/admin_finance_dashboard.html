@@ -3,366 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin Finance Dashboard</title>
-
-  <style>
-    :root{
-      --bg:#04070c;
-      --panel:#030f25;
-      --card:#101f3d;
-      --text:#e8eefc;
-      --muted:#9fb0d0;
-      --line:rgba(255,255,255,.08);
-      --accent:#7c3aed;
-      --accent2:#22c55e;
-      --warn:#f59e0b;
-      --danger:#ef4444;
-      --shadow:0 18px 50px rgba(0,0,0,.35);
-      --radius:18px;
-    }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background:
-        radial-gradient(1200px 700px at 15% -10%, rgba(124,58,237,.35), transparent 55%),
-        radial-gradient(1000px 600px at 95% 5%, rgba(34,197,94,.22), transparent 55%),
-        radial-gradient(900px 600px at 60% 110%, rgba(59,130,246,.18), transparent 60%),
-        var(--bg);
-      color:var(--text);
-      overflow-x:hidden;
-    }
-
-    .page { animation: fadeUp .45s ease-out both; }
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(10px); }
-      to { opacity:1; transform:translateY(0); }
-    }
-
-    .layout{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns:280px 1fr;
-    }
-
-    .sidebar{
-      position:sticky;
-      top:0;
-      height:100vh;
-      padding:18px 14px;
-      background:linear-gradient(180deg, rgba(209,19,19,.06), rgba(255,255,255,.02));
-      border-right:1px solid var(--line);
-      backdrop-filter:blur(12px);
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:12px 12px 16px;
-      border-bottom:1px solid var(--line);
-      margin-bottom:14px;
-    }
-    .logo{
-      width:40px;
-      height:40px;
-      border-radius:14px;
-      background:
-        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.55), transparent 60%),
-        linear-gradient(135deg, rgba(124,58,237,1), rgba(34,197,94,1));
-      box-shadow:0 10px 30px rgba(124,58,237,.22);
-    }
-    .brand h1{ font-size:14px; margin:0; letter-spacing:.3px; }
-    .brand p{ margin:2px 0 0; color:var(--muted); font-size:12px; }
-
-    .nav{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      padding:8px 6px;
-    }
-    .nav a{
-      text-decoration:none;
-      color:var(--text);
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid transparent;
-      transition:transform .15s ease, background .15s ease, border-color .15s ease;
-    }
-    .nav a:hover{
-      transform:translateY(-1px);
-      background:rgba(255,255,255,.05);
-      border-color:rgba(255,255,255,.08);
-    }
-    .nav .active{
-      background:rgba(124,58,237,.18);
-      border-color:rgba(124,58,237,.35);
-      box-shadow:0 10px 28px rgba(124,58,237,.16);
-    }
-    .icon{
-      width:28px;
-      height:28px;
-      display:grid;
-      place-items:center;
-      border-radius:10px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.08);
-      font-size:14px;
-    }
-
-    .profile{
-      position:absolute;
-      left:14px;
-      right:14px;
-      bottom:14px;
-      padding:12px;
-      border-radius:16px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    .avatar{
-      width:36px;
-      height:36px;
-      border-radius:14px;
-      background:rgba(255,255,255,.09);
-      border:1px solid rgba(255,255,255,.10);
-      display:grid;
-      place-items:center;
-      font-weight:700;
-    }
-    .profile small{ color:var(--muted); display:block; margin-top:2px; }
-
-    .main{ padding:22px 22px 36px; }
-
-    .topbar{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      justify-content:space-between;
-      align-items:flex-end;
-      margin-bottom:16px;
-    }
-    .headline h2{ margin:0; font-size:22px; letter-spacing:.2px; }
-    .headline p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
-
-    .stats{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .stat{
-      min-width:160px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
-      padding:10px 12px;
-      transition:transform .15s ease;
-    }
-    .stat:hover{ transform:translateY(-1px); }
-    .stat .k{ color:var(--muted); font-size:12px; }
-    .stat .v{ font-size:18px; font-weight:700; margin-top:2px; }
-
-    .filters{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:flex-end;
-      padding:12px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
-      margin-bottom:16px;
-    }
-    .filters label{ color:var(--muted); font-size:12px; }
-    select, input, button{
-      appearance:none;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(15,27,51,.55);
-      color:var(--text);
-      padding:10px 12px;
-      outline:none;
-    }
-    input[type="search"]{ min-width:240px; }
-    button{
-      cursor:pointer;
-      background:linear-gradient(135deg, rgba(124,58,237,.95), rgba(99,102,241,.85));
-      border-color:rgba(124,58,237,.45);
-      font-weight:600;
-    }
-    .link{
-      text-decoration:none;
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.06);
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-    }
-    .inlineForm{ display:inline; }
-    .ghostButton{
-      cursor:pointer;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:14px;
-      font-weight:600;
-    }
-    .hint{ color:var(--muted); font-size:12px; }
-    .messages{ display:grid; gap:10px; margin-bottom:16px; }
-    .message{ padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06); }
-    .message.success{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.12); }
-    .message.error{ border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); }
-
-    .section{
-      margin-top:18px;
-    }
-    .section h3{
-      margin:0 0 12px;
-      font-size:16px;
-      letter-spacing:.2px;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:12px;
-    }
-    @media (min-width: 1100px){
-      .grid{ grid-template-columns:1fr 1fr; }
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .cardHeader{
-      padding:14px 16px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:flex-start;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background:rgba(0,0,0,.10);
-    }
-    .meta .id{
-      font-weight:800;
-      letter-spacing:.2px;
-      font-size:14px;
-    }
-    .meta .sub{
-      margin-top:4px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.4;
-    }
-
-    .chips{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .chip{
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.06);
-      white-space:nowrap;
-    }
-    .chip.ok{ border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.12); }
-    .chip.warn{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.12); }
-    .chip.bad{ border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); }
-
-    .cardBody{
-      padding:14px 16px 16px;
-      display:grid;
-      gap:12px;
-      grid-template-columns:1.1fr .9fr;
-    }
-    @media (max-width: 760px){
-      .cardBody{ grid-template-columns:1fr; }
-    }
-    .sectionTitle{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:6px;
-      letter-spacing:.2px;
-    }
-    .items{
-      margin:0;
-      padding-left:18px;
-    }
-    .items li{ margin:6px 0; }
-
-    .totals{
-      background:rgba(0,0,0,.12);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
-      padding:12px;
-    }
-    .row{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      font-size:13px;
-      padding:6px 0;
-      border-bottom:1px dashed rgba(255,255,255,.10);
-    }
-    .row:last-child{ border-bottom:none; }
-    .money{
-      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
-    .empty{
-      padding:20px;
-      border-radius:18px;
-      border:1px dashed rgba(255,255,255,.18);
-      background:rgba(255,255,255,.04);
-      text-align:center;
-      color:var(--muted);
-    }
-
-    @media (max-width: 980px){
-      .layout{ grid-template-columns:1fr; }
-      .sidebar{ height:auto; position:relative; }
-      .profile{ position:relative; margin-top:10px; }
-    }
-  </style>
+  <title>Admin Finance Workspace</title>
+  <style>{% include "market_finance/includes/admin_finance_theme_styles.html" %}</style>
 </head>
 <body>
+  {% include "includes/logout_button.html" %}
   <div class="layout page">
     <aside class="sidebar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="logo brandLogo"></div>
         <div>
           <h1>Market Finance</h1>
-          <p>Platform Administration</p>
+          <p>Admin workspace</p>
         </div>
       </div>
 
       <nav class="nav">
-        <a class="active" href="/finance/admin/dashboard/">
+        <a class="{% if current_section == 'overview' %}active{% endif %}" href="{% url 'market_finance:admin_finance_dashboard' %}{{ report_query }}">
+          <span class="icon">◫</span>
+          <span>Overview</span>
+        </a>
+        <a class="{% if current_section == 'reports' %}active{% endif %}" href="{% url 'market_finance:admin_finance_reports' %}{{ report_query }}">
           <span class="icon">£</span>
-          <span>Finance Dashboard</span>
+          <span>Financial Reports</span>
+        </a>
+        <a class="{% if current_section == 'settlements' %}active{% endif %}" href="{% url 'market_finance:admin_finance_settlements' %}{{ settlement_query }}">
+          <span class="icon">⇄</span>
+          <span>Settlements</span>
+        </a>
+        <a class="{% if current_section == 'exports' %}active{% endif %}" href="{% url 'market_finance:admin_finance_exports' %}{{ report_query }}">
+          <span class="icon">↓</span>
+          <span>Exports</span>
         </a>
         <a href="/admin/">
-          <span class="icon">⚙️</span>
+          <span class="icon">⚙</span>
           <span>Django Admin</span>
         </a>
       </nav>
@@ -387,17 +61,28 @@
 
       <div class="topbar">
         <div class="headline">
-          <h2>Admin Commission Dashboard</h2>
-          <p>Monitor platform-level commission, export financial reports, and manage weekly producer settlements.</p>
+          {% if current_section == "overview" %}
+            <h2>Admin Finance Overview</h2>
+            <p>Platform-wide order value, commission, producer payouts, and recent finance activity for the selected reporting period.</p>
+          {% elif current_section == "reports" %}
+            <h2>Financial Reports</h2>
+            <p>Generate filtered network commission reports, inspect multi-vendor order breakdowns, and trace producer payout allocations to source suborders.</p>
+          {% elif current_section == "settlements" %}
+            <h2>Settlement Monitoring</h2>
+            <p>Review weekly settlement periods, generate payout records, and confirm payment status across producers without mixing into the producer dashboard.</p>
+          {% else %}
+            <h2>Exports & Downloads</h2>
+            <p>Download the current admin report in CSV, Excel-compatible, or PDF formats with the exact filters currently applied.</p>
+          {% endif %}
         </div>
 
         <div class="stats">
           <div class="stat">
-            <div class="k">Gross sales</div>
+            <div class="k">Total order value</div>
             <div class="v money">£{{ gross_sales|floatformat:2 }}</div>
           </div>
           <div class="stat">
-            <div class="k">Platform commission</div>
+            <div class="k">Network commission</div>
             <div class="v money">£{{ total_commission|floatformat:2 }}</div>
           </div>
           <div class="stat">
@@ -405,17 +90,34 @@
             <div class="v money">£{{ total_payouts|floatformat:2 }}</div>
           </div>
           <div class="stat">
-            <div class="k">Orders in report</div>
-            <div class="v">{{ order_count }}</div>
+            <div class="k">Processed orders</div>
+            <div class="v">{{ processed_order_count }}</div>
+          </div>
+          <div class="stat">
+            <div class="k">Settlement records</div>
+            <div class="v">{{ paid_settlement_count }}</div>
+          </div>
+          <div class="stat">
+            <div class="k">Producers covered</div>
+            <div class="v">{{ paid_producer_count }}</div>
           </div>
         </div>
       </div>
 
       <form class="filters" method="get">
         <div>
+          <label><b>Quick period</b></label><br>
+          <select name="period">
+            {% for option in period_choices %}
+              <option value="{{ option.value }}" {% if period == option.value %}selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
           <label><b>Status</b></label><br>
           <select name="status">
-            <option value="">All</option>
+            <option value="">All statuses</option>
             {% for value, label in status_choices %}
               <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
@@ -449,303 +151,640 @@
           <input type="search" name="q" placeholder="producer, customer, order id" value="{{ q }}">
         </div>
 
-        <div style="display:flex; gap:10px;">
-          <button type="submit">Apply</button>
-          <a class="link" href="/finance/admin/dashboard/">Reset</a>
-          <a class="link" href="{% url 'market_finance:export_admin_finance_csv' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download CSV</a>
-          <a class="link" href="{% url 'market_finance:export_admin_finance_excel' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download Excel</a>
-          <a class="link" href="{% url 'market_finance:export_admin_finance_pdf' %}?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Download PDF</a>
+        <div class="filterActions">
+          <button type="submit">Apply filters</button>
+          <a class="linkBtn ghost" href="{% if current_section == 'reports' %}{% url 'market_finance:admin_finance_reports' %}{% elif current_section == 'settlements' %}{% url 'market_finance:admin_finance_settlements' %}{% elif current_section == 'exports' %}{% url 'market_finance:admin_finance_exports' %}{% else %}{% url 'market_finance:admin_finance_dashboard' %}{% endif %}">Reset</a>
         </div>
 
-        <div class="hint">These filters affect the running totals, order summaries, and commission records.</div>
+        <div class="hint">Filters affect the metrics, order drilldowns, producer totals, and export output together.</div>
       </form>
 
-      <section class="section">
-        <h3>Running Totals</h3>
-        <div class="grid">
-          <article class="card">
-            <div class="cardHeader">
-              <div class="meta">
-                <div class="id">Monthly Summary</div>
-                <div class="sub">{{ month_summary.label }}</div>
-              </div>
-            </div>
-            <div class="cardBody">
-              <div class="totals">
-                <div class="row"><span>Gross sales</span><span class="money">£{{ month_summary.gross_sales|floatformat:2 }}</span></div>
-                <div class="row"><span>Commission</span><span class="money">£{{ month_summary.total_commission|floatformat:2 }}</span></div>
-                <div class="row"><span>Producer payouts</span><span class="money">£{{ month_summary.total_payouts|floatformat:2 }}</span></div>
-              </div>
-            </div>
-          </article>
+      <div class="quickFilters">
+        {% for option in period_choices %}
+          <a class="{% if period == option.value %}active{% endif %}" href="{% if current_section == 'reports' %}{% url 'market_finance:admin_finance_reports' %}{% elif current_section == 'settlements' %}{% url 'market_finance:admin_finance_settlements' %}{% elif current_section == 'exports' %}{% url 'market_finance:admin_finance_exports' %}{% else %}{% url 'market_finance:admin_finance_dashboard' %}{% endif %}?period={{ option.value }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if producer_filter %}&producer={{ producer_filter }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}">
+            {{ option.label }}
+          </a>
+        {% endfor %}
+      </div>
 
-          <article class="card">
-            <div class="cardHeader">
-              <div class="meta">
-                <div class="id">Year To Date</div>
-                <div class="sub">{{ ytd_summary.label }}</div>
-              </div>
+      {% if current_section == "overview" %}
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Reporting Snapshot</h3>
+              <p>Current filter totals plus explicit monthly and year-to-date summaries for TC-025 reporting visibility.</p>
             </div>
-            <div class="cardBody">
-              <div class="totals">
-                <div class="row"><span>Gross sales</span><span class="money">£{{ ytd_summary.gross_sales|floatformat:2 }}</span></div>
-                <div class="row"><span>Commission</span><span class="money">£{{ ytd_summary.total_commission|floatformat:2 }}</span></div>
-                <div class="row"><span>Producer payouts</span><span class="money">£{{ ytd_summary.total_payouts|floatformat:2 }}</span></div>
+          </div>
+          <div class="grid three">
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Selected period</div>
+                  <div class="sub">Metrics driven by the active report filters.</div>
+                </div>
               </div>
-            </div>
-          </article>
-        </div>
-      </section>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Total order value</span><span class="money">£{{ gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission at 5%</span><span class="money">£{{ total_commission|floatformat:2 }}</span></div>
+                  <div class="row"><span>Producer payouts</span><span class="money">£{{ total_payouts|floatformat:2 }}</span></div>
+                  <div class="row"><span>Orders processed</span><span>{{ processed_order_count }}</span></div>
+                  <div class="row"><span>Orders in report</span><span>{{ order_count }}</span></div>
+                </div>
+              </div>
+            </article>
 
-      <section class="section">
-        <h3>Order Summaries</h3>
-        {% if order_summaries %}
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Monthly Summary</div>
+                  <div class="sub">{{ month_summary.label }}</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Gross sales</span><span class="money">£{{ month_summary.gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission</span><span class="money">£{{ month_summary.total_commission|floatformat:2 }}</span></div>
+                  <div class="row"><span>Producer payouts</span><span class="money">£{{ month_summary.total_payouts|floatformat:2 }}</span></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Year To Date</div>
+                  <div class="sub">{{ ytd_summary.label }}</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Gross sales</span><span class="money">£{{ ytd_summary.gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission</span><span class="money">£{{ ytd_summary.total_commission|floatformat:2 }}</span></div>
+                  <div class="row"><span>Producer payouts</span><span class="money">£{{ ytd_summary.total_payouts|floatformat:2 }}</span></div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Recent Financial Activity</h3>
+              <p>Latest suborder and settlement events to help admin spot operational changes quickly.</p>
+            </div>
+          </div>
+          {% if recent_activity %}
+            <div class="activityList">
+              {% for activity in recent_activity %}
+                <div class="activityRow">
+                  <div>
+                    <div class="title">{{ activity.title }}</div>
+                    <div class="muted">{{ activity.detail }} • {{ activity.timestamp|date:"d M Y, H:i" }}</div>
+                  </div>
+                  <div class="money">
+                    {% if activity.kind == "suborder" %}£{{ activity.amount|floatformat:2 }} commission{% else %}£{{ activity.amount|floatformat:2 }} payout{% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty">
+              <h3>No finance activity yet</h3>
+              <p style="margin:0;">Orders and settlements will appear here once the platform starts processing payments.</p>
+            </div>
+          {% endif %}
+        </section>
+
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Producer Snapshot</h3>
+              <p>Per-producer totals across the filtered report window, useful for quick payout and commission review.</p>
+            </div>
+          </div>
+          {% if producer_summaries %}
+            <div class="tableWrap">
+              <table class="dataTable">
+                <thead>
+                  <tr>
+                    <th>Producer</th>
+                    <th>Orders</th>
+                    <th>Suborders</th>
+                    <th>Gross sales</th>
+                    <th>Commission</th>
+                    <th>Payouts</th>
+                    <th>Latest delivery</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for summary in producer_summaries %}
+                    <tr>
+                      <td>{{ summary.producer.business_name|default:summary.producer.username }}</td>
+                      <td>{{ summary.order_count }}</td>
+                      <td>{{ summary.suborder_count }}</td>
+                      <td class="money">£{{ summary.gross_sales|floatformat:2 }}</td>
+                      <td class="money">£{{ summary.commission_total|floatformat:2 }}</td>
+                      <td class="money">£{{ summary.payout_total|floatformat:2 }}</td>
+                      <td>{{ summary.latest_delivery|date:"d M Y, H:i" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty">
+              <h3>No producers in this range</h3>
+              <p style="margin:0;">Adjust the filters to widen the reporting window.</p>
+            </div>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      {% if current_section == "reports" %}
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Commission Report</h3>
+              <p>Commission is calculated on the full order total while producer payouts remain split per producer suborder at 95%.</p>
+            </div>
+          </div>
+          <div class="workspaceNote" style="margin-bottom:14px;">
+            This report is traceable back to parent orders and producer suborders. For example, a £100 order produces £5.00 commission and £95.00 producer payout, while a £150 multi-vendor order split £80 and £70 produces £7.50 commission with payouts of £76.00 and £66.50.
+          </div>
+          <div class="grid three" style="margin-bottom:14px;">
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Selected Report Period</div>
+                  <div class="sub">Financial totals for the active filters and date range.</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Total order value</span><span class="money">£{{ gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>5% commission amount</span><span class="money">£{{ total_commission|floatformat:2 }}</span></div>
+                  <div class="row"><span>Producer payments (95%)</span><span class="money">£{{ total_payouts|floatformat:2 }}</span></div>
+                  <div class="row"><span>Orders processed</span><span>{{ processed_order_count }}</span></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Monthly Summary</div>
+                  <div class="sub">{{ month_summary.label }}</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Order value</span><span class="money">£{{ month_summary.gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission total</span><span class="money">£{{ month_summary.total_commission|floatformat:2 }}</span></div>
+                  <div class="row"><span>Producer payouts</span><span class="money">£{{ month_summary.total_payouts|floatformat:2 }}</span></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Year-To-Date Totals</div>
+                  <div class="sub">{{ ytd_summary.label }}</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Order value</span><span class="money">£{{ ytd_summary.gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission total</span><span class="money">£{{ ytd_summary.total_commission|floatformat:2 }}</span></div>
+                  <div class="row"><span>Producer payouts</span><span class="money">£{{ ytd_summary.total_payouts|floatformat:2 }}</span></div>
+                </div>
+              </div>
+            </article>
+          </div>
           <div class="grid">
             {% for summary in order_summaries %}
               <article class="card">
                 <div class="cardHeader">
                   <div class="meta">
                     <div class="id">Order #{{ summary.order.id }}</div>
-                    <div class="sub">
-                      Customer: <b>{{ summary.customer.username }}</b> • Created <b>{{ summary.order.created_at|date:"M d, Y H:i" }}</b>
-                    </div>
+                    <div class="sub">Customer <b>{{ summary.customer.username }}</b> • Created <b>{{ summary.order.created_at|date:"M d, Y H:i" }}</b></div>
                   </div>
                   <div class="chips">
-                    <span class="chip">{{ summary.supplier_count }} supplier{{ summary.supplier_count|pluralize }}</span>
+                    <span class="chip">{{ summary.supplier_count }} producer{{ summary.supplier_count|pluralize }}</span>
                     <span class="chip">{{ summary.status_summary }}</span>
+                    <span class="chip">{{ summary.settlement_status }}</span>
                   </div>
                 </div>
+
                 <div class="cardBody">
                   <div>
-                    <div class="sectionTitle">SUPPLIER BREAKDOWN</div>
-                    <ul class="items">
+                    <div class="miniGrid">
+                      <div class="miniCard">
+                        <div class="label">Order total</div>
+                        <div class="value money">£{{ summary.order_total|floatformat:2 }}</div>
+                      </div>
+                      <div class="miniCard">
+                        <div class="label">Commission total</div>
+                        <div class="value money">£{{ summary.commission_total|floatformat:2 }}</div>
+                      </div>
+                      <div class="miniCard">
+                        <div class="label">Producer payouts</div>
+                        <div class="value money">£{{ summary.producer_payout_total|floatformat:2 }}</div>
+                      </div>
+                      <div class="miniCard">
+                        <div class="label">5% check</div>
+                        <div class="value money">£{{ summary.commission_total|floatformat:2 }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="totals">
                       {% for suborder in summary.suborders %}
-                        <li>
-                          {{ suborder.producer.business_name|default:suborder.producer.username }}
-                          <span class="hint">subtotal £{{ suborder.subtotal|floatformat:2 }}, payout £{{ suborder.producer_payout_amount|floatformat:2 }}</span>
-                        </li>
+                        <div class="row">
+                          <span>{{ suborder.producer.business_name|default:suborder.producer.username }}</span>
+                          <span class="money">£{{ suborder.subtotal|floatformat:2 }} → £{{ suborder.producer_payout_amount|floatformat:2 }}</span>
+                        </div>
                       {% endfor %}
-                    </ul>
-                  </div>
-                  <div>
-                    <div class="sectionTitle">TOTALS</div>
-                    <div class="totals">
-                      <div class="row"><span>Order total</span><span class="money">£{{ summary.order_total|floatformat:2 }}</span></div>
-                      <div class="row"><span>Commission</span><span class="money">£{{ summary.commission_total|floatformat:2 }}</span></div>
-                      <div class="row"><span>Producer payouts</span><span class="money">£{{ summary.producer_payout_total|floatformat:2 }}</span></div>
-                    </div>
-                    <div style="margin-top:12px;">
-                      <a class="link" href="{% url 'market_finance:admin_order_finance_detail' summary.order.id %}">View order detail</a>
                     </div>
                   </div>
                 </div>
+
+                <div class="cardFooter">
+                  <span class="hint">Order-level drilldown includes full itemised multi-vendor splits and payment traceability.</span>
+                  <a class="linkBtn" href="{% url 'market_finance:admin_order_finance_detail' summary.order.id %}">View order detail</a>
+                </div>
               </article>
+            {% empty %}
+              <div class="empty" style="grid-column:1/-1;">
+                <h3>No order summaries found</h3>
+                <p style="margin:0;">Try widening the current filters to include more orders.</p>
+              </div>
             {% endfor %}
           </div>
-        {% else %}
-          <div class="empty">
-            <h3 style="margin:0 0 8px; color:var(--text);">No order summaries found</h3>
-            <p style="margin:0;">Try widening the current filters to include more orders.</p>
+        </section>
+
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Order Breakdown</h3>
+              <p>Expandable order finance rows preserve the existing drilldown behavior while adopting the newer dashboard styling.</p>
+            </div>
           </div>
-        {% endif %}
-      </section>
 
-      <section class="section">
-        <h3>Weekly Settlements</h3>
-        <form class="filters" method="get" style="margin-bottom:16px;">
-          <input type="hidden" name="status" value="{{ status_filter }}">
-          <input type="hidden" name="producer" value="{{ producer_filter }}">
-          <input type="hidden" name="date_from" value="{{ date_from }}">
-          <input type="hidden" name="date_to" value="{{ date_to }}">
-          <input type="hidden" name="q" value="{{ q }}">
+          {% if order_summaries %}
+            <section class="activityList">
+              {% for summary in order_summaries %}
+                <article class="card" id="order-card-{{ summary.order.id }}">
+                  <div class="cardHeader">
+                    <div class="meta">
+                      <div class="id">Order #{{ summary.order.id }}</div>
+                      <div class="sub">
+                        Customer: <b>{{ summary.customer.username }}</b><br>
+                        Overall total: <b>£{{ summary.order_total|floatformat:2 }}</b> • Commission: <b>£{{ summary.commission_total|floatformat:2 }}</b>
+                      </div>
+                    </div>
+                    <div class="chips">
+                      <span class="chip">{{ summary.supplier_count }} suppliers</span>
+                      <span class="chip">{{ summary.status_summary }}</span>
+                    </div>
+                  </div>
 
-          <div>
-            <label><b>Settlement week</b></label><br>
-            <select name="settlement_week">
-              <option value="">All weeks</option>
-              {% for week in available_weeks %}
-                <option value="{{ week.value }}" {% if settlement_week == week.value %}selected{% endif %}>{{ week.label }}</option>
+                  <div class="cardFooter">
+                    <span class="hint">Commission stays at 5% of the full order while payouts are kept per producer portion.</span>
+                    <button type="button" class="linkBtn ghost toggleDetailsBtn" data-target="details-{{ summary.order.id }}">Order details <span>&darr;</span></button>
+                  </div>
+
+                  <div class="detailsPanel" id="details-{{ summary.order.id }}">
+                    <div class="detailsInner">
+                      <div class="box">
+                        <h3>Per-producer split</h3>
+                        {% for suborder in summary.suborders %}
+                          <div class="row"><span>{{ suborder.producer.business_name|default:suborder.producer.username }}</span><span class="money">£{{ suborder.subtotal|floatformat:2 }}</span></div>
+                          <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount|floatformat:2 }}</span></div>
+                          <div class="row"><span>Payout</span><span class="money">£{{ suborder.producer_payout_amount|floatformat:2 }}</span></div>
+                        {% endfor %}
+                      </div>
+
+                      <div class="box">
+                        <h3>Linked records</h3>
+                        <div class="row"><span>Parent order</span><span>#{{ summary.order.id }}</span></div>
+                        {% for suborder in summary.suborders %}
+                          <div class="row"><span>Suborder {{ forloop.counter }}</span><span>#{{ suborder.id }} • {{ suborder.get_status_display }}</span></div>
+                        {% endfor %}
+                      </div>
+
+                      <div class="box" style="grid-column:1/-1;">
+                        <h3>Items by producer</h3>
+                        {% for suborder in summary.suborders %}
+                          <div class="muted" style="margin:0 0 6px;">{{ suborder.producer.business_name|default:suborder.producer.username }}</div>
+                          <ul class="items">
+                            {% for item in suborder.items.all %}
+                              <li>{{ item.product_name }} x{{ item.quantity }} <span class="muted">• line £{{ item.line_total|floatformat:2 }}</span></li>
+                            {% empty %}
+                              <li class="muted">No items recorded.</li>
+                            {% endfor %}
+                          </ul>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </article>
               {% endfor %}
-            </select>
+            </section>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      {% if current_section == "settlements" %}
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Weekly Settlements</h3>
+              <p>Settlement weeks run from <b>Monday to Sunday</b>. Stored weekly settlement records are shown first for auditability, and pending rows only appear when delivered suborders exist for a producer-week but no settlement record has been generated yet.</p>
+            </div>
           </div>
 
-          <div style="display:flex; gap:10px;">
-            <button type="submit">Apply week</button>
-            <a class="link" href="/finance/admin/dashboard/?status={{ status_filter }}&producer={{ producer_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&q={{ q }}">Show all weeks</a>
-          </div>
+          <form class="filters" method="get">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="hidden" name="producer" value="{{ producer_filter }}">
+            <input type="hidden" name="date_from" value="{{ date_from }}">
+            <input type="hidden" name="date_to" value="{{ date_to }}">
+            <input type="hidden" name="q" value="{{ q }}">
+            <input type="hidden" name="period" value="{{ period }}">
 
-          <div class="hint">This filter only affects the weekly settlement cards below.</div>
-        </form>
+            <div>
+              <label><b>Settlement week</b></label><br>
+              <select name="settlement_week">
+                <option value="">All weeks</option>
+                {% for week in available_weeks %}
+                  <option value="{{ week.value }}" {% if settlement_week == week.value %}selected{% endif %}>{{ week.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
 
-        {% if settlement_week %}
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin:-4px 0 16px;">
-            {% if previous_week_query %}
-              <a class="link" href="/finance/admin/dashboard/{{ previous_week_query }}">Previous week</a>
-            {% endif %}
-            {% if next_week_query %}
-              <a class="link" href="/finance/admin/dashboard/{{ next_week_query }}">Next week</a>
-            {% endif %}
-          </div>
-        {% endif %}
+            <div class="filterActions">
+              <button type="submit">Apply week</button>
+              <a class="linkBtn ghost" href="{% url 'market_finance:admin_finance_settlements' %}{{ report_query }}">Show all weeks</a>
+            </div>
+          </form>
 
-        {% if settlements %}
-          <div class="grid">
-            {% for settlement in settlements %}
-              <article class="card">
-                <div class="cardHeader">
-                  <div class="meta">
-                    <div class="id">{{ settlement.producer.business_name|default:settlement.producer.username }}</div>
-                    <div class="sub">
-                      Settlement week: <b>{{ settlement.week_start|date:"M d, Y" }}</b> to <b>{{ settlement.week_end|date:"M d, Y" }}</b>
+          {% if settlements %}
+            <div class="settlementStack">
+              {% for settlement in settlements %}
+                <article class="card settlementCard">
+                  <div class="settlementHero">
+                    <div>
+                      <h4>{{ settlement.producer.business_name|default:settlement.producer.username }}</h4>
+                      <p>Settlement week <b>{{ settlement.week_start|date:"d M Y" }}</b> to <b>{{ settlement.week_end|date:"d M Y" }}</b> • Monday-based weekly settlement window</p>
                     </div>
-                  </div>
-
-                  <div class="chips">
-                    {% if settlement.record %}
-                      {% if settlement.record.status == "PAID" %}
-                        <span class="chip ok">Paid</span>
-                      {% else %}
-                        <span class="chip warn">Generated</span>
-                      {% endif %}
-                    {% elif not settlement.has_data %}
-                      <span class="chip">No orders</span>
-                    {% else %}
-                      <span class="chip warn">Not generated</span>
-                    {% endif %}
-                    <span class="chip">{{ settlement.suborder_count }} suborders</span>
-                  </div>
-                </div>
-
-                <div class="cardBody">
-                  <div>
-                    <div class="sectionTitle">SETTLEMENT SUMMARY</div>
-                    <ul class="items">
-                      <li>Producer: <b>{{ settlement.producer.business_name|default:settlement.producer.username }}</b></li>
-                      <li>Week start: <b>{{ settlement.week_start|date:"d M Y" }}</b></li>
-                      <li>Week end: <b>{{ settlement.week_end|date:"d M Y" }}</b></li>
-                      <li>Included suborders: <b>{{ settlement.suborder_count }}</b></li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <div class="sectionTitle">TOTALS</div>
-                    <div class="totals">
-                      <div class="row"><span>Gross sales</span><span class="money">£{{ settlement.gross_sales|floatformat:2 }}</span></div>
-                      <div class="row"><span>Commission</span><span class="money">£{{ settlement.commission|floatformat:2 }}</span></div>
-                      <div class="row"><b>Producer payout</b><b class="money">£{{ settlement.payout|floatformat:2 }}</b></div>
+                    <div class="settlementHeroMeta">
                       {% if settlement.record %}
-                        <div class="row"><span>Record status</span><span>{{ settlement.record.get_status_display }}</span></div>
+                        {% if settlement.record.status == "PAID" %}
+                          <span class="chip ok">Paid</span>
+                        {% else %}
+                          <span class="chip status">Generated</span>
+                        {% endif %}
+                      {% elif settlement.has_data %}
+                        <span class="chip">Pending record</span>
                       {% endif %}
+                      <span class="chip">{{ settlement.suborder_count }} suborders</span>
                     </div>
                   </div>
-                </div>
 
-                <div class="cardHeader" style="border-top:1px solid rgba(255,255,255,.08); border-bottom:none; align-items:center;">
-                  <div class="hint">
-                    {% if settlement.record %}
-                      Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}
-                      {% if settlement.record.paid_at %}
-                        • Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}
-                      {% endif %}
-                    {% elif not settlement.has_data %}
-                      No delivered suborders for this settlement period.
-                    {% else %}
-                      Create a settlement record for this producer-week.
-                    {% endif %}
+                  <div class="settlementBody">
+                    <div class="settlementSidebar">
+                      <section class="settlementPanel">
+                        <h5>Weekly Summary</h5>
+                        <div class="settlementSummary">
+                          <div class="settlementStat"><span class="label">Gross sales</span><strong class="money">£{{ settlement.gross_sales|floatformat:2 }}</strong></div>
+                          <div class="settlementStat"><span class="label">Commission deducted</span><strong class="money">£{{ settlement.commission|floatformat:2 }}</strong></div>
+                          <div class="settlementStat"><span class="label">Producer payout</span><strong class="money">£{{ settlement.payout|floatformat:2 }}</strong></div>
+                          <div class="settlementStat"><span class="label">Record status</span><strong>{% if settlement.record %}{{ settlement.record.get_status_display }}{% else %}Pending generation{% endif %}</strong></div>
+                        </div>
+                      </section>
+
+                      <section class="settlementPanel">
+                        <h5>Audit Details</h5>
+                        <ul class="settlementAudit">
+                          <li>Producer: <b>{{ settlement.producer.business_name|default:settlement.producer.username }}</b></li>
+                          <li>Settlement week starts: <b>{{ settlement.week_start|date:"l d M Y" }}</b></li>
+                          <li>Settlement week ends: <b>{{ settlement.week_end|date:"l d M Y" }}</b></li>
+                          <li>Included delivered suborders: <b>{{ settlement.suborder_count }}</b></li>
+                          <li>Settlement record: <b>{% if settlement.record %}Stored{% else %}Pending generation{% endif %}</b></li>
+                          <li>Audit source: <b>Delivered producer suborders</b></li>
+                        </ul>
+                      </section>
+                    </div>
+
+                    <div class="settlementMain">
+                      <section class="settlementPanel">
+                        <h5>Contributing orders</h5>
+                        <div class="settlementTableWrap">
+                          <table class="settlementTable">
+                            <thead>
+                              <tr>
+                                <th>Order</th>
+                                <th>Suborder</th>
+                                <th>Delivery</th>
+                                <th>Subtotal</th>
+                                <th>Commission</th>
+                                <th>Payout</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% if settlement.suborders %}
+                                {% for suborder in settlement.suborders %}
+                                  <tr>
+                                    <td>#{{ suborder.order.id }}</td>
+                                    <td>#{{ suborder.id }}</td>
+                                    <td>{{ suborder.delivery_date|date:"d M Y, H:i" }}</td>
+                                    <td class="money">£{{ suborder.subtotal|floatformat:2 }}</td>
+                                    <td class="money">£{{ suborder.commission_amount|floatformat:2 }}</td>
+                                    <td class="money">£{{ suborder.producer_payout_amount|floatformat:2 }}</td>
+                                  </tr>
+                                {% endfor %}
+                              {% else %}
+                                <tr>
+                                  <td colspan="6" class="muted">No contributing delivered suborders are attached to this stored record in the current filtered dataset.</td>
+                                </tr>
+                              {% endif %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    </div>
                   </div>
 
-                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    {% if settlement.has_data %}
-                      <form class="inlineForm" method="post" action="{% url 'market_finance:generate_settlement' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
-                        <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
-                        <button type="submit" class="ghostButton">
-                          {% if settlement.record %}Refresh record{% else %}Generate record{% endif %}
-                        </button>
-                      </form>
+                  <div class="settlementActions">
+                    <span class="hint">
+                      {% if settlement.record %}
+                        Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}{% if settlement.record.paid_at %} • Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}{% endif %}
+                      {% elif settlement.has_data %}
+                        Delivered orders exist for this producer-week, but no settlement record has been stored yet.
+                      {% endif %}
+                    </span>
 
-                      <a class="link" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ settlement.producer.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download report</a>
-
-                      {% if settlement.record and settlement.record.status != "PAID" %}
-                        <form class="inlineForm" method="post" action="{% url 'market_finance:mark_settlement_paid' settlement.record.id %}">
+                    <div class="filterActions">
+                      {% if settlement.has_data %}
+                        <form method="post" action="{% url 'market_finance:generate_settlement' %}">
                           {% csrf_token %}
-                          <button type="submit">Mark paid</button>
+                          <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
+                          <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
+                          <button type="submit" class="ghost">{% if settlement.record %}Refresh stored record{% else %}Generate stored record{% endif %}</button>
                         </form>
+                        <a class="linkBtn" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ settlement.producer.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download CSV</a>
+                        {% if settlement.record and settlement.record.status != "PAID" %}
+                          <form method="post" action="{% url 'market_finance:mark_settlement_paid' settlement.record.id %}">
+                            {% csrf_token %}
+                            <button type="submit">Mark paid</button>
+                          </form>
+                        {% endif %}
                       {% endif %}
-                    {% endif %}
-                  </div>
-                </div>
-              </article>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="empty">
-            <h3 style="margin:0 0 8px; color:var(--text);">No settlement-ready records</h3>
-            <p style="margin:0;">Delivered suborders will appear here once producer orders move through the full lifecycle.</p>
-          </div>
-        {% endif %}
-      </section>
-
-      <section class="section">
-        <h3>Commission Records</h3>
-        {% if suborders %}
-          <div class="grid">
-            {% for suborder in suborders %}
-              <article class="card">
-                <div class="cardHeader">
-                  <div class="meta">
-                    <div class="id">SubOrder #{{ suborder.id }} • Order #{{ suborder.order.id }}</div>
-                    <div class="sub">
-                      Producer: <b>{{ suborder.producer.business_name|default:suborder.producer.username }}</b><br>
-                      Customer: <b>{{ suborder.order.customer.username }}</b> • Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
                     </div>
                   </div>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty">
+              <h3>No settlement-ready records</h3>
+              <p style="margin:0;">Delivered suborders will appear here once orders move through the full lifecycle.</p>
+            </div>
+          {% endif %}
+        </section>
+      {% endif %}
 
-                  <div class="chips">
-                    {% if suborder.status == "DELIVERED" %}
-                      <span class="chip ok">{{ suborder.status }}</span>
-                    {% elif suborder.status == "CANCELLED" %}
-                      <span class="chip bad">{{ suborder.status }}</span>
-                    {% else %}
-                      <span class="chip warn">{{ suborder.status }}</span>
-                    {% endif %}
-                  </div>
+      {% if current_section == "exports" %}
+        <div class="workspaceNote">
+          The export links below always use the active filters shown at the top of the page, including period, date range, producer, status, and search terms.
+        </div>
+
+        <section class="section">
+          <div class="grid three">
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">CSV Export</div>
+                  <div class="sub">Required export for admin reporting and downstream spreadsheet analysis.</div>
                 </div>
-
-                <div class="cardBody">
-                  <div>
-                    <div class="sectionTitle">ITEMS</div>
-                    <ul class="items">
-                      {% for item in suborder.items.all %}
-                        <li>{{ item.product_name }} - Qty: <b>{{ item.quantity }}</b> <span class="hint">at £{{ item.unit_price }}</span></li>
-                      {% empty %}
-                        <li>No items recorded.</li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <div class="sectionTitle">TOTALS</div>
-                    <div class="totals">
-                      <div class="row"><span>Subtotal</span><span class="money">£{{ suborder.subtotal|floatformat:2 }}</span></div>
-                      <div class="row"><span>Commission</span><span class="money">£{{ suborder.commission_amount|floatformat:2 }}</span></div>
-                      <div class="row"><span>Payout</span><span class="money">£{{ suborder.producer_payout_amount|floatformat:2 }}</span></div>
-                      <div class="row"><span>Status</span><span>{{ suborder.get_status_display }}</span></div>
-                    </div>
-                  </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Rows</span><span>{{ suborders|length }} suborders</span></div>
+                  <div class="row"><span>Includes</span><span>Per-order and per-producer values</span></div>
                 </div>
-              </article>
-            {% endfor %}
+              </div>
+              <div class="cardFooter">
+                <span class="hint">CSV reflects all filters exactly.</span>
+                <a class="linkBtn" href="{% url 'market_finance:export_admin_finance_csv' %}{{ report_query }}">Download CSV</a>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">Excel-Compatible Export</div>
+                  <div class="sub">Simple workbook-friendly table for quick offline finance review.</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Format</span><span>XLS content type</span></div>
+                  <div class="row"><span>Purpose</span><span>Audit and spreadsheet workflows</span></div>
+                </div>
+              </div>
+              <div class="cardFooter">
+                <span class="hint">Uses the current filter state.</span>
+                <a class="linkBtn" href="{% url 'market_finance:export_admin_finance_excel' %}{{ report_query }}">Download Excel</a>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="cardHeader">
+                <div class="meta">
+                  <div class="id">PDF Snapshot</div>
+                  <div class="sub">Portable summary for quick sharing, sign-off, or archived reporting packs.</div>
+                </div>
+              </div>
+              <div class="cardBody single">
+                <div class="totals">
+                  <div class="row"><span>Report totals</span><span class="money">£{{ gross_sales|floatformat:2 }}</span></div>
+                  <div class="row"><span>Commission</span><span class="money">£{{ total_commission|floatformat:2 }}</span></div>
+                </div>
+              </div>
+              <div class="cardFooter">
+                <span class="hint">Includes totals plus the leading order rows.</span>
+                <a class="linkBtn" href="{% url 'market_finance:export_admin_finance_pdf' %}{{ report_query }}">Download PDF</a>
+              </div>
+            </article>
           </div>
-        {% else %}
-          <div class="empty">
-            <h3 style="margin:0 0 8px; color:var(--text);">No finance records found</h3>
-            <p style="margin:0;">Try widening the filters or seed some demo producer suborders first.</p>
+        </section>
+
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Current Export Scope</h3>
+              <p>Preview of the data that will be exported from the current report state.</p>
+            </div>
           </div>
-        {% endif %}
-      </section>
+          {% if suborders %}
+            <div class="tableWrap">
+              <table class="dataTable">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Suborder</th>
+                    <th>Producer</th>
+                    <th>Status</th>
+                    <th>Subtotal</th>
+                    <th>Commission</th>
+                    <th>Payout</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for suborder in suborders %}
+                    <tr>
+                      <td>#{{ suborder.order.id }}</td>
+                      <td>#{{ suborder.id }}</td>
+                      <td>{{ suborder.producer.business_name|default:suborder.producer.username }}</td>
+                      <td>{{ suborder.get_status_display }}</td>
+                      <td class="money">£{{ suborder.subtotal|floatformat:2 }}</td>
+                      <td class="money">£{{ suborder.commission_amount|floatformat:2 }}</td>
+                      <td class="money">£{{ suborder.producer_payout_amount|floatformat:2 }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty">
+              <h3>No data to export</h3>
+              <p style="margin:0;">Widen the report filters to produce downloadable finance data.</p>
+            </div>
+          {% endif %}
+        </section>
+      {% endif %}
     </main>
   </div>
+
+  <script>
+    document.querySelectorAll('.toggleDetailsBtn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const targetId = btn.getAttribute('data-target');
+        const card = btn.closest('.card');
+        const panel = document.getElementById(targetId);
+        if (!card || !panel) {
+          return;
+        }
+
+        const isOpen = card.classList.contains('open');
+        card.classList.toggle('open', !isOpen);
+        btn.innerHTML = isOpen ? 'Order details <span>&darr;</span>' : 'Hide details <span>&uarr;</span>';
+      });
+    });
+  </script>
 </body>
 </html>

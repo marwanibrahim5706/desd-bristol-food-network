@@ -1,8 +1,53 @@
 {% if user.is_authenticated %}
-<div style="display:flex; justify-content:flex-end; margin:16px;">
+  <style>
+    .sessionLogout {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+    }
+
+    .sessionLogout form {
+      margin: 0;
+    }
+
+    .sessionLogout button {
+      appearance: none;
+      border: 1px solid rgba(55,65,81,.9);
+      background: rgba(15,23,42,.86);
+      color: #f8fafc;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: .01em;
+      cursor: pointer;
+      box-shadow: 0 14px 30px rgba(2,6,23,.28);
+      backdrop-filter: blur(14px);
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .sessionLogout button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(59,130,246,.36);
+      background: rgba(30,41,59,.94);
+    }
+
+    @media (max-width: 640px) {
+      .sessionLogout {
+        top: 12px;
+        right: 12px;
+      }
+
+      .sessionLogout button {
+        padding: 9px 12px;
+      }
+    }
+  </style>
+  <div class="sessionLogout">
     <form method="post" action="{% url 'accounts:logout' %}">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
+      {% csrf_token %}
+      <button type="submit">Log out</button>
     </form>
-</div>
+  </div>
 {% endif %}

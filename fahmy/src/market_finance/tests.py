@@ -14,6 +14,7 @@ from market_products.models import Product
 from .models import RecurringOrder
 from .services import (
     build_order_finance_summaries,
+    build_finance_pdf,
     calculate_running_period_summaries,
     generate_order_from_recurring,
     generate_weekly_settlements,
@@ -208,10 +209,25 @@ class AdminFinanceDashboardTests(TestCase):
         self.client.force_login(self.admin)
 
         response = self.client.get(reverse("market_finance:admin_finance_dashboard"))
-        self.assertContains(response, "Order Summaries")
+        self.assertContains(response, "Admin Finance Overview")
         self.assertContains(response, "Monthly Summary")
         self.assertContains(response, "Year To Date")
         self.assertContains(response, "£7.50")
+
+        reports_response = self.client.get(reverse("market_finance:admin_finance_reports"))
+        self.assertContains(reports_response, "Financial Reports")
+        self.assertContains(reports_response, "Commission Report")
+        self.assertContains(reports_response, "Order Breakdown")
+        self.assertContains(reports_response, "Previous 2 weeks")
+        self.assertContains(reports_response, "5% commission amount")
+        self.assertContains(reports_response, "View order detail")
+
+        settlements_response = self.client.get(reverse("market_finance:admin_finance_settlements"))
+        self.assertContains(settlements_response, "Settlement Monitoring")
+
+        exports_page = self.client.get(reverse("market_finance:admin_finance_exports"))
+        self.assertContains(exports_page, "Exports & Downloads")
+        self.assertContains(exports_page, "Download CSV")
 
         order_detail = self.client.get(
             reverse("market_finance:admin_order_finance_detail", args=[self.order.id])
@@ -223,6 +239,7 @@ class AdminFinanceDashboardTests(TestCase):
         csv_response = self.client.get(reverse("market_finance:export_admin_finance_csv"))
         self.assertEqual(csv_response.status_code, 200)
         self.assertIn("suborder_id,order_id,producer,customer", csv_response.content.decode("utf-8"))
+        self.assertIn("gross_sales,150.00", csv_response.content.decode("utf-8"))
 
         excel_response = self.client.get(reverse("market_finance:export_admin_finance_excel"))
         self.assertEqual(excel_response.status_code, 200)
@@ -231,3 +248,50 @@ class AdminFinanceDashboardTests(TestCase):
         pdf_response = self.client.get(reverse("market_finance:export_admin_finance_pdf"))
         self.assertEqual(pdf_response.status_code, 200)
         self.assertEqual(pdf_response["Content-Type"], "application/pdf")
+
+    def test_non_admin_users_cannot_access_admin_finance_pages(self):
+        self.client.force_login(self.producer_one)
+
+        protected_urls = [
+            reverse("market_finance:admin_finance_dashboard"),
+            reverse("market_finance:admin_finance_reports"),
+            reverse("market_finance:admin_finance_settlements"),
+            reverse("market_finance:admin_finance_exports"),
+            reverse("market_finance:admin_order_finance_detail", args=[self.order.id]),
+            reverse("market_finance:export_admin_finance_csv"),
+            reverse("market_finance:export_admin_finance_excel"),
+            reverse("market_finance:export_admin_finance_pdf"),
+        ]
+
+        for url in protected_urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 403)
+
+    def test_settlement_page_prefers_stored_records_and_shows_audit_source_rows(self):
+        generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer_one,
+            week_start=settlement_week_bounds(self.suborder_one.delivery_date)[0],
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("market_finance:admin_finance_settlements"))
+        self.assertContains(response, "Stored")
+        self.assertContains(response, "Contributing orders")
+        self.assertContains(response, f"#{self.order.id}")
+
+
+class FinancePdfTests(TestCase):
+    def test_pdf_builder_adds_text_leading_and_multiple_line_entries(self):
+        pdf = build_finance_pdf(
+            [
+                "Admin Finance Report",
+                "This is a deliberately long finance line that should wrap cleanly across the PDF output instead of collapsing onto a single unreadable row in the exported file.",
+                "Another line",
+            ]
+        )
+
+        self.assertIn(b"TL", pdf)
+        self.assertIn(b"T*", pdf)
+        self.assertTrue(pdf.startswith(b"%PDF-1.4"))
