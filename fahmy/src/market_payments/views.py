@@ -582,7 +582,7 @@ def pay_now(request):
         return _complete_payment(
             request,
             payment,
-            transaction_reference=f"test-{payment.id}",
+            transaction_reference=f"demo-{payment.order_id}",
         )
 
     return redirect(

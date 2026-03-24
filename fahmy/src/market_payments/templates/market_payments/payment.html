@@ -271,6 +271,11 @@
         </div>
 
         {% if producer_sections %}
+          {% if not single_producer_only %}
+            <div class="row" style="margin-bottom: 12px;">
+              <span class="pill neutral">Multiple producers detected</span>
+            </div>
+          {% endif %}
           {% for section in producer_sections %}
             <div class="producer-block">
               <div class="row" style="margin-bottom: 10px;">
