@@ -634,6 +634,30 @@ class ProducerContentTests(TestCase):
         self.assertFalse(CartItem.objects.filter(cart=cart, product_id=self.product.id).exists())
         self.assertContains(response, "removed from active baskets")
 
+    def test_producer_can_delete_product_used_in_historical_order(self):
+        order = Order.objects.create(customer=self.customer)
+        suborder = ProducerSubOrder.objects.create(
+            order=order,
+            producer=self.producer,
+            delivery_date=timezone.now() + timedelta(days=3),
+        )
+        historical_item = OrderItem.objects.create(
+            suborder=suborder,
+            product=self.product,
+            product_name=self.product.name,
+            unit_price=self.product.price,
+            quantity=1,
+        )
+
+        self.client.force_login(self.producer)
+        response = self.client.post(reverse("producer_product_delete", args=[self.product.id]), follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(id=self.product.id).exists())
+        historical_item.refresh_from_db()
+        self.assertIsNone(historical_item.product)
+        self.assertEqual(historical_item.product_name, "Cooking Onions")
+
     def test_product_delete_requires_post(self):
         self.client.force_login(self.producer)
         response = self.client.get(reverse("producer_product_delete", args=[self.product.id]))

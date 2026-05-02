@@ -340,18 +340,36 @@ def producer_product_delete(request, pk: int):
     product = get_object_or_404(Product, pk=pk, producer=request.user)
     product_name = product.name
     from market_payments.models import CartItem
+    from market_finance.models import RecurringOrder
 
     removed_from_carts = CartItem.objects.filter(product=product).delete()[0]
+    recurring_orders_updated = 0
+    for recurring_order in RecurringOrder.objects.all():
+        data = dict(recurring_order.template_order_data or {})
+        items = data.get("items") or []
+        kept_items = [item for item in items if str(item.get("product_id")) != str(product.id)]
+        if len(kept_items) == len(items):
+            continue
+        recurring_orders_updated += 1
+        if kept_items:
+            data["items"] = kept_items
+            recurring_order.template_order_data = data
+            recurring_order.save(update_fields=["template_order_data", "updated_at"])
+        else:
+            recurring_order.delete()
+
     try:
         product.delete()
         if removed_from_carts:
             messages.success(request, f"{product_name} has been deleted and removed from active baskets.")
+        elif recurring_orders_updated:
+            messages.success(request, f"{product_name} has been deleted and removed from repeat orders.")
         else:
             messages.success(request, f"{product_name} has been deleted.")
     except ProtectedError:
         product.is_active = False
         product.save(update_fields=["is_active"])
-        messages.warning(request, f"{product_name} is used in existing baskets, so it has been hidden from customers.")
+        messages.warning(request, f"{product_name} is linked to protected records, so it has been hidden from customers.")
     return redirect("producer_product_list")
 
 

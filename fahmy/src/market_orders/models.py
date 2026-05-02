@@ -83,8 +83,10 @@ class OrderItem(models.Model):
 
     product = models.ForeignKey(
         "market_products.Product",
-        on_delete=models.PROTECT,
-        related_name="order_items"
+        on_delete=models.SET_NULL,
+        related_name="order_items",
+        null=True,
+        blank=True,
     )
 
     product_name = models.CharField(max_length=255)
