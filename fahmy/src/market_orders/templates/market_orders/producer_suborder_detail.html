@@ -3,218 +3,206 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SubOrder Details</title>
+  <title>Order Details</title>
   <style>
     {% include "market_orders/includes/producer_theme_styles.html" %}
 
-    .wrap{
-      max-width:980px;
-      margin:26px auto;
-      padding:0 16px;
-      animation:fade .35s ease-out both;
+    .detailWrap{
+      max-width:1040px;
     }
 
-    @keyframes fade{
-      from{ opacity:.2; transform:translateY(8px); }
-      to{ opacity:1; transform:none; }
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(30,41,59,.74), rgba(17,24,39,.92));
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-
-    .head{
-      padding:16px 18px;
-      border-bottom:1px solid rgba(55,65,81,.82);
+    .detailHeader{
       display:flex;
       justify-content:space-between;
-      flex-wrap:wrap;
-      gap:10px;
-      background:rgba(30,41,59,.84);
+      gap:24px;
+      align-items:flex-start;
+      margin-bottom:26px;
+      padding:24px;
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      background:linear-gradient(135deg, #ffffff, #fff3e4);
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
     }
 
-    .grid{
+    .detailHeader h1{
+      margin:0;
+      font-size:34px;
+      letter-spacing:-.03em;
+    }
+
+    .detailGrid{
       display:grid;
-      gap:12px;
-      padding:18px;
-      grid-template-columns:1fr;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:20px;
     }
 
-    @media(min-width:860px){
-      .grid{ grid-template-columns:1fr 1fr; }
+    .panel{
+      background:var(--surface);
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
     }
 
-    .box{
-      background:rgba(17,24,39,.78);
-      border:1px solid rgba(55,65,81,.82);
-      border-radius:16px;
-      padding:14px;
+    .panel.full{ grid-column:1 / -1; }
+    .panel h2{ margin:0 0 12px; font-size:16px; }
+    .itemList{ margin:0; padding:0; list-style:none; }
+    .itemList li{ display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line-soft); }
+    .itemList li:last-child{ border-bottom:0; }
+    .inline{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; }
+    .statusActions{ margin-top:16px; }
+    .historyList{ margin:0; padding-left:18px; }
+    .historyList li{ margin:10px 0; color:var(--secondary); }
+
+    @media(max-width:800px){
+      .detailHeader{ flex-direction:column; }
+      .detailGrid{ grid-template-columns:1fr; }
+      .panel.full{ grid-column:auto; }
     }
-
-    h1{ margin:0; font-size:18px; }
-    h3{ margin:0 0 10px; font-size:14px; letter-spacing:.2px; }
-
-    ul{ margin:0; padding-left:18px; }
-    li{ margin:6px 0; }
-
-    .actions{
-      padding:14px 18px;
-      border-top:1px solid rgba(55,65,81,.82);
-      display:flex;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      gap:10px;
-      background:rgba(15,23,42,.62);
-    }
-
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-    }
-
-    .msgs{ padding:12px 18px 0; }
-    .field{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-    .inline{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-    .small-muted{ color:var(--muted); font-size:12px; }
   </style>
 </head>
 <body>
   {% include "includes/logout_button.html" %}
-  <div class="wrap">
-    <div class="card">
-      <div class="head">
+  <div class="producerShell">
+    <aside class="producerNav">
+      <div class="brand">
+        <div class="brandLogo">P</div>
         <div>
-          <h1>SubOrder #{{ suborder.id }} &bull; Order #{{ suborder.order.id }}</h1>
-          <div class="muted">
-            Customer: <b>{{ suborder.order.customer }}</b> &bull;
-            Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }} &bull;
-            Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <span class="pill info">{{ suborder.status }}</span>
-          {% if lead_ok %}
-            <span class="pill ok">&#10003; 48h OK</span>
-          {% else %}
-            <span class="pill bad">&#10005; Lead time</span>
-          {% endif %}
+          <h1>Producer Hub</h1>
+          <p>{{ request.user }}</p>
         </div>
       </div>
 
-      {% if messages %}
-      <div class="msgs">
-        {% for message in messages %}
-          <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
-            {{ message }}
-          </div>
-        {% endfor %}
+      <nav class="nav" aria-label="Producer navigation">
+        <a href="/orders/producer/"><span class="navIcon">H</span><span>Dashboard</span></a>
+        <a class="active" href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
+        <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
+        <a href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
+      </nav>
+
+      <div class="profile">
+        <span class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</span>
+        <span>
+          <strong>{{ request.user }}</strong><br>
+          <span class="muted">Signed in as producer</span>
+        </span>
       </div>
-      {% endif %}
+    </aside>
 
-      <div class="grid">
-        <div class="box">
-          <h3>Customer Contact</h3>
-          <div class="row"><span>Email</span><span>{{ suborder.order.customer.email }}</span></div>
-          <div class="row"><span>Phone</span><span>{{ suborder.order.customer_phone|default:"&mdash;" }}</span></div>
-        </div>
-
-        <div class="box">
-          <h3>Delivery</h3>
-          <div class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"&mdash;" }}</div>
-          <div style="margin-top:10px;">
-            <h3>Special Instructions</h3>
-            <div class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"&mdash;" }}</div>
-          </div>
-        </div>
-
-        <div class="box">
-          <h3>Items</h3>
-          <ul>
-            {% for item in suborder.items.all %}
-              <li>
-                {{ item.product_name }} &mdash; Qty: <b>{{ item.quantity }}</b>
-                <span class="muted">&bull; Unit &pound;{{ item.unit_price }} &bull; Line &pound;{{ item.line_total }}</span>
-              </li>
-            {% empty %}
-              <li class="muted">No items.</li>
-            {% endfor %}
-          </ul>
-        </div>
-
-        <div class="box">
-          <h3>Totals</h3>
-          <div class="row"><span>Subtotal</span><span class="money">&pound;{{ suborder.subtotal }}</span></div>
-          <div class="row"><span>Commission</span><span class="money">&pound;{{ suborder.commission_amount }}</span></div>
-          <div class="row"><b>Payout</b><b class="money">&pound;{{ suborder.producer_payout_amount }}</b></div>
-        </div>
-
-        <div class="box">
-          <h3>Change Status</h3>
-          <div class="small-muted">
-            Allowed next steps depend on current status. Every change is logged.
-          </div>
-
-          <form method="post" action="{% url 'producer_suborder_change_status' suborder.id %}" style="margin-top:10px;">
-            {% csrf_token %}
-
-            <div class="inline">
-              <div class="field" style="min-width:220px;">
-                <label for="new_status">New status</label>
-                <select name="new_status" id="new_status" {% if not allowed_next %}disabled{% endif %} required>
-                  {% if allowed_next %}
-                    {% for s in allowed_next %}
-                      <option value="{{ s }}">{{ s }}</option>
-                    {% endfor %}
-                  {% else %}
-                    <option value="">No transitions available</option>
-                  {% endif %}
-                </select>
-              </div>
-
-              <div class="field" style="flex:1; min-width:240px;">
-                <label for="note">Note (optional)</label>
-                <input type="text" name="note" id="note" placeholder="e.g., Packed and ready" {% if not allowed_next %}disabled{% endif %} />
-              </div>
-
-              <button class="btn" type="submit" {% if not allowed_next %}disabled{% endif %}>Update status</button>
+    <main class="producerMain">
+      <div class="detailWrap">
+        <header class="detailHeader">
+          <div>
+            <p class="eyebrow">Order details</p>
+            <h1>Order #{{ suborder.order.id }}</h1>
+            <p class="muted">Customer {{ suborder.order.customer }} &bull; delivery {{ suborder.delivery_date|date:"M d, Y H:i" }}</p>
+            <div class="chips" style="margin-top:12px;">
+              <span class="chip status" data-s="{{ suborder.status }}">{{ suborder.status }}</span>
+              {% if lead_ok %}
+                <span class="chip ok">48h notice ok</span>
+              {% else %}
+                <span class="chip bad">Short notice</span>
+              {% endif %}
             </div>
+          </div>
+          <a class="linkBtn secondary" href="/orders/producer/dashboard/">Back to orders</a>
+        </header>
 
-            {% if not allowed_next %}
-              <div class="small-muted" style="margin-top:10px;">
-                This suborder is <b>{{ suborder.status }}</b> and cannot be changed further.
-              </div>
-            {% endif %}
-          </form>
-        </div>
-
-        <div class="box">
-          <h3>Status History</h3>
-          <ul>
-            {% for ev in status_events %}
-              <li>
-                <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span> &mdash;
-                <b>{{ ev.old_status }}</b> &rarr; <b>{{ ev.new_status }}</b>
-                <span class="muted">by {{ ev.changed_by.username }}</span>
-                {% if ev.note %}<span class="muted">&bull; &ldquo;{{ ev.note }}&rdquo;</span>{% endif %}
-              </li>
-            {% empty %}
-              <li class="muted">No status changes yet.</li>
+        {% if messages %}
+          <div class="messagesWrap">
+            {% for message in messages %}
+              <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
             {% endfor %}
-          </ul>
+          </div>
+        {% endif %}
+
+        <div class="detailGrid">
+          <section class="panel">
+            <h2>Customer contact</h2>
+            <div class="row"><span>Email</span><span>{{ suborder.order.customer.email }}</span></div>
+            <div class="row"><span>Phone</span><span>{{ suborder.order.customer_phone|default:"&mdash;" }}</span></div>
+          </section>
+
+          <section class="panel">
+            <h2>Delivery</h2>
+            <p class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"&mdash;" }}</p>
+            <h2>Special instructions</h2>
+            <p class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"&mdash;" }}</p>
+          </section>
+
+          <section class="panel">
+            <h2>Items for you</h2>
+            <ul class="itemList">
+              {% for item in suborder.items.all %}
+                <li>
+                  <span>{{ item.product_name }}<br><span class="muted">Unit &pound;{{ item.unit_price }} &bull; Line &pound;{{ item.line_total }}</span></span>
+                  <strong>Qty {{ item.quantity }}</strong>
+                </li>
+              {% empty %}
+                <li class="muted">No items.</li>
+              {% endfor %}
+            </ul>
+          </section>
+
+          <section class="panel">
+            <h2>Money</h2>
+            <div class="row"><span>Subtotal</span><span class="money">&pound;{{ suborder.subtotal }}</span></div>
+            <div class="row"><span>Commission</span><span class="money">&pound;{{ suborder.commission_amount }}</span></div>
+            <div class="row"><strong>Payout</strong><strong class="money">&pound;{{ suborder.producer_payout_amount }}</strong></div>
+          </section>
+
+          <section class="panel full">
+            <h2>Update order progress</h2>
+            <p class="muted">Choose the next available step and add a note if it helps your team.</p>
+            <form method="post" action="{% url 'producer_suborder_change_status' suborder.id %}" class="statusActions">
+              {% csrf_token %}
+              <div class="inline">
+                <div class="field">
+                  <label for="new_status">Next step</label>
+                  <select name="new_status" id="new_status" {% if not allowed_next %}disabled{% endif %} required>
+                    {% if allowed_next %}
+                      {% for s in allowed_next %}
+                        <option value="{{ s }}">{{ s }}</option>
+                      {% endfor %}
+                    {% else %}
+                      <option value="">No next step</option>
+                    {% endif %}
+                  </select>
+                </div>
+
+                <div class="field" style="flex:1; min-width:240px;">
+                  <label for="note">Optional note</label>
+                  <input type="text" name="note" id="note" placeholder="Packed and ready" {% if not allowed_next %}disabled{% endif %}>
+                </div>
+
+                <button type="submit" {% if not allowed_next %}disabled{% endif %}>Save update</button>
+              </div>
+
+              {% if not allowed_next %}
+                <p class="hint">This order is {{ suborder.status }} and has no more available updates.</p>
+              {% endif %}
+            </form>
+          </section>
+
+          <section class="panel full">
+            <h2>Status history</h2>
+            <ul class="historyList">
+              {% for ev in status_events %}
+                <li>
+                  <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span>:
+                  <strong>{{ ev.old_status }}</strong> to <strong>{{ ev.new_status }}</strong>
+                  <span class="muted">by {{ ev.changed_by.username }}</span>
+                  {% if ev.note %}<span class="muted"> | "{{ ev.note }}"</span>{% endif %}
+                </li>
+              {% empty %}
+                <li class="muted">No status changes yet.</li>
+              {% endfor %}
+            </ul>
+          </section>
         </div>
       </div>
-
-      <div class="actions">
-        <a class="linkBtn ghost btn" href="/orders/producer/dashboard/">&larr; Back to dashboard</a>
-        <a class="linkBtn ghost btn" href="/admin/">Admin</a>
-      </div>
-    </div>
+    </main>
   </div>
 </body>
 </html>

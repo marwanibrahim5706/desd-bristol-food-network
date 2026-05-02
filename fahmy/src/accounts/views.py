@@ -59,7 +59,7 @@ def _safe_redirect_or_default(request, next_url, user):
     if user.is_superuser or user.is_staff:
         return redirect("/finance/admin/dashboard/")
     if getattr(user, "role", None) == User.Role.PRODUCER:
-        return redirect("/orders/producer/dashboard/")
+        return redirect("/orders/producer/")
     if getattr(user, "role", None) == User.Role.CUSTOMER:
         return redirect("/discover/")
     if getattr(user, "role", None) == User.Role.ADMIN:

@@ -4,558 +4,331 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Producer Dashboard &bull; Orders</title>
-
   <style>
     {% include "market_orders/includes/producer_theme_styles.html" %}
 
-    .page { animation: fadeUp .45s ease-out both; }
-    @keyframes fadeUp {
-      from { opacity:0; transform: translateY(10px); }
-      to   { opacity:1; transform: translateY(0); }
-    }
-
-    .layout{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns: 280px 1fr;
-    }
-
-    .sidebar{
-      position:sticky;
-      top:0;
-      height:100vh;
-      padding:18px 14px;
-      background: linear-gradient(180deg, rgba(30,41,59,.82), rgba(15,23,42,.94));
-      border-right:1px solid var(--line);
-      backdrop-filter: blur(16px);
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:12px 12px 16px;
-      border-bottom:1px solid var(--line);
-      margin-bottom:14px;
-    }
-
-    .logo{
-      width:40px;
-      height:40px;
-    }
-
-    .brand h1{ font-size:14px; margin:0; letter-spacing:.3px; }
-    .brand p{ margin:2px 0 0; color:var(--muted); font-size:12px; }
-
-    .nav{
+    .orderList{
       display:flex;
       flex-direction:column;
-      gap:8px;
-      padding:8px 6px;
+      gap:20px;
     }
 
-    .nav a{
-      color:var(--text);
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:12px 12px;
-      border-radius:16px;
-      border:1px solid transparent;
-      transition:transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
-    }
-
-    .nav a:hover{
-      transform:translateY(-1px);
-      background:rgba(30,41,59,.86);
-      border-color:rgba(59,130,246,.2);
-    }
-
-    .nav .active{
-      background:rgba(37,99,235,.14);
-      border-color:rgba(59,130,246,.34);
-      box-shadow:inset 3px 0 0 rgba(59,130,246,.9);
-    }
-
-    .icon{
-      width:28px;
-      height:28px;
-      display:grid;
-      place-items:center;
-      border-radius:10px;
-      background:rgba(17,24,39,.72);
-      border:1px solid rgba(55,65,81,.9);
-      font-size:14px;
-    }
-
-    .profile{
-      position:absolute;
-      left:14px;
-      right:14px;
-      bottom:14px;
-      padding:12px;
-      border-radius:16px;
-      background:rgba(17,24,39,.58);
-      border:1px solid rgba(55,65,81,.9);
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
-    .avatar{
-      width:36px;
-      height:36px;
-      border-radius:14px;
-      background:rgba(30,41,59,.78);
-      border:1px solid rgba(55,65,81,.9);
-      display:grid;
-      place-items:center;
-      font-weight:700;
-    }
-
-    .profile small{ color:var(--muted); display:block; margin-top:2px; }
-
-    .main{
-      padding:22px 22px 36px;
-    }
-
-    .topbar{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      justify-content:space-between;
-      align-items:flex-end;
-      margin-bottom:16px;
-    }
-
-    .headline h2{ margin:0; font-size:22px; letter-spacing:.2px; }
-    .headline p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
-
-    .stats{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .stat{
-      min-width:160px;
-      background:rgba(17,24,39,.58);
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:16px;
-      padding:10px 12px;
-      transition:transform .15s ease;
-    }
-
-    .stat:hover{ transform:translateY(-1px); }
-    .stat .k{ color:var(--muted); font-size:12px; }
-    .stat .v{ font-size:18px; font-weight:700; margin-top:2px; }
-
-    .filters{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      padding:12px;
-      background:rgba(17,24,39,.58);
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:16px;
-      margin-bottom:14px;
-    }
-
-    .filters label{ color:var(--muted); font-size:12px; }
-    input[type="search"]{ min-width:240px; }
-
-    .ordersList{
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(30,41,59,.74), rgba(17,24,39,.92));
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+    .orderCard{
+      background:var(--surface);
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+      scroll-margin-top:24px;
       overflow:hidden;
-      transition:transform .18s ease, border-color .18s ease;
-      scroll-margin-top:20px;
     }
 
-    .card:hover{
-      transform:translateY(-2px);
-      border-color:rgba(59,130,246,.32);
-    }
-
-    .cardHeader{
-      padding:14px 16px;
+    .orderHeader{
       display:grid;
-      grid-template-columns:minmax(0, 1.3fr) minmax(320px, .7fr);
-      gap:16px;
-      align-items:start;
-      border-bottom:1px solid rgba(55,65,81,.82);
-      background:rgba(30,41,59,.84);
+      grid-template-columns:minmax(0, 1fr) minmax(280px, 420px);
+      gap:24px;
+      padding:24px;
+      border-bottom:1px solid var(--line-soft);
+      background:linear-gradient(135deg, #ffffff, #fff8ef);
     }
 
-    .meta{ line-height:1.25; }
-    .meta .id{
-      font-weight:800;
-      letter-spacing:.2px;
-      font-size:14px;
+    .orderTitle{
+      margin:0;
+      font-size:18px;
+      line-height:1.25;
     }
 
-    .meta .sub{
-      margin-top:4px;
+    .orderMeta{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:14px;
+      margin-top:18px;
+    }
+
+    .metaItem{
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.76);
+      border:1px solid var(--line-soft);
+    }
+
+    .metaItem span{
+      display:block;
       color:var(--muted);
       font-size:12px;
-      line-height:1.6;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .metaItem strong{
+      font-size:14px;
     }
 
     .chips{
       display:flex;
-      gap:8px;
       flex-wrap:wrap;
-      justify-content:flex-start;
+      gap:8px;
       margin-top:12px;
     }
 
-    .headerRight{
-      display:flex;
-      flex-direction:column;
-      align-items:stretch;
-      justify-content:flex-start;
+    .statusBox{
+      background:linear-gradient(135deg, var(--accent-sage), #ffffff);
+      border:1px solid var(--line-soft);
+      border-radius:18px;
+      padding:18px;
     }
 
-    .miniBox{
-      background:rgba(17,24,39,.78);
-      border:1px solid rgba(55,65,81,.82);
-      border-radius:16px;
-      padding:12px;
-    }
-
-    .miniTitle{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:8px;
-      letter-spacing:.2px;
-    }
-
-    .inlineForm{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:end;
-    }
-
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      min-width:180px;
-      flex:1;
-    }
-
-    .cardBody{
-      padding:14px 16px 16px;
-      display:grid;
-      grid-template-columns:1fr 340px;
-      gap:14px;
-      align-items:start;
-    }
-
+    .statusBox h3,
     .sectionTitle{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:6px;
-      letter-spacing:.2px;
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:800;
     }
 
-    .items{
+    .orderBody{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) 280px;
+      gap:24px;
+      padding:24px;
+    }
+
+    .itemList{
       margin:0;
-      padding-left:18px;
-      color:var(--text);
+      padding:0;
+      list-style:none;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
     }
 
-    .items li{ margin:6px 0; }
-    .items .muted{ color:var(--muted); }
+    .itemList li{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 0;
+      border-bottom:1px solid var(--line-soft);
+    }
 
-    .totals{
-      background:rgba(17,24,39,.78);
-      border:1px solid rgba(55,65,81,.82);
+    .itemList li:last-child{ border-bottom:0; }
+
+    .totalsBox{
+      border:1px solid var(--line-soft);
       border-radius:16px;
-      padding:12px;
+      padding:16px;
+      background:var(--accent-blue);
     }
 
-    .cardFooter{
-      padding:12px 16px;
-      border-top:1px solid rgba(55,65,81,.82);
+    .orderFooter{
       display:flex;
       justify-content:space-between;
       align-items:center;
       gap:12px;
       flex-wrap:wrap;
-      background:rgba(15,23,42,.62);
+      padding:18px 24px;
+      border-top:1px solid var(--line-soft);
+      background:#fcfbf8;
     }
 
-    .hint{ color:var(--muted); font-size:12px; }
-
+    /* Details stay available, but start closed so the main order list is easier to scan. */
     .detailsPanel{
       max-height:0;
       overflow:hidden;
-      transition:max-height .35s ease;
-      border-top:1px solid rgba(55,65,81,.82);
-      background:rgba(2,10,22,.58);
+      transition:max-height .25s ease;
+      border-top:1px solid var(--line-soft);
     }
 
-    .card.open .detailsPanel{
-      max-height:2500px;
+    .orderCard.open .detailsPanel{
+      max-height:2200px;
     }
 
     .detailsInner{
-      padding:16px;
+      padding:24px;
       display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:18px;
+      background:#fcfbf8;
     }
 
-    .box{
-      background:rgba(17,24,39,.78);
-      border:1px solid rgba(55,65,81,.82);
-      border-radius:16px;
-      padding:14px;
+    .detailBox{
+      border:1px solid var(--line-soft);
+      border-radius:18px;
+      background:#fff;
+      padding:18px;
     }
 
-    .box h3{
-      margin:0 0 10px;
-      font-size:14px;
-      letter-spacing:.2px;
-    }
-
-    .historyList{
-      margin:0;
-      padding-left:18px;
-    }
-
-    .historyList li{ margin:8px 0; }
-
-    .messagesWrap{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      margin-bottom:14px;
-    }
+    .detailBox.full{ grid-column:1 / -1; }
+    .historyList{ margin:0; padding-left:18px; }
+    .historyList li{ margin:8px 0; color:var(--secondary); }
 
     .empty{
-      padding:20px;
+      border:1px dashed var(--line);
       border-radius:18px;
-      border:1px dashed rgba(71,85,105,.72);
-      background:rgba(17,24,39,.5);
+      background:var(--surface);
+      padding:36px;
       text-align:center;
-      color:var(--muted);
     }
 
     @media (max-width: 1180px){
-      .cardHeader{
-        grid-template-columns:1fr;
-      }
-
-      .cardBody{
-        grid-template-columns:1fr;
-      }
-
-      .detailsInner{
-        grid-template-columns:1fr;
-      }
+      .orderHeader,
+      .orderBody,
+      .detailsInner{ grid-template-columns:1fr; }
+      .orderMeta{ grid-template-columns:1fr; }
     }
 
-    @media (max-width: 980px){
-      .layout{ grid-template-columns:1fr; }
-      .sidebar{ height:auto; position:relative; }
-      .profile{ position:relative; margin-top:10px; }
-    }
   </style>
 </head>
 
 <body>
   {% include "includes/logout_button.html" %}
-  <div class="layout page">
-
-    <aside class="sidebar">
+  <div class="producerShell">
+    <aside class="producerNav">
       <div class="brand">
-        <div class="logo brandLogo"></div>
+        <div class="brandLogo">P</div>
         <div>
-          <h1>Market Producer</h1>
-          <p>Order Management</p>
+          <h1>Producer Hub</h1>
+          <p>{{ request.user }}</p>
         </div>
       </div>
 
-      <nav class="nav">
-        <a class="active" href="/orders/producer/dashboard/">
-          <span class="icon">&#128230;</span>
-          <span>Incoming Orders</span>
-        </a>
-        <a href="/finance/producer/settlements/">
-          <span class="icon">£</span>
-          <span>Weekly Settlements</span>
-        </a>
-        <a href="http://localhost:8000/producer/products/">
-          <span class="icon">&#9881;</span>
-          <span>Product Management</span>
-        </a>
-        <a href="/admin/">
-          <span class="icon">⚙️</span>
-          <span>Admin</span>
-        </a>
+      <nav class="nav" aria-label="Producer navigation">
+        <a href="/orders/producer/"><span class="navIcon">H</span><span>Dashboard</span></a>
+        <a class="active" href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
+        <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
+        <a href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
       </nav>
 
       <div class="profile">
-        <div class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</div>
-        <div>
-          <div style="font-weight:700;">{{ request.user }}</div>
-          <small>Producer session</small>
-        </div>
+        <span class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</span>
+        <span>
+          <strong>{{ request.user }}</strong><br>
+          <span class="muted">Signed in as producer</span>
+        </span>
       </div>
     </aside>
 
-    <main class="main">
-
-      <div class="topbar">
-        <div class="headline">
-          <h2>Incoming Orders</h2>
-          <p>Sorted by <b>delivery date</b>. Minimum lead time requirement: <b>48 hours</b>.</p>
+    <main class="producerMain">
+      <header class="pageHeader">
+        <div>
+          <p class="eyebrow">Orders</p>
+          <h1>Orders to prepare</h1>
+          <p>Review customer orders, check delivery details, and update each order as it moves through your workflow.</p>
         </div>
+        <a class="linkBtn secondary" href="/producer/products/">Manage products</a>
+      </header>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="k">Total suborders</div>
-            <div class="v">{{ suborders|length }}</div>
-          </div>
-          <div class="stat">
-            <div class="k">Status filter</div>
-            <div class="v">{% if status_filter %}{{ status_filter }}{% else %}All{% endif %}</div>
-          </div>
+      <section class="summaryGrid" aria-label="Order summary">
+        <div class="summaryTile">
+          <div class="label">Orders shown</div>
+          <div class="value">{{ suborders|length }}</div>
         </div>
-      </div>
+        <div class="summaryTile">
+          <div class="label">Current view</div>
+          <div class="value">{% if status_filter %}{{ status_filter }}{% else %}All{% endif %}</div>
+        </div>
+        <div class="summaryTile">
+          <div class="label">Delivery notice</div>
+          <div class="value">48h</div>
+        </div>
+      </section>
 
       {% if messages %}
         <div class="messagesWrap">
           {% for message in messages %}
-            <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
-              {{ message }}
-            </div>
+            <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
           {% endfor %}
         </div>
       {% endif %}
 
-      <form class="filters" method="get">
-        <div>
-          <label><b>Status</b></label><br>
-          <select name="status">
-            <option value="">All</option>
-            {% for value,label in status_choices %}
-              <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
+      <section class="toolbar" aria-label="Filter orders">
+        <h2 class="toolbarTitle">Find an order</h2>
+        <form class="filters" method="get">
+          <div class="field">
+            <label for="statusFilter">Show</label>
+            <select name="status" id="statusFilter">
+              <option value="">All statuses</option>
+              {% for value,label in status_choices %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
 
-        <div>
-          <label><b>Search (customer / order id)</b></label><br>
-          <input type="search" name="q" placeholder="e.g. customer1 or 12" value="{{ request.GET.q|default:'' }}">
-        </div>
+          <div class="field" style="flex:1; min-width:240px;">
+            <label for="orderSearch">Search</label>
+            <input id="orderSearch" type="search" name="q" placeholder="Customer name, email, or order number" value="{{ request.GET.q|default:'' }}">
+          </div>
 
-        <div style="display:flex; gap:10px; align-items:flex-end;">
-          <button type="submit">Apply</button>
-          <a class="linkBtn ghost" href="/orders/producer/dashboard/">Reset</a>
-        </div>
-
-        <div class="hint">Tip: Click &ldquo;Order details&rdquo; to expand the full order information below.</div>
-      </form>
+          <button type="submit">Apply filters</button>
+          <a class="linkBtn secondary" href="/orders/producer/dashboard/">Clear</a>
+        </form>
+      </section>
 
       {% if suborders %}
-        <section class="ordersList">
+        <section class="orderList" aria-label="Incoming orders">
           {% for suborder_data in suborders %}
             {% with suborder=suborder_data.0 lead_ok=suborder_data.1 %}
-              <article class="card" id="suborder-card-{{ suborder.id }}">
-                <div class="cardHeader">
+              <article class="orderCard" id="suborder-card-{{ suborder.id }}">
+                <div class="orderHeader">
                   <div>
-                    <div class="meta">
-                      <div class="id">SubOrder #{{ suborder.id }} &bull; Order #{{ suborder.order.id }}</div>
-                      <div class="sub">
-                        Customer: <b>{{ suborder.order.customer }}</b><br>
-                        Order date: {{ suborder.order.created_at|date:"M d, Y H:i" }}<br>
-                        Delivery: <b>{{ suborder.delivery_date|date:"M d, Y H:i" }}</b>
-                      </div>
+                    <h2 class="orderTitle">Order #{{ suborder.order.id }}</h2>
+                    <p class="muted">Customer: <strong>{{ suborder.order.customer }}</strong></p>
+
+                    <div class="orderMeta">
+                      <div class="metaItem"><span>Placed</span><strong>{{ suborder.order.created_at|date:"M d, Y H:i" }}</strong></div>
+                      <div class="metaItem"><span>Delivery</span><strong>{{ suborder.delivery_date|date:"M d, Y H:i" }}</strong></div>
+                      <div class="metaItem"><span>Your payout</span><strong class="money">&pound;{{ suborder.producer_payout_amount }}</strong></div>
                     </div>
 
                     <div class="chips">
-                      <span class="chip status" data-s="{{ suborder.status }}">&#9679; {{ suborder.status }}</span>
+                      <span class="chip status" data-s="{{ suborder.status }}">{{ suborder.status }}</span>
                       {% if lead_ok %}
-                        <span class="chip ok">&#10003; 48h OK</span>
+                        <span class="chip ok">48h notice ok</span>
                       {% else %}
-                        <span class="chip bad">&#10005; Lead time</span>
+                        <span class="chip bad">Short notice</span>
                       {% endif %}
                     </div>
                   </div>
 
-                  <div class="headerRight">
-                    <div class="miniBox">
-                      <div class="miniTitle">Change status</div>
-
-                      <form method="post" action="{% url 'producer_suborder_change_status' suborder.id %}">
-                        {% csrf_token %}
-
-                        <div class="inlineForm">
-                          <div class="field">
-                            <label for="new_status_{{ suborder.id }}">New status</label>
-                            <select
-                              name="new_status"
-                              id="new_status_{{ suborder.id }}"
-                              {% if suborder.allowed_next %}required{% else %}disabled{% endif %}
-                            >
-                              {% if suborder.allowed_next %}
-                                {% for s in suborder.allowed_next %}
-                                  <option value="{{ s }}">{{ s }}</option>
-                                {% endfor %}
-                              {% else %}
-                                <option value="">No transitions available</option>
-                              {% endif %}
-                            </select>
-                          </div>
-
-                          <div class="field">
-                            <label for="note_{{ suborder.id }}">Note</label>
-                            <input
-                              type="text"
-                              name="note"
-                              id="note_{{ suborder.id }}"
-                              placeholder="e.g. Packed and ready"
-                              {% if not suborder.allowed_next %}disabled{% endif %}
-                            >
-                          </div>
-
-                          <button type="submit" {% if not suborder.allowed_next %}disabled{% endif %}>
-                            Update status
-                          </button>
+                  <div class="statusBox">
+                    <h3>Update order progress</h3>
+                    <form method="post" action="{% url 'producer_suborder_change_status' suborder.id %}">
+                      {% csrf_token %}
+                      <div class="inlineForm">
+                        <div class="field">
+                          <label for="new_status_{{ suborder.id }}">Next step</label>
+                          <select name="new_status" id="new_status_{{ suborder.id }}" {% if suborder.allowed_next %}required{% else %}disabled{% endif %}>
+                            {% if suborder.allowed_next %}
+                              {% for s in suborder.allowed_next %}
+                                <option value="{{ s }}">{{ s }}</option>
+                              {% endfor %}
+                            {% else %}
+                              <option value="">No next step</option>
+                            {% endif %}
+                          </select>
                         </div>
 
-                        {% if not suborder.allowed_next %}
-                          <div class="hint" style="margin-top:10px;">
-                            This suborder is <b>{{ suborder.status }}</b> and cannot be changed further.
-                          </div>
-                        {% endif %}
-                      </form>
-                    </div>
+                        <div class="field">
+                          <label for="note_{{ suborder.id }}">Optional note</label>
+                          <input type="text" name="note" id="note_{{ suborder.id }}" placeholder="Packed and ready" {% if not suborder.allowed_next %}disabled{% endif %}>
+                        </div>
+
+                        <button type="submit" {% if not suborder.allowed_next %}disabled{% endif %}>Save update</button>
+                      </div>
+
+                      {% if not suborder.allowed_next %}
+                        <p class="hint">This order is {{ suborder.status }} and has no more available updates.</p>
+                      {% endif %}
+                    </form>
                   </div>
                 </div>
 
-                <div class="cardBody">
+                <div class="orderBody">
                   <div>
-                    <div class="sectionTitle">ITEMS</div>
-                    <ul class="items">
+                    <h3 class="sectionTitle">Items for you</h3>
+                    <ul class="itemList">
                       {% for item in suborder.items.all %}
                         <li>
-                          {{ item.product_name }} &mdash;
-                          Qty: <b>{{ item.quantity }}</b>
-                          <span class="muted">&bull; Unit &pound;{{ item.unit_price }}</span>
+                          <span>{{ item.product_name }}</span>
+                          <strong>Qty {{ item.quantity }}</strong>
                         </li>
                       {% empty %}
                         <li class="muted">No items.</li>
@@ -564,47 +337,42 @@
                   </div>
 
                   <div>
-                    <div class="sectionTitle">TOTALS</div>
-                    <div class="totals">
+                    <h3 class="sectionTitle">Money</h3>
+                    <div class="totalsBox">
                       <div class="row"><span>Subtotal</span><span class="money">&pound;{{ suborder.subtotal }}</span></div>
                       <div class="row"><span>Commission</span><span class="money">&pound;{{ suborder.commission_amount }}</span></div>
-                      <div class="row"><b>Payout</b><b class="money">&pound;{{ suborder.producer_payout_amount }}</b></div>
+                      <div class="row"><strong>Payout</strong><strong class="money">&pound;{{ suborder.producer_payout_amount }}</strong></div>
                     </div>
                   </div>
                 </div>
 
-                <div class="cardFooter">
-                  <span class="hint">Only your items are shown for multi-vendor orders.</span>
-                  <button type="button" class="linkBtn toggleDetailsBtn ghost" data-target="details-{{ suborder.id }}">
-                    Order details <span>&darr;</span>
-                  </button>
+                <div class="orderFooter">
+                  <span class="hint">Full customer, delivery, item, and history details are still available.</span>
+                  <button type="button" class="linkBtn secondary toggleDetailsBtn" data-target="details-{{ suborder.id }}">Show details</button>
                 </div>
 
                 <div class="detailsPanel" id="details-{{ suborder.id }}">
                   <div class="detailsInner">
-                    <div class="box">
-                      <h3>Customer Contact</h3>
+                    <div class="detailBox">
+                      <h3>Customer contact</h3>
                       <div class="row"><span>Email</span><span>{{ suborder.order.customer.email }}</span></div>
                       <div class="row"><span>Phone</span><span>{{ suborder.order.customer_phone|default:"&mdash;" }}</span></div>
                     </div>
 
-                    <div class="box">
+                    <div class="detailBox">
                       <h3>Delivery</h3>
-                      <div class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"&mdash;" }}</div>
-
-                      <div style="margin-top:12px;">
-                        <h3>Special Instructions</h3>
-                        <div class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"&mdash;" }}</div>
-                      </div>
+                      <p class="muted" style="white-space:pre-line;">{{ suborder.order.delivery_address|default:"&mdash;" }}</p>
+                      <h3>Special instructions</h3>
+                      <p class="muted" style="white-space:pre-line;">{{ suborder.order.special_instructions|default:"&mdash;" }}</p>
                     </div>
 
-                    <div class="box">
-                      <h3>Items</h3>
-                      <ul class="items">
+                    <div class="detailBox">
+                      <h3>All item details</h3>
+                      <ul class="itemList">
                         {% for item in suborder.items.all %}
                           <li>
-                            {{ item.product_name }} &mdash; Qty: <b>{{ item.quantity }}</b>
-                            <span class="muted">&bull; Unit &pound;{{ item.unit_price }} &bull; Line &pound;{{ item.line_total }}</span>
+                            <span>{{ item.product_name }}<br><span class="muted">Unit &pound;{{ item.unit_price }} &bull; Line &pound;{{ item.line_total }}</span></span>
+                            <strong>Qty {{ item.quantity }}</strong>
                           </li>
                         {% empty %}
                           <li class="muted">No items.</li>
@@ -612,22 +380,22 @@
                       </ul>
                     </div>
 
-                    <div class="box">
+                    <div class="detailBox">
                       <h3>Totals</h3>
                       <div class="row"><span>Subtotal</span><span class="money">&pound;{{ suborder.subtotal }}</span></div>
                       <div class="row"><span>Commission</span><span class="money">&pound;{{ suborder.commission_amount }}</span></div>
-                      <div class="row"><b>Payout</b><b class="money">&pound;{{ suborder.producer_payout_amount }}</b></div>
+                      <div class="row"><strong>Payout</strong><strong class="money">&pound;{{ suborder.producer_payout_amount }}</strong></div>
                     </div>
 
-                    <div class="box" style="grid-column: 1 / -1;">
-                      <h3>Status History</h3>
+                    <div class="detailBox full">
+                      <h3>Status history</h3>
                       <ul class="historyList">
                         {% for ev in suborder.status_events.all %}
                           <li>
-                            <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span> &mdash;
-                            <b>{{ ev.old_status }}</b> &rarr; <b>{{ ev.new_status }}</b>
+                            <span class="muted">{{ ev.changed_at|date:"M d, Y H:i" }}</span>:
+                            <strong>{{ ev.old_status }}</strong> to <strong>{{ ev.new_status }}</strong>
                             <span class="muted">by {{ ev.changed_by.username }}</span>
-                            {% if ev.note %}<span class="muted">&bull; &ldquo;{{ ev.note }}&rdquo;</span>{% endif %}
+                            {% if ev.note %}<span class="muted"> | "{{ ev.note }}"</span>{% endif %}
                           </li>
                         {% empty %}
                           <li class="muted">No status changes yet.</li>
@@ -642,8 +410,8 @@
         </section>
       {% else %}
         <div class="empty">
-          <h3 style="margin:0 0 8px; color:var(--text);">No incoming orders</h3>
-          <p style="margin:0;">Create demo orders (3 different delivery dates) to satisfy TC9 preconditions.</p>
+          <h2>No orders to show</h2>
+          <p class="muted">When customers place orders for your products, they will appear here.</p>
         </div>
       {% endif %}
     </main>
@@ -652,29 +420,20 @@
   <script>
     document.querySelectorAll('.toggleDetailsBtn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        const targetId = btn.getAttribute('data-target');
-        const card = btn.closest('.card');
+        const card = btn.closest('.orderCard');
         const isOpen = card.classList.contains('open');
-
-        if (isOpen) {
-          card.classList.remove('open');
-          btn.innerHTML = 'Order details <span>&darr;</span>';
-        } else {
-          card.classList.add('open');
-          btn.innerHTML = 'Hide details <span>&uarr;</span>';
-        }
+        card.classList.toggle('open', !isOpen);
+        btn.textContent = isOpen ? 'Show details' : 'Hide details';
       });
     });
 
     window.addEventListener('load', function() {
       if (window.location.hash) {
         const card = document.querySelector(window.location.hash);
-        if (card && card.classList.contains('card')) {
+        if (card && card.classList.contains('orderCard')) {
           const btn = card.querySelector('.toggleDetailsBtn');
-          if (btn) {
-            card.classList.add('open');
-            btn.innerHTML = 'Hide details <span>&uarr;</span>';
-          }
+          card.classList.add('open');
+          if (btn) btn.textContent = 'Hide details';
         }
       }
     });

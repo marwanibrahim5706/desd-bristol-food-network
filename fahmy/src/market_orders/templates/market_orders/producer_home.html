@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Producer Portal &bull; Dashboard</title>
+  <style>
+    {% include "market_orders/includes/producer_theme_styles.html" %}
+
+    .welcomePanel{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto;
+      gap:28px;
+      align-items:center;
+      margin-bottom:26px;
+      padding:34px;
+      border:1px solid var(--line-soft);
+      border-radius:28px;
+      background:
+        radial-gradient(circle at 85% 20%, rgba(198,107,61,.16), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #fff3e4 52%, #eef6ef 100%);
+      box-shadow:var(--shadow);
+    }
+
+    .welcomePanel h1{
+      margin:0;
+      font-size:42px;
+      line-height:1.08;
+      letter-spacing:-.03em;
+    }
+
+    .welcomePanel p{
+      margin:10px 0 0;
+      max-width:720px;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.65;
+    }
+
+    .todayCard{
+      min-width:190px;
+      padding:20px;
+      border:1px solid rgba(47,79,79,.12);
+      border-radius:20px;
+      background:rgba(255,255,255,.82);
+      box-shadow:0 12px 26px rgba(55,45,34,.08);
+    }
+
+    .todayCard span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .todayCard strong{
+      display:block;
+      margin-top:6px;
+      font-size:18px;
+    }
+
+    .homeStats{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:18px;
+      margin-bottom:26px;
+    }
+
+    .homeStat{
+      position:relative;
+      min-height:148px;
+      padding:22px;
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      background:var(--surface);
+      box-shadow:0 12px 28px rgba(55,45,34,.07);
+      overflow:hidden;
+    }
+
+    .homeStat:before,
+    .homeStat:after{
+      content:"";
+      position:absolute;
+      pointer-events:none;
+    }
+
+    .homeStat:before{
+      inset:0 auto 0 0;
+      width:6px;
+      background:var(--primary);
+      opacity:.85;
+    }
+
+    .homeStat:after{
+      right:-36px;
+      top:-42px;
+      width:112px;
+      height:112px;
+      border-radius:999px;
+      background:rgba(49,95,82,.09);
+    }
+
+    .homeStat.orders{ background:linear-gradient(135deg, #ffffff, var(--accent-sage)); }
+    .homeStat.action{ background:linear-gradient(135deg, #ffffff, var(--accent-soft)); }
+    .homeStat.payout{ background:linear-gradient(135deg, #ffffff, var(--accent-blue)); }
+    .homeStat.products{ background:linear-gradient(135deg, #ffffff, #f3eafa); }
+    .homeStat.action:before{ background:var(--warm); }
+    .homeStat.payout:before{ background:var(--blue); }
+    .homeStat.products:before{ background:#7b61a8; }
+
+    .homeStat .label{
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .homeStat .value{
+      margin-top:14px;
+      font-size:36px;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:-.03em;
+    }
+
+    .homeStat .hint{
+      display:block;
+      margin-top:12px;
+    }
+
+    .homeLayout{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+      align-items:start;
+    }
+
+    .insightGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+      margin-bottom:26px;
+    }
+
+    .insightCard{
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      background:var(--surface);
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+      padding:24px;
+    }
+
+    .insightCard h2{
+      margin:0;
+      font-size:21px;
+      letter-spacing:-.01em;
+    }
+
+    .insightCard p{
+      margin:6px 0 20px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .statusBars{
+      display:grid;
+      gap:14px;
+    }
+
+    .statusBarRow{
+      display:grid;
+      grid-template-columns:96px minmax(0, 1fr) 34px;
+      gap:12px;
+      align-items:center;
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .barTrack{
+      height:12px;
+      border-radius:999px;
+      background:#ede5d9;
+      overflow:hidden;
+    }
+
+    .barFill{
+      display:block;
+      height:100%;
+      min-width:8px;
+      border-radius:inherit;
+      background:var(--primary);
+    }
+
+    .barFill.pending{ background:var(--warm); }
+    .barFill.confirmed{ background:var(--blue); }
+    .barFill.ready{ background:var(--gold); }
+    .barFill.delivered{ background:var(--success); }
+
+    .trendChart{
+      display:flex;
+      align-items:end;
+      gap:12px;
+      height:150px;
+      padding:14px 8px 4px;
+      border-radius:18px;
+      background:linear-gradient(135deg, var(--accent-blue), #ffffff);
+    }
+
+    .trendDay{
+      flex:1;
+      display:flex;
+      min-width:0;
+      height:100%;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .trendBar{
+      width:100%;
+      max-width:34px;
+      min-height:8px;
+      border-radius:999px 999px 8px 8px;
+      background:linear-gradient(180deg, var(--primary), #7aa891);
+    }
+
+    .progressPanel{
+      display:grid;
+      gap:16px;
+      margin-top:16px;
+    }
+
+    .progressItem{
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--line-soft);
+      background:linear-gradient(135deg, #ffffff, var(--accent-sage));
+    }
+
+    .progressTop{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:10px;
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .progressTrack{
+      height:12px;
+      border-radius:999px;
+      background:#e8dfd2;
+      overflow:hidden;
+    }
+
+    .progressFill{
+      display:block;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg, var(--primary), var(--warm));
+    }
+
+    .quickActionsPanel{
+      grid-column:1 / -1;
+    }
+
+    .homePanel{
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      background:var(--surface);
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+      overflow:hidden;
+    }
+
+    .homePanelHeader{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      padding:22px 24px;
+      border-bottom:1px solid var(--line-soft);
+      background:linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,243,235,.86));
+    }
+
+    .homePanelHeader h2{
+      margin:0;
+      font-size:21px;
+      letter-spacing:-.01em;
+    }
+
+    .homePanelHeader p{
+      margin:5px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .quickActions{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:18px;
+      padding:24px;
+    }
+
+    .actionTile{
+      display:block;
+      min-height:160px;
+      padding:22px;
+      border:1px solid var(--line-soft);
+      border-radius:20px;
+      background:#fcfbf8;
+      transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .actionTile:nth-child(1){ background:linear-gradient(135deg, #ffffff, var(--accent-sage)); }
+    .actionTile:nth-child(2){ background:linear-gradient(135deg, #ffffff, var(--accent-soft)); }
+    .actionTile:nth-child(3){ background:linear-gradient(135deg, #ffffff, var(--accent-blue)); }
+    .actionTile:nth-child(4){ background:linear-gradient(135deg, #ffffff, #f2eaf7); }
+
+    .actionTile:hover{
+      transform:translateY(-2px);
+      border-color:rgba(47,79,79,.28);
+      box-shadow:0 12px 28px rgba(34,38,41,.08);
+    }
+
+    .actionIcon{
+      width:34px;
+      height:34px;
+      display:grid;
+      place-items:center;
+      margin-bottom:14px;
+      border-radius:10px;
+      background:var(--surface-tint);
+      color:var(--primary-strong);
+      font-weight:900;
+    }
+
+    .actionTile strong{
+      display:block;
+      font-size:17px;
+    }
+
+    .actionTile span{
+      display:block;
+      margin-top:6px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .simpleList{
+      margin:0;
+      padding:0;
+      list-style:none;
+    }
+
+    .simpleList li{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      padding:18px 24px;
+      border-bottom:1px solid var(--line-soft);
+      align-items:flex-start;
+    }
+
+    .simpleList li:last-child{ border-bottom:0; }
+
+    .simpleList strong{
+      display:block;
+      margin-bottom:4px;
+      font-size:14px;
+    }
+
+    .emptyCalm{
+      padding:24px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+    }
+
+    /* The homepage is intentionally lighter than module screens: it guides users to the right task before showing dense records. */
+    @media(max-width:1180px){
+      .homeStats{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+      .insightGrid{ grid-template-columns:1fr; }
+      .homeLayout{ grid-template-columns:1fr; }
+      .quickActions{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media(max-width:720px){
+      .welcomePanel{ grid-template-columns:1fr; }
+      .homeStats,
+      .insightGrid,
+      .quickActions{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  {% include "includes/logout_button.html" %}
+  <div class="producerShell">
+    <aside class="producerNav">
+      <div class="brand">
+        <div class="brandLogo">P</div>
+        <div>
+          <h1>Producer Hub</h1>
+          <p>{{ request.user }}</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Producer navigation">
+        <a class="active" href="/orders/producer/"><span class="navIcon">H</span><span>Dashboard</span></a>
+        <a href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
+        <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
+        <a href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
+      </nav>
+
+      <div class="profile">
+        <span class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</span>
+        <span>
+          <strong>{{ request.user }}</strong><br>
+          <span class="muted">Signed in as producer</span>
+        </span>
+      </div>
+    </aside>
+
+    <main class="producerMain">
+      <section class="welcomePanel" aria-label="Producer overview">
+        <div>
+          <p class="eyebrow">Dashboard</p>
+          <h1>Welcome back, {{ request.user.username|default:"producer" }}</h1>
+          <p>This is your starting point. See the key numbers, then jump into orders, products, settlements, or admin when you need more detail.</p>
+        </div>
+        <div class="todayCard">
+          <span>Today</span>
+          <strong>{% now "D, d M Y" %}</strong>
+        </div>
+      </section>
+
+      <section class="homeStats" aria-label="Key numbers">
+        <article class="homeStat orders">
+          <div class="label">Orders to prepare</div>
+          <div class="value">{{ open_orders_count }}</div>
+          <span class="hint">Open orders in your workflow</span>
+        </article>
+        <article class="homeStat action">
+          <div class="label">Need action</div>
+          <div class="value">{{ needs_action_count }}</div>
+          <span class="hint">Orders waiting for your first update</span>
+        </article>
+        <article class="homeStat payout">
+          <div class="label">Upcoming payout</div>
+          <div class="value money">&pound;{{ upcoming_payout|floatformat:2 }}</div>
+          <span class="hint">Generated or delivered payout value</span>
+        </article>
+        <article class="homeStat products">
+          <div class="label">Active products</div>
+          <div class="value">{{ active_products_count }}</div>
+          <span class="hint">{{ low_stock_count }} need a stock check</span>
+        </article>
+      </section>
+
+      <section class="insightGrid" aria-label="Producer insights">
+        <article class="insightCard">
+          <h2>Order picture</h2>
+          <p>Status breakdown and the next seven delivery days, so you can see what is moving without reading every order.</p>
+          <div class="statusBars">
+            {% for item in status_breakdown %}
+              <div class="statusBarRow">
+                <span>{{ item.label }}</span>
+                <span class="barTrack"><span class="barFill {{ item.tone }}" style="width:{{ item.percent }}%;"></span></span>
+                <span>{{ item.count }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="trendChart" aria-label="Upcoming delivery trend">
+            {% for day in trend_days %}
+              <div class="trendDay">
+                <span class="trendBar" style="height:{{ day.height }}%;"></span>
+                <span>{{ day.label }}</span>
+                <span>{{ day.count }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="insightCard">
+          <h2>Payout and stock health</h2>
+          <p>Simple health checks for money and catalogue readiness. These are summaries only; all details remain in Settlements and Products.</p>
+          <div class="progressPanel">
+            <div class="progressItem">
+              <div class="progressTop">
+                <span>Payout readiness</span>
+                <span class="money">&pound;{{ upcoming_payout|floatformat:2 }}</span>
+              </div>
+              <div class="progressTrack"><span class="progressFill" style="width:{{ payout_progress }}%;"></span></div>
+              <p class="hint">Generated payout: &pound;{{ generated_payout|floatformat:2 }}. Delivered value: &pound;{{ delivered_payout|floatformat:2 }}.</p>
+            </div>
+            <div class="progressItem">
+              <div class="progressTop">
+                <span>Stock health</span>
+                <span>{{ stock_health_percent }}%</span>
+              </div>
+              <div class="progressTrack"><span class="progressFill" style="width:{{ stock_health_percent }}%;"></span></div>
+              <p class="hint">{{ stock_ok_count }} products look healthy. {{ low_stock_count }} need a stock check.</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <div class="homeLayout">
+        <section class="homePanel quickActionsPanel" aria-label="Quick actions">
+          <div class="homePanelHeader">
+            <div>
+              <h2>What do you want to do?</h2>
+              <p>Choose a section. Nothing has been removed; this just gives you a calmer first step.</p>
+            </div>
+          </div>
+          <div class="quickActions">
+            <a class="actionTile" href="/orders/producer/dashboard/">
+              <span class="actionIcon">O</span>
+              <strong>View orders</strong>
+              <span>Prepare orders, check delivery details, and update progress.</span>
+            </a>
+            <a class="actionTile" href="/producer/products/">
+              <span class="actionIcon">P</span>
+              <strong>Manage products</strong>
+              <span>Add products, edit prices, and update stock levels.</span>
+            </a>
+            <a class="actionTile" href="/finance/producer/settlements/">
+              <span class="actionIcon">£</span>
+              <strong>Check settlements</strong>
+              <span>Review weekly payouts, commission, and CSV downloads.</span>
+            </a>
+            <a class="actionTile" href="/admin/">
+              <span class="actionIcon">A</span>
+              <strong>Open admin</strong>
+              <span>Use the full admin tools when you need advanced controls.</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="homePanel" aria-label="Latest orders">
+          <div class="homePanelHeader">
+            <div>
+              <h2>Latest orders</h2>
+              <p>The next few orders by delivery date.</p>
+            </div>
+            <a class="linkBtn secondary" href="/orders/producer/dashboard/">See all</a>
+          </div>
+          {% if latest_orders %}
+            <ul class="simpleList">
+              {% for order in latest_orders %}
+                <li>
+                  <span>
+                    <strong>Order #{{ order.order.id }}</strong>
+                    <span class="muted">{{ order.order.customer }} &bull; delivery {{ order.delivery_date|date:"d M, H:i" }}</span>
+                  </span>
+                  <span class="chip status" data-s="{{ order.status }}">{{ order.status }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="emptyCalm">No orders are waiting right now.</div>
+          {% endif %}
+        </section>
+
+        <section class="homePanel" aria-label="Recent activity">
+          <div class="homePanelHeader">
+            <div>
+              <h2>Recent activity</h2>
+              <p>Recent order progress updates for your products.</p>
+            </div>
+          </div>
+          {% if recent_events %}
+            <ul class="simpleList">
+              {% for event in recent_events %}
+                <li>
+                  <span>
+                    <strong>Order #{{ event.suborder.order.id }}</strong>
+                    <span class="muted">{{ event.old_status }} to {{ event.new_status }} by {{ event.changed_by.username }}</span>
+                  </span>
+                  <span class="muted">{{ event.changed_at|date:"d M, H:i" }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="emptyCalm">No recent updates yet. Activity will appear here once orders move forward.</div>
+          {% endif %}
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

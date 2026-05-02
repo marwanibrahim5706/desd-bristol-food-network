@@ -13,7 +13,7 @@ def home(request):
         return redirect("/admin/")
 
     if getattr(request.user, "role", None) == User.Role.PRODUCER:
-        return redirect("/orders/producer/dashboard/")
+        return redirect("/orders/producer/")
 
     if getattr(request.user, "role", None) == User.Role.CUSTOMER:
         return redirect("/discover/")
