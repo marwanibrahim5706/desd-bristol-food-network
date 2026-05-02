@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
+from django.db.models import ProtectedError
 from django.db.models import Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -327,6 +328,31 @@ def producer_product_edit(request, pk: int):
             "product": product,
         },
     )
+
+
+@login_required
+def producer_product_delete(request, pk: int):
+    if not is_producer(request.user):
+        raise PermissionDenied("Producer access required.")
+    if request.method != "POST":
+        return HttpResponseBadRequest("Product deletion must be submitted from the product list.")
+
+    product = get_object_or_404(Product, pk=pk, producer=request.user)
+    product_name = product.name
+    from market_payments.models import CartItem
+
+    removed_from_carts = CartItem.objects.filter(product=product).delete()[0]
+    try:
+        product.delete()
+        if removed_from_carts:
+            messages.success(request, f"{product_name} has been deleted and removed from active baskets.")
+        else:
+            messages.success(request, f"{product_name} has been deleted.")
+    except ProtectedError:
+        product.is_active = False
+        product.save(update_fields=["is_active"])
+        messages.warning(request, f"{product_name} is used in existing baskets, so it has been hidden from customers.")
+    return redirect("producer_product_list")
 
 
 @login_required

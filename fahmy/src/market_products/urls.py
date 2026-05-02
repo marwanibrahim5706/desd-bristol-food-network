@@ -19,4 +19,5 @@ urlpatterns = [
     path("producer/products/", views.producer_product_list, name="producer_product_list"),
     path("producer/products/add/", views.producer_product_create, name="producer_product_create"),
     path("producer/products/<int:pk>/edit/", views.producer_product_edit, name="producer_product_edit"),
+    path("producer/products/<int:pk>/delete/", views.producer_product_delete, name="producer_product_delete"),
 ]

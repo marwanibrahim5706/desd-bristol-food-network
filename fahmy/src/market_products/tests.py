@@ -11,6 +11,7 @@ from market_orders.models import Order, OrderItem, ProducerSubOrder
 from market_payments.models import Order as PaymentOrder
 from market_payments.models import OrderItem as PaymentOrderItem
 from market_payments.models import Payment
+from market_payments.models import Cart, CartItem
 
 from .models import FarmStory, FavouriteRecipe, Product, Recipe, Review
 from .services import average_product_rating, create_verified_review, user_can_review_product
@@ -607,6 +608,37 @@ class ProducerContentTests(TestCase):
         response = self.client.get(reverse("producer_product_create"))
         self.assertContains(response, "Image preview")
         self.assertContains(response, "product-image-preview")
+
+    def test_producer_can_delete_own_product(self):
+        self.client.force_login(self.producer)
+        response = self.client.post(reverse("producer_product_delete", args=[self.product.id]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(id=self.product.id).exists())
+        self.assertContains(response, "has been deleted")
+
+    def test_producer_cannot_delete_other_producers_product(self):
+        self.client.force_login(self.producer)
+        response = self.client.post(reverse("producer_product_delete", args=[self.other_product.id]))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Product.objects.filter(id=self.other_product.id).exists())
+
+    def test_delete_product_removes_it_from_active_carts(self):
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=2)
+
+        self.client.force_login(self.producer)
+        response = self.client.post(reverse("producer_product_delete", args=[self.product.id]), follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(id=self.product.id).exists())
+        self.assertFalse(CartItem.objects.filter(cart=cart, product_id=self.product.id).exists())
+        self.assertContains(response, "removed from active baskets")
+
+    def test_product_delete_requires_post(self):
+        self.client.force_login(self.producer)
+        response = self.client.get(reverse("producer_product_delete", args=[self.product.id]))
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Product.objects.filter(id=self.product.id).exists())
 
     def test_customer_can_save_favourite_recipe(self):
         recipe = Recipe.objects.create(

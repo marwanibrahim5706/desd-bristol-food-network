@@ -61,6 +61,23 @@
 
     .detailList li:last-child{ border-bottom:0; }
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+    .productActions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+    }
+    .productActions form{ margin:0; }
+    .dangerBtn{
+      border:1px solid rgba(185,28,28,.28);
+      background:#fff7f7;
+      color:#991b1b;
+      border-radius:14px;
+      padding:12px 18px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .dangerBtn:hover{ border-color:rgba(185,28,28,.5); background:#fee2e2; }
 
     .emptyState{
       background:var(--surface);
@@ -113,6 +130,14 @@
         <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
       </header>
 
+      {% if messages %}
+        <div class="messagesWrap">
+          {% for message in messages %}
+            <div class="msg {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <section class="summaryGrid" aria-label="Product summary">
         <div class="summaryTile"><div class="label">Products</div><div class="value">{{ products|length }}</div></div>
         <div class="summaryTile"><div class="label">Visible to customers</div><div class="value">{{ active_count|default:0 }}</div></div>
@@ -154,7 +179,13 @@
                 {% endif %}
               </div>
 
-              <a class="linkBtn secondary" href="{% url 'producer_product_edit' product.id %}">Edit product</a>
+              <div class="productActions">
+                <a class="linkBtn secondary" href="{% url 'producer_product_edit' product.id %}">Edit product</a>
+                <form method="post" action="{% url 'producer_product_delete' product.id %}">
+                  {% csrf_token %}
+                  <button class="dangerBtn" type="submit" onclick="return confirm('Delete {{ product.name|escapejs }}? This removes it from your catalogue.');">Delete product</button>
+                </form>
+              </div>
             </article>
           {% endfor %}
         </section>
