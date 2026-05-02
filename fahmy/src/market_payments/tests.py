@@ -12,7 +12,7 @@ from market_orders.models import OrderItem as MarketOrderItem
 from market_orders.models import ProducerSubOrder
 from market_payments.models import Cart, CartItem, Order as PaymentOrder, OrderItem as PaymentOrderItem, Payment
 from market_payments.services import calculate_commission_breakdown, request_checkout_breakdown
-from market_products.models import Product
+from market_products.models import FavouriteRecipe, Product, Recipe
 
 
 class SingleProducerCheckoutTestCase(TestCase):
@@ -45,6 +45,17 @@ class SingleProducerCheckoutTestCase(TestCase):
             stock_quantity=20,
             is_active=True,
         )
+        self.recipe = Recipe.objects.create(
+            producer=self.producer,
+            title="Spring Greens Tart",
+            description="A simple tart for brunch and lunch tables.",
+            ingredients="Greens\nPastry\nCheese",
+            instructions="Bake until golden.",
+            status=Recipe.Status.PUBLISHED,
+            moderation_status=Recipe.ModerationStatus.APPROVED,
+        )
+        self.recipe.products.set([self.product_one, self.product_two])
+        FavouriteRecipe.objects.create(customer=self.customer, recipe=self.recipe)
 
     def test_tc007_customer_can_checkout_single_producer_order(self):
         self.client.force_login(self.customer)
@@ -62,12 +73,15 @@ class SingleProducerCheckoutTestCase(TestCase):
         self.assertContains(cart_response, "Heritage Carrots")
         self.assertContains(cart_response, "Spring Greens")
         self.assertContains(cart_response, "Platform commission (5%)")
+        self.assertContains(cart_response, "Saved favourites")
+        self.assertContains(cart_response, "Spring Greens Tart")
 
         payment_response = self.client.get(reverse("market_payments:payment"))
         self.assertEqual(payment_response.status_code, 200)
         self.assertContains(payment_response, "Bristol Valley Farm")
         self.assertContains(payment_response, "1 Test Street, Bristol")
         self.assertContains(payment_response, "Delivery date")
+        self.assertContains(payment_response, "Spring Greens Tart")
 
         delivery_date = timezone.localtime(timezone.now() + timedelta(hours=49)).strftime("%Y-%m-%dT%H:%M")
         checkout_response = self.client.post(
@@ -86,6 +100,7 @@ class SingleProducerCheckoutTestCase(TestCase):
         self.assertEqual(checkout_response.status_code, 200)
         self.assertContains(checkout_response, "Receipt")
         self.assertContains(checkout_response, "Order #")
+        self.assertContains(checkout_response, "Spring Greens Tart")
 
         payment = Payment.objects.get()
         self.assertEqual(payment.status, Payment.Status.PAID)
@@ -129,6 +144,22 @@ class SingleProducerCheckoutTestCase(TestCase):
         self.assertEqual(producer_dashboard.status_code, 200)
         self.assertContains(producer_dashboard, self.customer.username)
         self.assertContains(producer_dashboard, "Heritage Carrots")
+
+    def test_cart_quantity_update_does_not_show_noisy_success_message(self):
+        self.client.force_login(self.customer)
+        cart = Cart.objects.create(user=self.customer)
+        item = CartItem.objects.create(cart=cart, product=self.product_one, quantity=1)
+
+        response = self.client.post(
+            reverse("market_payments:update_cart_item", args=[item.id]),
+            {"quantity": "2"},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Updated Heritage Carrots quantity to 2.")
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 2)
 
 
 class MultiProducerCheckoutTestCase(TestCase):

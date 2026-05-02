@@ -47,9 +47,10 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+      gap: 18px;
       margin-top: 16px;
+      align-items: start;
     }
 
     .card {
@@ -78,8 +79,12 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 16px;
-      padding: 14px 0;
+      padding: 12px 0;
       border-bottom: 1px solid #e5e7eb;
+    }
+
+    .item-row {
+      gap: 18px;
     }
 
     .item-row:last-child,
@@ -99,6 +104,65 @@
     .item-name {
       font-weight: 700;
       margin-bottom: 4px;
+    }
+
+    .item-shell {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .item-media,
+    .item-media-placeholder {
+      width: 112px;
+      height: 112px;
+      border-radius: 16px;
+      flex: 0 0 112px;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      overflow: hidden;
+    }
+
+    .item-media img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .item-media-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .item-content {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .item-description {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 10px 0 0;
+      max-width: 42ch;
+    }
+
+    .item-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      min-width: 120px;
     }
 
     .item-meta {
@@ -164,25 +228,39 @@
       border: 0;
       background: transparent;
       color: #6b7280;
-      padding: 8px 0 0;
+      padding: 6px 0 0;
     }
 
     .totals {
-      margin-top: 16px;
-      padding-top: 4px;
+      margin-top: 4px;
       border-top: 1px solid #e5e7eb;
     }
 
     .grand-total {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
     }
 
     .stack {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 16px;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .totals-card {
+      padding: 22px;
+    }
+
+    .checkout-btn {
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .clear-cart-form {
+      text-align: center;
     }
 
     .qty-form {
@@ -249,6 +327,81 @@
       padding: 8px 0 4px;
     }
 
+    .cart-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .favourite-card {
+      margin-top: 16px;
+    }
+
+    .favourite-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .favourite-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      text-decoration: none;
+      color: inherit;
+      background: #fafafa;
+    }
+
+    .favourite-item:hover {
+      background: #f3f4f6;
+    }
+
+    .favourite-thumb,
+    .favourite-thumb-placeholder {
+      width: 92px;
+      height: 92px;
+      border-radius: 14px;
+      object-fit: cover;
+      flex: 0 0 92px;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+    }
+
+    .favourite-thumb-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .favourite-copy {
+      min-width: 0;
+    }
+
+    .favourite-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .favourite-desc {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
+    .favourite-link-btn {
+      width: auto;
+    }
+
     @media (max-width: 800px) {
       .grid {
         grid-template-columns: 1fr;
@@ -267,6 +420,33 @@
         align-items: flex-start;
       }
 
+      .item-shell {
+        width: 100%;
+      }
+
+      .item-actions {
+        width: 100%;
+        align-items: flex-start;
+      }
+
+      .item-media,
+      .item-media-placeholder {
+        width: 96px;
+        height: 96px;
+        flex-basis: 96px;
+      }
+
+      .favourite-item {
+        flex-direction: column;
+      }
+
+      .favourite-thumb,
+      .favourite-thumb-placeholder {
+        width: 100%;
+        height: 170px;
+        flex-basis: auto;
+      }
+
       .amount {
         white-space: normal;
       }
@@ -274,20 +454,13 @@
   </style>
 </head>
 <body>
-  {% include "includes/logout_button.html" %}
+  {% include "includes/site_nav.html" %}
   <div class="wrap">
     <div class="top">
       <div>
         <h1>Cart</h1>
         <div class="muted">Review items in your basket before payment.</div>
       </div>
-
-      <a class="muted" href="/admin/">Admin</a>
-    </div>
-
-    <div class="actions">
-      <a class="btn-secondary" href="/">Continue Shopping</a>
-      <a class="btn-secondary" href="{% url 'market_payments:order_history' %}">Order History</a>
     </div>
 
     {% if messages %}
@@ -299,6 +472,7 @@
     {% endif %}
 
     <div class="grid">
+      <div class="cart-layout">
       <div class="card">
         <div class="row" style="margin-bottom: 12px;">
           <h2 class="section-title" style="margin:0;">Items in cart</h2>
@@ -320,40 +494,58 @@
 
               {% for item in section.items %}
                 <div class="item-row" style="padding-left: 12px;">
-                  <div>
-                    <div class="item-name">
-                      <a class="item-link" href="{% url 'product_detail' item.product.id %}">
-                        {{ item.product.name }}
+                  <div class="item-shell">
+                    {% if item.product.image_url %}
+                      <a class="item-media" href="{% url 'product_detail' item.product.id %}" aria-label="View {{ item.product.name }}">
+                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" loading="lazy" />
                       </a>
-                    </div>
-                    <form class="qty-form" method="post" action="{% url 'market_payments:update_cart_item' item.id %}">
-                      {% csrf_token %}
-                      <div class="qty-stepper" aria-label="Quantity controls for {{ item.product.name }}">
-                        <button
-                          class="qty-btn"
-                          type="submit"
-                          name="quantity"
-                          value="{{ item.quantity|add:'-1' }}"
-                          aria-label="Decrease quantity for {{ item.product.name }}"
-                        >
-                          -
-                        </button>
-                        <span class="qty-divider" aria-hidden="true"></span>
-                        <span class="qty-value">{{ item.quantity }}</span>
-                        <span class="qty-divider" aria-hidden="true"></span>
-                        <button
-                          class="qty-btn"
-                          type="submit"
-                          name="quantity"
-                          value="{{ item.quantity|add:'1' }}"
-                          aria-label="Increase quantity for {{ item.product.name }}"
-                        >
-                          +
-                        </button>
+                    {% else %}
+                      <div class="item-media-placeholder">{{ item.product.name }}</div>
+                    {% endif %}
+
+                    <div class="item-content">
+                      <div class="item-name">
+                        <a class="item-link" href="{% url 'product_detail' item.product.id %}">
+                          {{ item.product.name }}
+                        </a>
                       </div>
-                    </form>
+                      <div class="item-meta">{{ section.producer_name }}</div>
+                      {% if item.product.description %}
+                        <p class="item-description">{{ item.product.description|truncatechars:110 }}</p>
+                      {% endif %}
+
+                      <form class="qty-form" method="post" action="{% url 'market_payments:update_cart_item' item.id %}">
+                        {% csrf_token %}
+                        <div class="qty-stepper" aria-label="Quantity controls for {{ item.product.name }}">
+                          <button
+                            class="qty-btn"
+                            type="submit"
+                            name="quantity"
+                            value="{{ item.quantity|add:'-1' }}"
+                            aria-label="Decrease quantity for {{ item.product.name }}"
+                          >
+                            -
+                          </button>
+                          <span class="qty-divider" aria-hidden="true"></span>
+                          <span class="qty-value">{{ item.quantity }}</span>
+                          <span class="qty-divider" aria-hidden="true"></span>
+                          <button
+                            class="qty-btn"
+                            type="submit"
+                            name="quantity"
+                            value="{{ item.quantity|add:'1' }}"
+                            aria-label="Increase quantity for {{ item.product.name }}"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
-                  <div class="amount">£{{ item.line_total }}</div>
+                  <div class="item-actions">
+                    <div class="amount">£{{ item.line_total }}</div>
+                    <div class="item-meta">Line total</div>
+                  </div>
                 </div>
               {% endfor %}
             </div>
@@ -362,8 +554,10 @@
           <div class="empty">Your cart is empty.</div>
         {% endif %}
       </div>
+      {% include "market_payments/includes/favourite_recipes_panel.html" %}
+      </div>
 
-      <div class="card">
+      <div class="card totals-card">
         <h2 class="section-title">Cart totals</h2>
 
         <div class="totals">
@@ -384,9 +578,9 @@
         </div>
 
         <div class="stack">
-          <a class="btn" href="{% url 'market_payments:payment' %}">Proceed to Checkout</a>
+          <a class="btn checkout-btn" href="{% url 'market_payments:payment' %}">Proceed to Checkout</a>
 
-          <form method="post" action="{% url 'market_payments:clear_cart' %}">
+          <form class="clear-cart-form" method="post" action="{% url 'market_payments:clear_cart' %}">
             {% csrf_token %}
             <button type="submit" class="clear-btn">Clear cart</button>
           </form>

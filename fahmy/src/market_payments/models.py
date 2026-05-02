@@ -117,6 +117,11 @@ class Settlement(models.Model):
         on_delete=models.PROTECT,
         related_name="settlements",
     )
+    included_suborders = models.ManyToManyField(
+        "market_orders.ProducerSubOrder",
+        related_name="settlements",
+        blank=True,
+    )
     week_start = models.DateField()
     week_end = models.DateField()
     gross_sales = models.DecimalField(max_digits=12, decimal_places=2, default=0)

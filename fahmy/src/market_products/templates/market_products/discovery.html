@@ -40,16 +40,57 @@
 
     .search-form {
       display: flex;
-      gap: 10px;
-      margin: 14px 0 18px;
+      flex-direction: column;
+      gap: 14px;
+      margin: 18px 0 18px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: 0 18px 40px rgba(17, 24, 39, 0.06);
+    }
+
+    .search-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
     }
 
     input, select {
-      padding: 10px 12px;
+      padding: 13px 14px;
       border: 1px solid #d9dee8;
-      border-radius: 12px;
+      border-radius: 16px;
       width: 100%;
       background: white;
+      color: #111827;
+      font-size: 14px;
+      min-height: 50px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: #111827;
+      box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+    }
+
+    .search-input {
+      font-weight: 600;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .control-md {
+      grid-column: span 3;
+    }
+
+    .control-sm {
+      grid-column: span 4;
     }
 
     button,
@@ -64,6 +105,50 @@
       text-decoration: none;
       display: inline-block;
       text-align: center;
+    }
+
+    .filters-toggle {
+      padding: 13px 16px;
+      border: 1px solid #d9dee8;
+      border-radius: 16px;
+      background: #f9fafb;
+      color: #111827;
+      cursor: pointer;
+      font-weight: 700;
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 50px;
+      white-space: nowrap;
+      appearance: none;
+    }
+
+    .filters-toggle::after {
+      content: "▾";
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .filters-toggle[aria-expanded="true"]::after {
+      content: "▴";
+    }
+
+    .filters-panel-wrap {
+      display: none;
+      border-top: 1px solid #eef0f4;
+      padding-top: 14px;
+    }
+
+    .filters-panel-wrap.open {
+      display: block;
+    }
+
+    .filters-panel {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
     }
 
     .btn-secondary {
@@ -90,6 +175,18 @@
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 14px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .thumb {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 12px;
+      display: block;
     }
 
     .row {
@@ -107,6 +204,13 @@
       font-size: 12px;
     }
 
+    .filter-summary {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: -4px 0 18px;
+    }
+
     .danger {
       background: #fee2e2;
     }
@@ -116,13 +220,90 @@
     }
 
     .product-link {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
       text-decoration: none;
       color: inherit;
     }
 
+    .meta-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .product-description {
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 10px 0 0;
+    }
+
     .product-actions {
-      margin-top: 14px;
+      margin-top: auto;
+      padding-top: 16px;
+    }
+
+    .avoid-panel {
+      grid-column: 1 / -1;
+      background: #f9fafb;
+      border: 1px solid #eef0f4;
+      border-radius: 20px;
+      padding: 14px;
+    }
+
+    .avoid-panel-title {
+      color: #374151;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .avoid-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .avoid-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .avoid-option input {
+      width: auto;
+      margin: 0;
+      accent-color: #111827;
+    }
+
+    .avoid-option:has(input:checked) {
+      background: #fee2e2;
+      border-color: #fecaca;
+      color: #7f1d1d;
+    }
+
+    .form-actions {
+      grid-column: 7 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 0;
+    }
+
+    .form-actions button,
+    .form-actions .btn-secondary {
+      min-width: 150px;
+      border-radius: 16px;
     }
 
     .product-actions form {
@@ -184,6 +365,28 @@
       }
 
       .search-form {
+        padding: 14px;
+      }
+
+      .search-shell,
+      .filter-grid,
+      .filters-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .search-input,
+      .control-sm,
+      .control-md,
+      .avoid-panel,
+      .form-actions {
+        grid-column: 1;
+      }
+
+      .form-actions {
+        width: 100%;
+      }
+
+      .form-actions {
         flex-direction: column;
       }
 
@@ -194,18 +397,14 @@
   </style>
 </head>
 <body>
-  {% include "includes/logout_button.html" %}
+  {% include "includes/site_nav.html" %}
   <div class="wrap">
     <div class="top">
       <div>
         <h1 style="margin:0;">Discovery</h1>
-        <div class="muted">Browse products and search by name/producer.</div>
+        <div class="muted">Search by product, producer, category, allergens, season, food miles, organic status, price, and availability.</div>
       </div>
 
-      <div class="top-right">
-        <a class="btn-secondary" href="{% url 'market_payments:cart' %}">Cart</a>
-        <a class="muted" href="/admin/">Admin</a>
-      </div>
     </div>
 
     {% if messages %}
@@ -217,18 +416,81 @@
     {% endif %}
 
     <form method="get" class="search-form">
-      <input name="q" placeholder="Search (e.g. apples)" value="{{ q }}">
-      <select name="available">
-        <option value="">Active products</option>
-        <option value="1" {% if available == "1" %}selected{% endif %}>Available only (stock &gt; 0)</option>
-      </select>
-      <button type="submit">Search</button>
+      <div class="search-shell">
+        <input class="search-input" name="q" placeholder="Search product, producer, category, season, allergen..." value="{{ filters.q }}">
+        <button type="button" class="filters-toggle" aria-expanded="{% if has_advanced_filters %}true{% else %}false{% endif %}" aria-controls="discovery-filters">Filters</button>
+        <button type="submit">Search</button>
+      </div>
+      <div id="discovery-filters" class="filters-panel-wrap{% if has_advanced_filters %} open{% endif %}">
+        <div class="filters-panel">
+            <select class="control-md" name="category">
+              <option value="">All categories</option>
+              {% for value, label in categories %}
+                <option value="{{ value }}" {% if filters.category == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <select class="control-md" name="available">
+              <option value="">Active products</option>
+              <option value="1" {% if filters.available == "1" %}selected{% endif %}>Available only</option>
+            </select>
+            <select class="control-md" name="organic">
+              <option value="">Organic and non-organic</option>
+              <option value="1" {% if filters.organic == "1" %}selected{% endif %}>Organic only</option>
+            </select>
+            <select class="control-md" name="season">
+              <option value="">Any season</option>
+              {% for value, label in seasons %}
+                <option value="{{ value }}" {% if filters.season == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <input class="control-sm" name="max_food_miles" type="number" step="0.1" min="0" placeholder="Max food miles" value="{{ filters.max_food_miles }}">
+            <input class="control-sm" name="min_price" type="number" step="0.01" min="0" placeholder="Min £" value="{{ filters.min_price }}">
+            <input class="control-sm" name="max_price" type="number" step="0.01" min="0" placeholder="Max £" value="{{ filters.max_price }}">
+
+            <div class="avoid-panel">
+              <div class="avoid-panel-title">Avoid categories / allergens</div>
+              <div class="avoid-options">
+                {% for value, label in categories %}
+                  <label class="avoid-option">
+                    <input type="checkbox" name="avoid_categories" value="{{ value }}" {% if value in filters.avoid_categories %}checked{% endif %}>
+                    Avoid {{ label }}
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <select class="control-md" name="sort">
+              <option value="name" {% if filters.sort == "name" %}selected{% endif %}>Sort: Name</option>
+              <option value="price_asc" {% if filters.sort == "price_asc" %}selected{% endif %}>Price low to high</option>
+              <option value="price_desc" {% if filters.sort == "price_desc" %}selected{% endif %}>Price high to low</option>
+              <option value="food_miles" {% if filters.sort == "food_miles" %}selected{% endif %}>Lowest food miles</option>
+              <option value="newest" {% if filters.sort == "newest" %}selected{% endif %}>Newest</option>
+            </select>
+            <div class="form-actions">
+              <a class="btn-secondary" href="{% url 'discovery_alt' %}">Clear</a>
+            </div>
+        </div>
+      </div>
     </form>
+
+    <div class="filter-summary">
+      <span class="pill">{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }} found</span>
+      {% if filters.q %}<span class="pill">Search: {{ filters.q }}</span>{% endif %}
+      {% if filters.category %}<span class="pill">Category filtered</span>{% endif %}
+      {% if filters.available == "1" %}<span class="pill ok">In stock only</span>{% endif %}
+      {% if filters.organic == "1" %}<span class="pill ok">Organic only</span>{% endif %}
+      {% if filters.season %}<span class="pill">Season: {{ filters.season }}</span>{% endif %}
+      {% for label in avoided_category_labels %}<span class="pill">Avoiding {{ label }}</span>{% endfor %}
+      {% if filters.max_food_miles %}<span class="pill">Within {{ filters.max_food_miles }} miles</span>{% endif %}
+    </div>
 
     <div class="grid">
       {% for p in page_obj %}
         <div class="card">
           <a class="product-link" href="{% url 'product_detail' p.id %}">
+            {% if p.image_url %}
+              <img class="thumb" src="{{ p.image_url }}" alt="{{ p.name }}" onerror="this.onerror=null;this.src='{{ p.image_fallback_url }}';">
+            {% endif %}
             <div class="row">
               <strong>{{ p.name }}</strong>
               <span class="pill">£{{ p.price }}</span>
@@ -238,7 +500,11 @@
               Producer: {{ p.producer.username }}
             </div>
 
-            <div style="margin-top:10px;">
+            {% if p.description %}
+              <p class="product-description">{{ p.description|truncatechars:120 }}</p>
+            {% endif %}
+
+            <div class="meta-pills">
               {% if p.stock_quantity > 0 %}
                 <span class="pill ok">In stock: {{ p.stock_quantity }}</span>
               {% else %}
@@ -247,6 +513,17 @@
 
               {% if not p.is_active %}
                 <span class="pill danger">Inactive</span>
+              {% endif %}
+              {% if p.is_organic %}
+                <span class="pill ok">Organic</span>
+              {% endif %}
+              <span class="pill">{{ p.get_category_display }}</span>
+              <span class="pill">{{ p.get_seasonal_availability_display }}</span>
+              {% if p.food_miles != None %}
+                <span class="pill">{{ p.food_miles }} food miles</span>
+              {% endif %}
+              {% if p.allergens %}
+                <span class="pill danger">Allergens: {{ p.allergens }}</span>
               {% endif %}
             </div>
           </a>
@@ -272,15 +549,25 @@
 
     <div class="pagination">
       {% if page_obj.has_previous %}
-        <a class="pill" href="?q={{ q }}&available={{ available }}&page={{ page_obj.previous_page_number }}">Prev</a>
+        <a class="pill" href="?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ page_obj.previous_page_number }}">Prev</a>
       {% endif %}
 
       <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
 
       {% if page_obj.has_next %}
-        <a class="pill" href="?q={{ q }}&available={{ available }}&page={{ page_obj.next_page_number }}">Next</a>
+        <a class="pill" href="?{{ pagination_query }}{% if pagination_query %}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
       {% endif %}
     </div>
   </div>
+  <script>
+    const filtersToggle = document.querySelector('.filters-toggle');
+    const filtersPanel = document.getElementById('discovery-filters');
+    if (filtersToggle && filtersPanel) {
+      filtersToggle.addEventListener('click', function() {
+        const isOpen = filtersPanel.classList.toggle('open');
+        filtersToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    }
+  </script>
 </body>
 </html>

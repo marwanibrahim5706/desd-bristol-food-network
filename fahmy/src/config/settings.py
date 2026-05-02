@@ -147,6 +147,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "market_accounts.User"
 
 LOGIN_URL = "/accounts/login/"
+CSRF_FAILURE_VIEW = "accounts.views.csrf_failure"
 
 # Internal URL for the dedicated payments microservice container.
 PAYMENTS_SERVICE_URL = os.getenv("PAYMENTS_SERVICE_URL", "http://payments:8001")

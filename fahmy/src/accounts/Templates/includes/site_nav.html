@@ -1,0 +1,202 @@
+{% if user.is_authenticated %}
+  <style>
+    .siteNav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(15,23,42,.92);
+      border-bottom: 1px solid rgba(55,65,81,.9);
+      box-shadow: 0 14px 34px rgba(2,6,23,.28);
+      backdrop-filter: blur(16px);
+    }
+
+    .siteNavInner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .siteBrand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 190px;
+      color: #f8fafc;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .siteBrandMark {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background:
+        radial-gradient(14px 14px at 30% 30%, rgba(255,255,255,.55), transparent 60%),
+        linear-gradient(135deg, #16a34a, #2563eb);
+      box-shadow: 0 10px 22px rgba(37,99,235,.16);
+      flex: 0 0 auto;
+    }
+
+    .siteBrandText {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .siteBrandText small {
+      color: #9ca3af;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    .siteNavLinks {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .siteNavLinks a {
+      color: #f8fafc;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+    }
+
+    .siteNavLinks a:hover {
+      color: #fff;
+      background: rgba(30,41,59,.86);
+      border-color: rgba(59,130,246,.22);
+      transform: translateY(-1px);
+    }
+
+    .siteNavLinks a[aria-current="page"] {
+      color: #fff;
+      background: rgba(37,99,235,.18);
+      border-color: rgba(59,130,246,.34);
+    }
+
+    .siteNavActions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      min-width: 190px;
+    }
+
+    .siteUser {
+      color: #9ca3af;
+      font-size: 13px;
+      font-weight: 700;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .siteLogoutForm {
+      margin: 0;
+    }
+
+    .siteLogoutButton {
+      appearance: none;
+      border: 1px solid rgba(148,163,184,.28);
+      background: rgba(30,41,59,.86);
+      color: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: none;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+
+    .siteLogoutButton:hover {
+      transform: translateY(-1px);
+      background: rgba(51,65,85,.94);
+      border-color: rgba(59,130,246,.36);
+      filter: none;
+    }
+
+    body:has(.siteNav) .sessionLogout {
+      display: none;
+    }
+
+    @media (max-width: 820px) {
+      .siteNavInner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 12px 16px;
+      }
+
+      .siteBrand,
+      .siteNavActions {
+        min-width: 0;
+      }
+
+      .siteNavLinks {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .siteNavActions {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+
+  <header class="siteNav">
+    <div class="siteNavInner">
+      <a class="siteBrand" href="/">
+        <span class="siteBrandMark" aria-hidden="true"></span>
+        <span class="siteBrandText">
+          Bristol Food Network
+          <small>{{ user.get_role_display|default:"Marketplace" }}</small>
+        </span>
+      </a>
+
+      <nav class="siteNavLinks" aria-label="Primary">
+        <a href="{% url 'discovery_alt' %}" {% if request.path == "/discover/" or request.path == "/" %}aria-current="page"{% endif %}>Discover</a>
+        <a href="{% url 'market_payments:cart' %}" {% if request.path == "/payments/cart/" %}aria-current="page"{% endif %}>Cart</a>
+        <a href="{% url 'market_payments:order_history' %}" {% if request.path == "/payments/orders/" %}aria-current="page"{% endif %}>Orders</a>
+        <a href="{% url 'market_finance:recurring_orders_dashboard' %}" {% if request.path == "/finance/recurring/" %}aria-current="page"{% endif %}>Repeat Orders</a>
+
+        {% if user.role == "PRODUCER" %}
+          <a href="{% url 'producer_dashboard' %}" {% if request.path == "/orders/producer/dashboard/" %}aria-current="page"{% endif %}>Producer Orders</a>
+          <a href="{% url 'producer_product_list' %}" {% if request.path == "/producer/products/" %}aria-current="page"{% endif %}>Products</a>
+          <a href="{% url 'producer_content_dashboard' %}" {% if request.path == "/producer/content/" %}aria-current="page"{% endif %}>Content</a>
+          <a href="{% url 'market_finance:producer_settlements_dashboard' %}" {% if request.path == "/finance/producer/settlements/" %}aria-current="page"{% endif %}>Settlements</a>
+        {% endif %}
+
+        {% if user.is_staff or user.is_superuser or user.role == "ADMIN" %}
+          <a href="{% url 'market_finance:admin_finance_dashboard' %}" {% if request.path == "/finance/admin/dashboard/" %}aria-current="page"{% endif %}>Finance</a>
+          <a href="/admin/" {% if request.path == "/admin/" %}aria-current="page"{% endif %}>Admin</a>
+        {% endif %}
+      </nav>
+
+      <div class="siteNavActions">
+        <span class="siteUser">{{ user.username }}</span>
+        <form class="siteLogoutForm" method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button class="siteLogoutButton" type="submit">Log out</button>
+        </form>
+      </div>
+    </div>
+  </header>
+{% endif %}

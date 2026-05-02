@@ -376,7 +376,7 @@
 </head>
 
 <body>
-  {% include "includes/logout_button.html" %}
+  {% include "includes/site_nav.html" %}
   <div class="layout page">
 
     <aside class="sidebar">
@@ -389,17 +389,21 @@
       </div>
 
       <nav class="nav">
-        <a class="active" href="/orders/producer/dashboard/">
+        <a class="active" href="{% url 'producer_dashboard' %}">
           <span class="icon">&#128230;</span>
           <span>Incoming Orders</span>
         </a>
-        <a href="/finance/producer/settlements/">
+        <a href="{% url 'market_finance:producer_settlements_dashboard' %}">
           <span class="icon">£</span>
           <span>Weekly Settlements</span>
         </a>
-        <a href="http://localhost:8000/producer/products/">
+        <a href="{% url 'producer_product_list' %}">
           <span class="icon">&#9881;</span>
           <span>Product Management</span>
+        </a>
+        <a href="{% url 'producer_content_dashboard' %}">
+          <span class="icon">&#127859;</span>
+          <span>Content & Reviews</span>
         </a>
         <a href="/admin/">
           <span class="icon">⚙️</span>
@@ -643,7 +647,7 @@
       {% else %}
         <div class="empty">
           <h3 style="margin:0 0 8px; color:var(--text);">No incoming orders</h3>
-          <p style="margin:0;">Create demo orders (3 different delivery dates) to satisfy TC9 preconditions.</p>
+          <p style="margin:0;">New customer orders will appear here when they are placed.</p>
         </div>
       {% endif %}
     </main>

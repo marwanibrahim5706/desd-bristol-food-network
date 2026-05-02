@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ producer.business_name|default:producer.username }}</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin:0; background:#f6f7fb; color:#111827; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    .card { background:white; border:1px solid #e5e7eb; border-radius:18px; padding:20px; margin-top:14px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .item { border:1px solid #e5e7eb; border-radius:16px; padding:14px; margin-top:12px; background:#fafafa; }
+    .muted { color:#6b7280; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; margin-right:6px; }
+    .thumb { width:100%; max-height:220px; object-fit:cover; border-radius:14px; border:1px solid #e5e7eb; margin-bottom:10px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; cursor:pointer; }
+    @media (max-width: 860px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  {% include "includes/site_nav.html" %}
+  <div class="wrap">
+    <a class="muted" href="{% url 'discovery' %}">← Back to discovery</a>
+    <div class="card">
+      <h1 style="margin:0 0 8px;">{{ producer.business_name|default:producer.username }}</h1>
+      <div class="muted">Producer profile, recipes, and farm stories.</div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2 style="margin-top:0;">Products</h2>
+        {% for product in products %}
+          <div class="item">
+            <a href="{% url 'product_detail' product.id %}"><strong>{{ product.name }}</strong></a>
+            <div class="muted">£{{ product.price }} • {{ product.get_category_display }}</div>
+            {% if product.description %}<p style="margin-bottom:0;">{{ product.description|truncatechars:120 }}</p>{% endif %}
+          </div>
+        {% empty %}
+          <p class="muted">No products published yet.</p>
+        {% endfor %}
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0;">Recipes</h2>
+        {% for recipe in recipes %}
+          <div class="item">
+            {% if recipe.image_url %}<img class="thumb" src="{{ recipe.image_url }}" alt="{{ recipe.title }}">{% endif %}
+            <a href="{% url 'recipe_detail' recipe.id %}"><strong>{{ recipe.title }}</strong></a>
+            <div class="muted">{{ recipe.get_seasonal_tag_display }} • {{ recipe.products.count }} linked product{{ recipe.products.count|pluralize }}</div>
+            <p>{{ recipe.description|truncatechars:150 }}</p>
+            {% if request.user.is_authenticated and request.user.role == "CUSTOMER" %}
+              <form method="post" action="{% url 'toggle_favourite_recipe' recipe.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'producer_profile' producer.id %}">
+                <button type="submit">{% if recipe.id in favourite_ids %}Remove Favourite{% else %}Save Favourite{% endif %}</button>
+              </form>
+            {% endif %}
+          </div>
+        {% empty %}
+          <p class="muted">No published recipes yet.</p>
+        {% endfor %}
+      </section>
+    </div>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Farm Stories</h2>
+      {% for story in stories %}
+        <div class="item">
+          {% if story.image_url %}<img class="thumb" src="{{ story.image_url }}" alt="{{ story.title }}">{% endif %}
+          <a href="{% url 'story_detail' story.id %}"><strong>{{ story.title }}</strong></a>
+          <div class="muted">{{ story.get_seasonal_tag_display }}</div>
+          <p style="margin-bottom:0;">{{ story.summary|truncatechars:180 }}</p>
+        </div>
+      {% empty %}
+        <p class="muted">No published farm stories yet.</p>
+      {% endfor %}
+    </section>
+  </div>
+</body>
+</html>

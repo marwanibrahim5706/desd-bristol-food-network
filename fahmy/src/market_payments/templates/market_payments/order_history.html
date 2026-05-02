@@ -38,13 +38,6 @@
       font-size: 14px;
     }
 
-    .actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin: 14px 0 0;
-    }
-
     .btn,
     .btn-secondary {
       display: inline-block;
@@ -73,17 +66,17 @@
       background: #fff;
       border: 1px solid #e5e7eb;
       border-radius: 18px;
-      padding: 20px;
+      padding: 12px 20px;
       margin-top: 16px;
     }
 
     .order-row {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr 0.9fr auto;
-      gap: 12px;
-      padding: 16px 0;
+      grid-template-columns: minmax(220px, 1.45fr) minmax(90px, .45fr) minmax(130px, .65fr) minmax(120px, .65fr) minmax(120px, .55fr) minmax(160px, .7fr);
+      gap: 18px;
+      padding: 22px 0;
       border-bottom: 1px solid #e5e7eb;
-      align-items: center;
+      align-items: start;
     }
 
     .order-row:last-child {
@@ -93,6 +86,23 @@
     .order-title {
       font-weight: 700;
       margin-bottom: 4px;
+    }
+
+    .order-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .review-links {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .review-links a {
+      font-weight: 700;
     }
 
     .pill {
@@ -124,6 +134,10 @@
       cursor: pointer;
     }
 
+    .order-actions button {
+      min-width: 126px;
+    }
+
     .msg-wrap {
       margin-top: 16px;
     }
@@ -145,18 +159,13 @@
   </style>
 </head>
 <body>
-  {% include "includes/logout_button.html" %}
+  {% include "includes/site_nav.html" %}
   <div class="wrap">
     <div class="top">
       <div>
         <h1>Order History</h1>
         <div class="muted">Review previous orders and add available items back to your cart.</div>
       </div>
-    </div>
-
-    <div class="actions">
-      <a class="btn-secondary" href="{% url 'market_payments:cart' %}">View Cart</a>
-      <a class="btn-secondary" href="/">Continue Shopping</a>
     </div>
 
     {% if messages %}
@@ -175,7 +184,7 @@
               <div class="order-title">Order #{{ entry.order.id }}</div>
               <div class="muted">{{ entry.item_count }} item{{ entry.item_count|pluralize }} • {{ entry.order.created_at|date:"d M Y, H:i" }}</div>
               <div class="muted">
-                {% for item in entry.order.items.all %}
+                {% for item in entry.items %}
                   {{ item.product_name }}{% if not forloop.last %}, {% endif %}
                 {% endfor %}
               </div>
@@ -215,10 +224,27 @@
               </div>
             </div>
             <div>
+              <div class="order-actions">
+              {% if entry.reviewable_items %}
+                <div class="review-links">
+                  {% for reviewable in entry.reviewable_items %}
+                    {% if reviewable.can_review %}
+                      <a href="{% url 'product_detail' reviewable.product.id %}">Write Review</a>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% if entry.market_order %}
+                <form method="post" action="{% url 'market_finance:create_recurring_order_from_order' entry.market_order.id %}" style="margin-bottom:10px;">
+                  {% csrf_token %}
+                  <button type="submit">Make Recurring</button>
+                </form>
+              {% endif %}
               <form method="post" action="{% url 'market_payments:reorder_order' entry.order.id %}">
                 {% csrf_token %}
                 <button type="submit">Reorder</button>
               </form>
+              </div>
             </div>
           </div>
         {% endfor %}

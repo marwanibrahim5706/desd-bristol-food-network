@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ page_title }}</title>
+  <style>
+    {% include "market_orders/includes/producer_theme_styles.html" %}
+    body { margin:0; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 24px; }
+    .card { background:linear-gradient(180deg, rgba(30,41,59,.74), rgba(17,24,39,.92)); border:1px solid rgba(55,65,81,.9); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
+    label { display:block; margin-bottom:6px; color:var(--muted); }
+    input, textarea, select { width:100%; border-radius:12px; border:1px solid rgba(100,116,139,.6); background:rgba(15,23,42,.92); color:var(--text); padding:10px 12px; font:inherit; }
+    textarea { min-height:120px; }
+    .field { margin-bottom:14px; }
+    .help { color:var(--muted); font-size:13px; margin-top:4px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid rgba(59,130,246,.28); background:rgba(37,99,235,.18); color:var(--text); cursor:pointer; }
+    .preview-card { margin-bottom:18px; padding:14px; border-radius:16px; border:1px solid rgba(100,116,139,.35); background:rgba(15,23,42,.52); }
+    .preview-card h2 { margin:0 0 10px; font-size:18px; }
+    .preview-frame { overflow:hidden; border-radius:14px; border:1px solid rgba(100,116,139,.3); background:rgba(2,6,23,.9); min-height:220px; display:flex; align-items:center; justify-content:center; }
+    .preview-frame img { display:block; width:100%; max-height:340px; object-fit:cover; }
+    .preview-empty { color:var(--muted); font-size:14px; padding:18px; text-align:center; }
+  </style>
+</head>
+<body>
+  {% include "includes/site_nav.html" %}
+  <div class="wrap">
+    <a href="{% url 'producer_content_dashboard' %}" style="color:#475569; text-decoration:none;">← Back to content dashboard</a>
+    <div class="card" style="margin-top:14px;">
+      <h1 style="margin-top:0;">{{ page_title }}</h1>
+      <form method="post">
+        {% csrf_token %}
+        {% if form.image_url %}
+          <div class="preview-card">
+            <h2>Image preview</h2>
+            <div class="preview-frame">
+              <img
+                id="image-url-preview"
+                src="{{ form.image_url.value|default:'' }}"
+                alt="Image preview"
+                {% if not form.image_url.value %}style="display:none;"{% endif %}
+              />
+              <div
+                id="image-url-preview-empty"
+                class="preview-empty"
+                {% if form.image_url.value %}style="display:none;"{% endif %}
+              >
+                Add an image URL to preview how this recipe or farm story will appear.
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        {% for field in form %}
+          <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="help" style="color:#fca5a5;">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        <button type="submit">{{ submit_label }}</button>
+      </form>
+    </div>
+  </div>
+  {% if form.image_url %}
+    <script>
+      (function () {
+        var input = document.getElementById("{{ form.image_url.id_for_label }}");
+        var preview = document.getElementById("image-url-preview");
+        var empty = document.getElementById("image-url-preview-empty");
+        if (!input || !preview || !empty) {
+          return;
+        }
+
+        function renderPreview() {
+          var value = (input.value || "").trim();
+          if (!value) {
+            preview.style.display = "none";
+            preview.removeAttribute("src");
+            empty.style.display = "block";
+            return;
+          }
+          preview.src = value;
+          preview.style.display = "block";
+          empty.style.display = "none";
+        }
+
+        preview.addEventListener("error", function () {
+          preview.style.display = "none";
+          empty.textContent = "This image URL could not be loaded. Double-check the link and try again.";
+          empty.style.display = "block";
+        });
+
+        preview.addEventListener("load", function () {
+          empty.style.display = "none";
+          preview.style.display = "block";
+        });
+
+        input.addEventListener("input", renderPreview);
+        renderPreview();
+      })();
+    </script>
+  {% endif %}
+</body>
+</html>

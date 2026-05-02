@@ -1,9 +1,10 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Avg
+from django.utils import timezone
 
 from market_orders.models import ProducerSubOrder
 
-from .models import Review
+from .models import FarmStory, FavouriteRecipe, Recipe, Review
 
 
 def user_can_review_product(user, product):
@@ -26,11 +27,62 @@ def create_verified_review(*, user, product, rating, comment=""):
     if Review.objects.filter(user=user, product=product).exists():
         raise ValidationError("You have already reviewed this product.")
 
-    review = Review(user=user, product=product, rating=rating, comment=comment)
+    review = Review(
+        user=user,
+        product=product,
+        rating=rating,
+        comment=comment,
+        verified_purchase=True,
+    )
     review.full_clean()
     review.save()
     return review
 
 
 def average_product_rating(product):
-    return product.reviews.aggregate(avg=Avg("rating"))["avg"]
+    return product.reviews.filter(
+        moderation_status=Review.ModerationStatus.PUBLISHED
+    ).aggregate(avg=Avg("rating"))["avg"]
+
+
+def published_product_recipes(product):
+    return product.recipes.filter(
+        status=Recipe.Status.PUBLISHED,
+        moderation_status=Recipe.ModerationStatus.APPROVED,
+    ).select_related("producer")
+
+
+def published_producer_stories(producer):
+    return FarmStory.objects.filter(
+        producer=producer,
+        status=FarmStory.Status.PUBLISHED,
+        moderation_status=FarmStory.ModerationStatus.APPROVED,
+    )
+
+
+def published_producer_recipes(producer):
+    return Recipe.objects.filter(
+        producer=producer,
+        status=Recipe.Status.PUBLISHED,
+        moderation_status=Recipe.ModerationStatus.APPROVED,
+    ).prefetch_related("products")
+
+
+def producer_can_manage_review(user, review):
+    return user.is_authenticated and getattr(user, "id", None) == review.product.producer_id
+
+
+def add_producer_response(*, review, producer, response_text):
+    if not producer_can_manage_review(producer, review):
+        raise PermissionDenied("You can only respond to reviews on your own products.")
+    review.producer_response = response_text.strip()
+    review.producer_responded_at = timezone.now()
+    review.full_clean()
+    review.save(update_fields=["producer_response", "producer_responded_at", "updated_at"])
+    return review
+
+
+def recipe_is_favourited_by_user(recipe, user):
+    if not user.is_authenticated:
+        return False
+    return FavouriteRecipe.objects.filter(customer=user, recipe=recipe).exists()

@@ -77,9 +77,39 @@
       margin: 6px 0 0;
       padding-left: 18px;
     }
+    .preview-card {
+      margin: 18px 0;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+    .preview-frame {
+      min-height: 220px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+    }
+    .preview-frame img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: cover;
+      display: block;
+    }
+    .preview-empty {
+      color: #6b7280;
+      font-size: 14px;
+      padding: 18px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+  {% include "includes/site_nav.html" %}
   <div class="wrap">
     <a class="muted" href="{% url 'producer_product_list' %}">← Back to My Products</a>
 
@@ -92,6 +122,25 @@
 
         {{ form.non_field_errors }}
 
+        <div class="preview-card">
+          <strong>Image preview</strong>
+          <div class="preview-frame" style="margin-top:10px;">
+            <img
+              id="product-image-preview"
+              src="{{ form.image_url.value|default:'' }}"
+              alt="Product image preview"
+              {% if not form.image_url.value %}style="display:none;"{% endif %}
+            >
+            <div
+              id="product-image-preview-empty"
+              class="preview-empty"
+              {% if form.image_url.value %}style="display:none;"{% endif %}
+            >
+              Add a product image URL to preview how this item will appear to customers.
+            </div>
+          </div>
+        </div>
+
         <label for="{{ form.name.id_for_label }}">Product name</label>
         {{ form.name }}
         {{ form.name.errors }}
@@ -103,6 +152,24 @@
         <label for="{{ form.category.id_for_label }}">Category</label>
         {{ form.category }}
         {{ form.category.errors }}
+
+        <label for="{{ form.image_url.id_for_label }}">Product image URL</label>
+        {{ form.image_url }}
+        {{ form.image_url.errors }}
+
+        <div class="checkbox-row">
+          {{ form.is_organic }}
+          <label for="{{ form.is_organic.id_for_label }}" style="margin:0;">Certified organic</label>
+        </div>
+        {{ form.is_organic.errors }}
+
+        <label for="{{ form.food_miles.id_for_label }}">Food miles</label>
+        {{ form.food_miles }}
+        {{ form.food_miles.errors }}
+
+        <label for="{{ form.seasonal_availability.id_for_label }}">Seasonal availability</label>
+        {{ form.seasonal_availability }}
+        {{ form.seasonal_availability.errors }}
 
         <label for="{{ form.price.id_for_label }}">Price</label>
         {{ form.price }}
@@ -133,5 +200,43 @@
       </form>
     </div>
   </div>
+  <script>
+    (function () {
+      var input = document.getElementById("{{ form.image_url.id_for_label }}");
+      var preview = document.getElementById("product-image-preview");
+      var empty = document.getElementById("product-image-preview-empty");
+      if (!input || !preview || !empty) {
+        return;
+      }
+
+      function renderPreview() {
+        var value = (input.value || "").trim();
+        if (!value) {
+          preview.style.display = "none";
+          preview.removeAttribute("src");
+          empty.textContent = "Add a product image URL to preview how this item will appear to customers.";
+          empty.style.display = "block";
+          return;
+        }
+        preview.src = value;
+        preview.style.display = "block";
+        empty.style.display = "none";
+      }
+
+      preview.addEventListener("error", function () {
+        preview.style.display = "none";
+        empty.textContent = "This image URL could not be loaded. Double-check the link and try again.";
+        empty.style.display = "block";
+      });
+
+      preview.addEventListener("load", function () {
+        empty.style.display = "none";
+        preview.style.display = "block";
+      });
+
+      input.addEventListener("input", renderPreview);
+      renderPreview();
+    })();
+  </script>
 </body>
 </html>

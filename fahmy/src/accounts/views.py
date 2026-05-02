@@ -16,6 +16,9 @@ def login_view(request):
     if request.user.is_authenticated:
         return _safe_redirect_or_default(request, next_url, request.user)
 
+    if request.GET.get("csrf") == "expired":
+        messages.error(request, "Your sign-in page expired. Please try signing in again.")
+
     if request.method == "POST":
         identifier = request.POST.get("identifier", "").strip()
         password = request.POST.get("password", "")
@@ -46,6 +49,18 @@ def logout_view(request):
     logout(request)
     messages.success(request, "You have been logged out.")
     return redirect("/accounts/login/")
+
+
+def csrf_failure(request, reason=""):
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
+    redirect_url = "/accounts/login/?csrf=expired"
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        redirect_url = f"{redirect_url}&next={next_url}"
+    return redirect(redirect_url)
 
 
 def _safe_redirect_or_default(request, next_url, user):

@@ -1,6 +1,6 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -11,6 +11,8 @@ from django.utils import timezone
 from market_orders.models import Order, OrderItem, ProducerSubOrder
 from market_payments.models import Payment as PaymentSnapshot, Settlement
 from market_products.models import Product
+
+from .models import RecurringOrder
 
 FINANCE_PROCESSED_STATUSES = {
     ProducerSubOrder.Status.CONFIRMED,
@@ -114,17 +116,22 @@ def _summarize_order_settlement_status(suborders):
     if not delivered_suborders:
         return "Awaiting delivered suborders"
 
-    settlement_keys = {
-        (settlement.producer_id, settlement.week_start): settlement
-        for settlement in Settlement.objects.filter(
-            producer_id__in={suborder.producer_id for suborder in delivered_suborders}
+    settlement_map = {}
+    settlement_qs = (
+        Settlement.objects.filter(
+            producer_id__in={suborder.producer_id for suborder in delivered_suborders},
+            included_suborders__in=delivered_suborders,
         )
-    }
+        .distinct()
+        .prefetch_related("included_suborders")
+    )
+    for settlement in settlement_qs:
+        for included_id in settlement.included_suborders.values_list("id", flat=True):
+            settlement_map[included_id] = settlement
 
     statuses = []
     for suborder in delivered_suborders:
-        week_start, _ = settlement_week_bounds(suborder.delivery_date)
-        settlement = settlement_keys.get((suborder.producer_id, week_start))
+        settlement = settlement_map.get(suborder.id)
         if settlement is None:
             statuses.append("Pending record")
         elif settlement.status == Settlement.Status.PAID:
@@ -274,7 +281,7 @@ def build_finance_pdf(lines):
     """
     Generate a lightweight PDF document without external dependencies.
 
-    This keeps the demo self-contained while still offering a downloadable PDF.
+    This keeps reporting self-contained while still offering a downloadable PDF.
     """
     def escape_pdf_text(value):
         return str(value).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
@@ -405,6 +412,42 @@ def build_settlement_summaries(suborders):
     )
 
 
+def get_settlement_suborders(*, producer_id=None, week_start=None, record=None):
+    queryset = (
+        base_finance_queryset()
+        .filter(status=ProducerSubOrder.Status.DELIVERED)
+        .prefetch_related("settlements")
+    )
+
+    current_record_id = None
+    if record is not None:
+        current_record_id = record.id
+        producer_id = record.producer_id
+        week_start = record.week_start
+
+    if producer_id is not None:
+        queryset = queryset.filter(producer_id=producer_id)
+
+    if week_start is not None:
+        queryset = queryset.filter(delivery_date__date__gte=week_start, delivery_date__date__lte=week_start + timedelta(days=6))
+
+    eligible = []
+    for suborder in queryset:
+        computed_week_start, _ = settlement_week_bounds(suborder.delivery_date)
+        if week_start is not None and computed_week_start != week_start:
+            continue
+
+        other_settlement_ids = [
+            settlement.id
+            for settlement in suborder.settlements.all()
+            if settlement.id != current_record_id
+        ]
+        if other_settlement_ids:
+            continue
+        eligible.append(suborder)
+    return eligible
+
+
 def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week=""):
     candidate_summaries = build_settlement_summaries(suborders)
     if producer is not None:
@@ -423,6 +466,9 @@ def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week
 
     rows = []
     for record in settlement_records:
+        record_suborders = list(
+            record.included_suborders.select_related("order", "order__customer", "producer").prefetch_related("items")
+        )
         summary = candidate_map.pop((record.producer_id, record.week_start), None)
         rows.append(
             {
@@ -433,8 +479,8 @@ def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week
                 "commission": record.commission_amount,
                 "payout": record.payout_amount,
                 "suborder_count": record.suborder_count,
-                "suborders": summary["suborders"] if summary else [],
-                "has_data": bool(summary) or record.suborder_count > 0,
+                "suborders": record_suborders,
+                "has_data": bool(record_suborders) or record.suborder_count > 0,
                 "record": record,
                 "is_pending": False,
             }
@@ -469,30 +515,66 @@ def generate_weekly_settlements(*, actor, producer=None, week_start=None):
     if actor is None:
         raise ValidationError("An actor is required to generate settlements.")
 
-    queryset = base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED)
-    if producer is not None:
-        queryset = queryset.filter(producer=producer)
-
     settlements = []
-    for summary in build_settlement_summaries(queryset):
-        if week_start and summary["week_start"] != week_start:
-            continue
-
-        settlement, _ = Settlement.objects.update_or_create(
-            producer=summary["producer"],
-            week_start=summary["week_start"],
-            defaults={
-                "week_end": summary["week_end"],
-                "gross_sales": summary["gross_sales"],
-                "commission_amount": summary["commission"],
-                "payout_amount": summary["payout"],
-                "suborder_count": summary["suborder_count"],
-                "status": Settlement.Status.GENERATED,
-                "generated_by": actor,
-                "paid_at": None,
-            },
+    producers = [producer] if producer is not None else None
+    if producers is None:
+        producer_ids = (
+            base_finance_queryset()
+            .filter(status=ProducerSubOrder.Status.DELIVERED)
+            .values_list("producer_id", flat=True)
+            .distinct()
         )
-        settlements.append(settlement)
+        producer_map = {
+            suborder.producer_id: suborder.producer
+            for suborder in base_finance_queryset()
+            .filter(status=ProducerSubOrder.Status.DELIVERED, producer_id__in=producer_ids)
+            .select_related("producer")
+        }
+        producers = [producer_map[producer_id] for producer_id in producer_ids if producer_id in producer_map]
+
+    for producer_obj in producers:
+        if week_start is not None:
+            week_starts = [week_start]
+        else:
+            week_starts = sorted(
+                {
+                    settlement_week_bounds(suborder.delivery_date)[0]
+                    for suborder in get_settlement_suborders(producer_id=producer_obj.id)
+                },
+                reverse=True,
+            )
+
+        for summary_week_start in week_starts:
+            settlement, _ = Settlement.objects.get_or_create(
+                producer=producer_obj,
+                week_start=summary_week_start,
+                defaults={
+                    "week_end": summary_week_start + timedelta(days=6),
+                    "generated_by": actor,
+                },
+            )
+            suborders = get_settlement_suborders(record=settlement)
+            if not suborders:
+                continue
+
+            summary = {
+                "week_end": summary_week_start + timedelta(days=6),
+                "gross_sales": sum((suborder.subtotal for suborder in suborders), Decimal("0.00")),
+                "commission": sum((suborder.commission_amount for suborder in suborders), Decimal("0.00")),
+                "payout": sum((suborder.producer_payout_amount for suborder in suborders), Decimal("0.00")),
+                "suborder_count": len(suborders),
+            }
+            settlement.week_end = summary["week_end"]
+            settlement.gross_sales = summary["gross_sales"]
+            settlement.commission_amount = summary["commission"]
+            settlement.payout_amount = summary["payout"]
+            settlement.suborder_count = summary["suborder_count"]
+            settlement.status = Settlement.Status.GENERATED
+            settlement.generated_by = actor
+            settlement.paid_at = None
+            settlement.save()
+            settlement.included_suborders.set(suborders)
+            settlements.append(settlement)
     return settlements
 
 
@@ -501,14 +583,17 @@ def build_recurring_template_from_order(order):
     Capture an order as a reusable recurring template without changing the source order.
     """
     items = []
+    delivery_time_counter = Counter()
     for suborder in order.producer_suborders.prefetch_related("items").all():
         local_delivery = timezone.localtime(suborder.delivery_date)
         for item in suborder.items.all():
+            delivery_label = local_delivery.strftime("%H:%M")
+            delivery_time_counter[delivery_label] += item.quantity
             items.append(
                 {
                     "product_id": item.product_id,
                     "quantity": item.quantity,
-                    "delivery_time": local_delivery.strftime("%H:%M"),
+                    "delivery_time": delivery_label,
                 }
             )
 
@@ -516,6 +601,7 @@ def build_recurring_template_from_order(order):
         "delivery_address": order.delivery_address,
         "customer_phone": order.customer_phone,
         "special_instructions": order.special_instructions,
+        "preferred_delivery_time": delivery_time_counter.most_common(1)[0][0] if delivery_time_counter else "12:00",
         "items": items,
     }
 
@@ -595,6 +681,83 @@ def update_next_instance_overrides(recurring_order, overrides):
     return recurring_order
 
 
+def update_recurring_order_status(recurring_order, status):
+    if status not in RecurringOrder.Status.values:
+        raise ValidationError("Invalid recurring order status.")
+    recurring_order.status = status
+    recurring_order.active = status == RecurringOrder.Status.ACTIVE
+    recurring_order.full_clean()
+    recurring_order.save(update_fields=["status", "active", "updated_at"])
+    return recurring_order
+
+
+def update_recurring_order_delivery_schedule(recurring_order, delivery_date_value, delivery_time_value):
+    try:
+        parsed_date = date.fromisoformat(delivery_date_value or "")
+    except ValueError as exc:
+        raise ValidationError("Please enter a valid delivery date.") from exc
+
+    try:
+        parsed_time = datetime.strptime(delivery_time_value or "", "%H:%M").time()
+    except ValueError as exc:
+        raise ValidationError("Please enter a valid delivery time.") from exc
+
+    requested_delivery = timezone.make_aware(
+        datetime.combine(parsed_date, parsed_time),
+        timezone.get_current_timezone(),
+    )
+    earliest_delivery = timezone.now() + timedelta(hours=48)
+    if requested_delivery < earliest_delivery:
+        raise ValidationError("Please choose a delivery slot at least 48 hours from now.")
+
+    template = deepcopy(recurring_order.template_order_data or {})
+    template["preferred_delivery_time"] = parsed_time.strftime("%H:%M")
+    items = template.get("items", [])
+    if isinstance(items, list):
+        for item in items:
+            if isinstance(item, dict):
+                item["delivery_time"] = parsed_time.strftime("%H:%M")
+
+    recurring_order.next_run_date = parsed_date
+    recurring_order.preferred_delivery_time = parsed_time
+    recurring_order.template_order_data = template
+    recurring_order.full_clean()
+    recurring_order.save(update_fields=["next_run_date", "preferred_delivery_time", "template_order_data", "updated_at"])
+    return recurring_order
+
+
+def update_recurring_order_details(recurring_order, *, delivery_address, customer_phone, special_instructions, quantities):
+    template = deepcopy(recurring_order.template_order_data or {})
+    template["delivery_address"] = (delivery_address or "").strip()
+    template["customer_phone"] = (customer_phone or "").strip()
+    template["special_instructions"] = (special_instructions or "").strip()
+
+    normalized_quantities = {}
+    for product_id, raw_quantity in (quantities or {}).items():
+        try:
+            quantity = int(raw_quantity)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("Please enter valid quantities.") from exc
+        if quantity <= 0:
+            raise ValidationError("Quantities must be at least 1.")
+        normalized_quantities[int(product_id)] = quantity
+
+    items = template.get("items", [])
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            product_id = item.get("product_id")
+            if product_id in normalized_quantities:
+                item["quantity"] = normalized_quantities[product_id]
+
+    recurring_order.template_order_data = template
+    recurring_order.next_instance_overrides = {}
+    recurring_order.full_clean()
+    recurring_order.save(update_fields=["template_order_data", "next_instance_overrides", "updated_at"])
+    return recurring_order
+
+
 def _build_delivery_datetime(next_run_date, delivery_time_value):
     try:
         parsed_time = datetime.strptime(delivery_time_value or "12:00", "%H:%M").time()
@@ -605,12 +768,72 @@ def _build_delivery_datetime(next_run_date, delivery_time_value):
     return timezone.make_aware(naive_value, timezone.get_current_timezone())
 
 
+def get_recurring_order_preview(recurring_order):
+    payload = deepcopy(recurring_order.template_order_data or {})
+    payload.update(recurring_order.next_instance_overrides or {})
+    items = payload.get("items", [])
+    preview_items = []
+    issues = []
+    if not isinstance(items, list):
+        return {"items": [], "issues": ["Template items are invalid."]}
+
+    product_ids = []
+    for raw_item in items:
+        if isinstance(raw_item, dict) and raw_item.get("product_id"):
+            product_ids.append(raw_item["product_id"])
+    product_map = {
+        product.id: product
+        for product in Product.objects.select_related("producer").filter(id__in=product_ids)
+    }
+
+    for index, raw_item in enumerate(items, start=1):
+        if not isinstance(raw_item, dict):
+            issues.append(f"Item {index} is invalid.")
+            continue
+
+        product = product_map.get(raw_item.get("product_id"))
+        quantity = raw_item.get("quantity") or 0
+        delivery_time = raw_item.get("delivery_time") or payload.get("preferred_delivery_time") or "12:00"
+        unit_price = product.price if product else Decimal("0.00")
+        line_total = (unit_price * quantity).quantize(Decimal("0.01"))
+        preview_items.append(
+            {
+                "product": product,
+                "quantity": quantity,
+                "delivery_time": delivery_time,
+                "unit_price": unit_price,
+                "line_total": line_total,
+                "is_available": bool(
+                    product and product.is_active and product.stock_quantity >= quantity and quantity > 0
+                ),
+            }
+        )
+        if product is None:
+            issues.append(f"Product {raw_item.get('product_id')} no longer exists.")
+        elif not product.is_active:
+            issues.append(f"{product.name} is no longer available.")
+        elif product.stock_quantity < quantity:
+            issues.append(f"{product.name} only has {product.stock_quantity} available.")
+
+    subtotal = sum((item["line_total"] for item in preview_items), Decimal("0.00")).quantize(Decimal("0.01"))
+    commission = (subtotal * Decimal("0.05")).quantize(Decimal("0.01"))
+    total = (subtotal + commission).quantize(Decimal("0.01"))
+
+    return {
+        "items": preview_items,
+        "issues": issues,
+        "subtotal": subtotal,
+        "commission": commission,
+        "total": total,
+    }
+
+
 def generate_order_from_recurring(recurring_order):
     """
     Materialize a recurring template as a new multi-vendor market order.
     """
-    if not recurring_order.active:
-        raise ValidationError("This recurring order is inactive.")
+    if recurring_order.status != RecurringOrder.Status.ACTIVE:
+        raise ValidationError("This recurring order is not active.")
 
     payload = deepcopy(recurring_order.template_order_data or {})
     payload.update(recurring_order.next_instance_overrides or {})
@@ -711,3 +934,17 @@ def generate_order_from_recurring(recurring_order):
     recurring_order.next_instance_overrides = {}
     recurring_order.save(update_fields=["last_run_at", "next_run_date", "next_instance_overrides", "updated_at"])
     return order
+
+
+def generate_due_recurring_orders(*, run_date=None):
+    if isinstance(run_date, str) and run_date:
+        run_date = date.fromisoformat(run_date)
+    run_date = run_date or timezone.localdate()
+    generated_orders = []
+    recurring_orders = (
+        RecurringOrder.objects.filter(status=RecurringOrder.Status.ACTIVE, next_run_date__lte=run_date)
+        .order_by("next_run_date", "id")
+    )
+    for recurring_order in recurring_orders:
+        generated_orders.append(generate_order_from_recurring(recurring_order))
+    return generated_orders

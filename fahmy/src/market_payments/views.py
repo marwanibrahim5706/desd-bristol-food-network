@@ -21,10 +21,11 @@ from market_orders.models import (
 
 from .models import Cart, CartItem, Order, OrderItem, Payment
 from .services import create_payment_record, request_checkout_breakdown
-from market_products.models import Product
+from market_products.models import FavouriteRecipe, Product
+from market_products.models import Review as ProductReview
 
 PAYMENT_PROVIDER_LABELS = {
-    "demo_card": "Test Sandbox Card",
+    "demo_card": "Card Payment",
     "visa_debit": "Visa Debit",
     "visa_credit": "Visa Credit",
     "mastercard_debit": "Mastercard Debit",
@@ -32,6 +33,9 @@ PAYMENT_PROVIDER_LABELS = {
     "amex": "American Express",
     "maestro": "Maestro",
 }
+
+def _is_bread_history_item(name):
+    return (name or "").strip().lower() == "bread"
 
 
 def _get_or_create_cart(user):
@@ -68,6 +72,39 @@ def _get_single_producer(cart):
     if len(sections) == 1:
         return sections[0]["producer"]
     return None
+
+
+def _get_favourite_recipe_cards(user, *, limit=3):
+    if not user.is_authenticated:
+        return []
+
+    favourites = (
+        FavouriteRecipe.objects.filter(customer=user)
+        .select_related("recipe", "recipe__producer")
+        .prefetch_related("recipe__products")
+        .order_by("-created_at")[:limit]
+    )
+
+    cards = []
+    for favourite in favourites:
+        recipe = favourite.recipe
+        products = list(recipe.products.all())
+        image_url = recipe.image_url or next(
+            (product.image_url for product in products if product.image_url),
+            "",
+        )
+        cards.append(
+            {
+                "id": recipe.id,
+                "title": recipe.title,
+                "producer_name": getattr(recipe.producer, "business_name", "") or getattr(recipe.producer, "username", ""),
+                "description": recipe.description,
+                "image_url": image_url,
+                "seasonal_tag": recipe.get_seasonal_tag_display(),
+                "product_count": len(products),
+            }
+        )
+    return cards
 
 
 def _find_matching_market_order(payment_order):
@@ -224,7 +261,11 @@ def cart_page(request):
     return render(
         request,
         "market_payments/cart.html",
-        {"cart": cart, "producer_sections": producer_sections},
+        {
+            "cart": cart,
+            "producer_sections": producer_sections,
+            "favourite_recipes": _get_favourite_recipe_cards(request.user),
+        },
     )
 
 
@@ -234,14 +275,39 @@ def order_history_page(request):
 
     orders = []
     for order in _get_customer_order_queryset(request.user):
+        payment_items = list(order.items.all())
+        if any(_is_bread_history_item(item.product_name) for item in payment_items):
+            continue
+
         latest_payment = order.payments.order_by("-created_at", "-id").first()
         market_order = _get_market_order_for_history(order)
+        reviewable_items = []
+        if market_order is not None:
+            for suborder in market_order.producer_suborders.prefetch_related("items__product").all():
+                for item in suborder.items.all():
+                    if _is_bread_history_item(item.product_name):
+                        continue
+                    already_reviewed = ProductReview.objects.filter(
+                        user=request.user,
+                        product=item.product,
+                    ).exists()
+                    reviewable_items.append(
+                        {
+                            "product": item.product,
+                            "suborder": suborder,
+                            "can_review": suborder.status == ProducerSubOrder.Status.DELIVERED and not already_reviewed,
+                            "already_reviewed": already_reviewed,
+                            "is_delivered": suborder.status == ProducerSubOrder.Status.DELIVERED,
+                        }
+                    )
         orders.append(
             {
                 "order": order,
                 "latest_payment": latest_payment,
                 "market_order": market_order,
-                "item_count": sum(item.quantity for item in order.items.all()),
+                "item_count": sum(item.quantity for item in payment_items),
+                "items": payment_items,
+                "reviewable_items": reviewable_items,
             }
         )
 
@@ -313,7 +379,6 @@ def update_cart_item(request, item_id):
 
     item.quantity = quantity
     item.save(update_fields=["quantity"])
-    messages.success(request, f"Updated {item.product.name} quantity to {quantity}.")
     return redirect("market_payments:cart")
 
 
@@ -413,6 +478,7 @@ def payment_page(request):
             "producer_name": getattr(producer, "business_name", "") or getattr(producer, "username", ""),
             "producer_sections": producer_sections,
             "single_producer_only": producer is not None,
+            "favourite_recipes": _get_favourite_recipe_cards(request.user),
         },
     )
 
@@ -683,5 +749,6 @@ def receipt_page(request, payment_id: int):
                 payment.provider,
                 payment.provider.replace("_", " ").title(),
             ),
+            "favourite_recipes": _get_favourite_recipe_cards(request.user),
         },
     )

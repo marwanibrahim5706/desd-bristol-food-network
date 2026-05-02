@@ -195,6 +195,15 @@
       align-items:flex-start;
       margin-bottom:12px;
     }
+    .productThumb{
+      width:100%;
+      height:180px;
+      object-fit:cover;
+      border-radius:16px;
+      border:1px solid rgba(100,116,139,.35);
+      margin-bottom:14px;
+      display:block;
+    }
 
     .productHeader h3{
       margin:0;
@@ -264,6 +273,7 @@
   </style>
 </head>
 <body>
+  {% include "includes/site_nav.html" %}
   <div class="layout page">
     <aside class="sidebar">
       <div class="brand">
@@ -275,13 +285,17 @@
       </div>
 
       <nav class="nav">
-        <a href="http://127.0.0.1:8000/orders/producer/dashboard/">
+        <a href="{% url 'producer_dashboard' %}">
           <span class="icon">&#128230;</span>
           <span>Incoming Orders</span>
         </a>
-        <a class="active" href="http://localhost:8000/producer/products/">
+        <a class="active" href="{% url 'producer_product_list' %}">
           <span class="icon">&#9881;</span>
-          <span>product managment</span>
+          <span>Product management</span>
+        </a>
+        <a href="{% url 'producer_content_dashboard' %}">
+          <span class="icon">&#127859;</span>
+          <span>Content & reviews</span>
         </a>
       </nav>
 
@@ -321,6 +335,7 @@
         <div class="muted">Review stock levels, update listings, and keep your catalogue current.</div>
         <div class="toolbarActions">
           <a class="linkBtn" href="{% url 'producer_product_create' %}">+ Add Product</a>
+          <a class="linkBtn" href="{% url 'producer_content_dashboard' %}">Content Dashboard</a>
         </div>
       </div>
 
@@ -328,6 +343,9 @@
         <div class="productsGrid">
           {% for product in products %}
             <article class="productCard">
+              {% if product.image_url %}
+                <img class="productThumb" src="{{ product.image_url }}" alt="{{ product.name }}" onerror="this.onerror=null;this.src='{{ product.image_fallback_url }}';">
+              {% endif %}
               <div class="productHeader">
                 <div>
                   <h3>{{ product.name }}</h3>
@@ -348,6 +366,14 @@
                   <span class="muted">Threshold</span>
                   <strong>{{ product.low_stock_threshold }}</strong>
                 </div>
+                <div class="detailRow">
+                  <span class="muted">Food miles</span>
+                  <strong>{% if product.food_miles != None %}{{ product.food_miles }}{% else %}Not set{% endif %}</strong>
+                </div>
+                <div class="detailRow">
+                  <span class="muted">Season</span>
+                  <strong>{{ product.get_seasonal_availability_display }}</strong>
+                </div>
                 {% if product.allergens %}
                   <div class="detailRow">
                     <span class="muted">Allergens</span>
@@ -365,6 +391,9 @@
 
                 {% if product.is_low_stock %}
                   <span class="pill info">Low stock</span>
+                {% endif %}
+                {% if product.is_organic %}
+                  <span class="pill ok">Organic</span>
                 {% endif %}
               </div>
 

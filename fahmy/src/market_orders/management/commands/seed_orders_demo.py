@@ -11,11 +11,11 @@ from market_products.models import Product
 from market_orders.models import Order, ProducerSubOrder, OrderItem, SubOrderStatusEvent
 
 COMMISSION_RATE = Decimal("0.05")
-DEFAULT_PASSWORD = "123"
+DEFAULT_PASSWORD = "Fahmy123$"
 
 
 class Command(BaseCommand):
-    help = "Seed demo products + orders + producer suborders for sprint demo."
+    help = "Seed marketplace products, orders, and producer suborders for testing."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -45,15 +45,15 @@ class Command(BaseCommand):
         producer2 = upsert_user("producer2", "producer2@test.com", "PRODUCER")
         customer1 = upsert_user("customer1", "customer1@test.com", "CUSTOMER")
 
-        self.stdout.write(self.style.SUCCESS("✅ Users ready: admin, producer1, producer2, customer1 (password=123)"))
+        self.stdout.write(self.style.SUCCESS(f"Users ready: admin, producer1, producer2, customer1 (password={DEFAULT_PASSWORD})"))
 
         # ----------------------------
         # Products
         # ----------------------------
         p1_products = [
             ("P1 Apples Box", Decimal("40.00"), 50),
-            ("P1 Fresh Bread", Decimal("12.50"), 80),
             ("P1 Olive Oil 1L", Decimal("95.00"), 30),
+            ("P1 Carrots Bag", Decimal("15.00"), 80),
         ]
         p2_products = [
             ("P2 Chicken Pack", Decimal("110.00"), 40),
@@ -106,7 +106,7 @@ class Command(BaseCommand):
             order = Order.objects.create(
                 customer=customer1,
                 status=Order.Status.CONFIRMED,
-                delivery_address=f"Demo Address {i}, Bristol",
+                delivery_address=f"Customer Address {i}, Bristol",
                 customer_phone="07123456789",
                 special_instructions="Leave at reception.",
             )
@@ -126,7 +126,7 @@ class Command(BaseCommand):
 
             # Items for producer1
             p1a = Product.objects.get(producer=producer1, name="P1 Apples Box")
-            p1b = Product.objects.get(producer=producer1, name="P1 Fresh Bread")
+            p1b = Product.objects.get(producer=producer1, name="P1 Carrots Bag")
             OrderItem.objects.create(
                 suborder=sub1,
                 product=p1a,
@@ -172,20 +172,20 @@ class Command(BaseCommand):
                 suborder=sub1,
                 old_status=ProducerSubOrder.Status.PENDING,
                 new_status=ProducerSubOrder.Status.CONFIRMED,
-                note="Auto-confirmed for demo",
-                changed_by=admin,  # admin action is common in demos
+                note="Auto-confirmed by the marketplace",
+                changed_by=admin,
             )
             sub1.status = ProducerSubOrder.Status.CONFIRMED
             sub1.save(update_fields=["status", "updated_at"])
 
-        existing_demo_orders = Order.objects.filter(customer=customer1).count()
-        if existing_demo_orders == 0:
+        existing_marketplace_orders = Order.objects.filter(customer=customer1).count()
+        if existing_marketplace_orders == 0:
             for idx, dt in enumerate(delivery_dates, start=1):
                 create_order(idx, dt)
-            self.stdout.write(self.style.SUCCESS("Created 3 demo orders (each has suborders for producer1 & producer2)"))
+            self.stdout.write(self.style.SUCCESS("Created 3 marketplace orders (each has suborders for producer1 & producer2)"))
         else:
             self.stdout.write(self.style.WARNING(
-                f"customer1 already has {existing_demo_orders} orders. Skipping order creation."
+                f"customer1 already has {existing_marketplace_orders} orders. Skipping order creation."
             ))
 
-        self.stdout.write(self.style.SUCCESS("Demo seed complete. Login as producer1/producer2 (password=123)."))
+        self.stdout.write(self.style.SUCCESS(f"Marketplace seed complete. Login as producer1/producer2 (password={DEFAULT_PASSWORD})."))

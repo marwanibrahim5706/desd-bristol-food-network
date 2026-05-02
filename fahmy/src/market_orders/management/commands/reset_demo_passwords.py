@@ -16,7 +16,7 @@ TARGETS = [
 
 
 class Command(BaseCommand):
-    help = "Reset passwords for specific demo users and verify the hash update."
+    help = "Reset passwords for seeded users and verify the hash update."
 
     def handle(self, *args, **options):
         User = get_user_model()

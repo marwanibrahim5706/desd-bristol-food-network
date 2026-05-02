@@ -21,3 +21,6 @@ db.sqlite3
 
 # Docker (optional)
 *.pid
+
+# Local extracted assessment notes
+fahmy/test_cases_extracted.txt

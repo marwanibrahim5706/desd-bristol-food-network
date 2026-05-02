@@ -14,8 +14,9 @@ from market_orders.models import Order, ProducerSubOrder, OrderItem, SubOrderSta
 
 
 COMMISSION_RATE = Decimal("0.05")
-DEFAULT_PASSWORD = "123"
-SEED_TAG = "[SEED_FULL_DEMO]"
+DEFAULT_PASSWORD = "Fahmy123$"
+SEEDED_ORDER_PREFIX = "Customer Address"
+SEED_REFERENCE = "market_seed"
 
 
 def model_field_names(model):
@@ -44,14 +45,14 @@ def enum_value(enum_cls, name, fallback=None):
 
 
 class Command(BaseCommand):
-    help = "Seed all existing tables with safe demo data for testing without altering schema."
+    help = "Seed all existing tables with safe marketplace data for testing without altering schema."
 
     def handle(self, *args, **options):
         random.seed(42)
         now = timezone.now()
         User = get_user_model()
 
-        self.stdout.write(self.style.WARNING("Starting full demo seed..."))
+        self.stdout.write(self.style.WARNING("Starting marketplace seed..."))
 
         # ------------------------------------------------------------------
         # 1) USERS
@@ -118,7 +119,7 @@ class Command(BaseCommand):
                 "customer1", "customer1@test.com", "CUSTOMER",
                 extra={
                     "phone": "07111111111",
-                    "address": "Flat 1, Demo Address, Bristol",
+                    "address": "Flat 1, Market Street, Bristol",
                     "postcode": "BS4 4DD",
                 },
             ),
@@ -126,7 +127,7 @@ class Command(BaseCommand):
                 "customer2", "customer2@test.com", "CUSTOMER",
                 extra={
                     "phone": "07222222222",
-                    "address": "Flat 2, Demo Address, Bristol",
+                    "address": "Flat 2, Market Street, Bristol",
                     "postcode": "BS5 5EE",
                 },
             ),
@@ -134,7 +135,7 @@ class Command(BaseCommand):
                 "customer3", "customer3@test.com", "CUSTOMER",
                 extra={
                     "phone": "07333333333",
-                    "address": "Flat 3, Demo Address, Bristol",
+                    "address": "Flat 3, Market Street, Bristol",
                     "postcode": "BS6 6FF",
                 },
             ),
@@ -147,37 +148,44 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------
         catalog = {
             producers[0]: [
-                ("P1 Apples Box", Decimal("40.00"), 50),
-                ("P1 Carrots Bag", Decimal("15.00"), 35),
-                ("P1 Potatoes Sack", Decimal("22.00"), 25),
-                ("P1 Olive Oil 1L", Decimal("95.00"), 12),
-                ("P1 Tomatoes Crate", Decimal("32.00"), 4),   # low stock test
+                ("P1 Apples Box", Decimal("40.00"), 50, "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("8.5"), "autumn", "", "Crisp seasonal apples grown close to Bristol, ideal for snacking, baking, and lunch boxes."),
+                ("P1 Carrots Bag", Decimal("15.00"), 35, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Carrots.JPG", "fruit_veg", True, Decimal("6.2"), "autumn", "", "Sweet local carrots with a firm crunch, perfect for roasting, soups, and fresh salads."),
+                ("P1 Potatoes Sack", Decimal("22.00"), 25, "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80", "fruit_veg", False, Decimal("7.0"), "all_year", "", "A hearty sack of all-round potatoes for mashing, baking, roasting, and weekly kitchen prep."),
+                ("P1 Olive Oil 1L", Decimal("95.00"), 12, "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1200&q=80", "other", False, Decimal("42.0"), "all_year", "", "Smooth extra virgin olive oil for dressings, roasting vegetables, and finishing warm dishes."),
+                ("P1 Tomatoes Crate", Decimal("32.00"), 4, "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("5.5"), "summer", "", "Juicy summer tomatoes with bright flavour for salads, sauces, sandwiches, and roasting."),   # low stock test
+                ("P1 Eggs Tray", Decimal("27.00"), 3, "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=1200&q=80", "eggs", True, Decimal("9.0"), "all_year", "Eggs", "Free range eggs with bright yolks, useful for breakfasts, baking, and protein-rich meals."),        # low stock test
             ],
             producers[1]: [
-                ("P2 Milk 1L", Decimal("18.00"), 120),
-                ("P2 Cheese 500g", Decimal("65.00"), 60),
-                ("P2 Yogurt Pack", Decimal("24.00"), 18),
-                ("P2 Butter Block", Decimal("19.00"), 7),
-                ("P2 Eggs Tray", Decimal("27.00"), 3),        # low stock test
+                ("P2 Milk 1L", Decimal("18.00"), 120, "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Fresh whole milk from a local dairy, ready for breakfast, baking, tea, and coffee."),
+                ("P2 Cheese 500g", Decimal("65.00"), 60, "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Rich farmhouse-style cheese with a creamy texture, good for boards, toasties, and cooking."),
+                ("P2 Yogurt Pack", Decimal("24.00"), 18, "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Creamy yogurt pots for breakfasts, desserts, smoothies, or simple fruit pairings."),
+                ("P2 Butter Block", Decimal("19.00"), 7, "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Golden butter block for baking, spreading, pan cooking, and finishing vegetables."),
             ],
             producers[2]: [
-                ("P3 Fresh Bread", Decimal("12.50"), 80),
-                ("P3 Croissant Box", Decimal("20.00"), 30),
-                ("P3 Wholemeal Loaf", Decimal("9.50"), 22),
-                ("P3 Donut Pack", Decimal("16.00"), 14),
-                ("P3 Brioche", Decimal("11.00"), 2),          # low stock test
+                ("P3 Fresh Bread", Decimal("12.50"), 80, "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten", "Freshly baked crusty bread for sandwiches, soup lunches, toast, and sharing."),
+                ("P3 Croissant Box", Decimal("20.00"), 30, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Croissants.jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk", "A box of buttery croissants with flaky layers, best for breakfast meetings and treats."),
+                ("P3 Wholemeal Loaf", Decimal("9.50"), 22, "https://images.pexels.com/photos/30675188/pexels-photo-30675188.jpeg?cs=srgb&dl=pexels-christina99999-30675188.jpg&fm=jpg", "bakery", True, Decimal("3.5"), "all_year", "Gluten", "Nutty wholemeal loaf baked for everyday sandwiches, toast, and soup pairings."),
+                ("P3 Donut Pack", Decimal("16.00"), 14, "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft sweet donuts for dessert tables, staff treats, and weekend sharing boxes."),
+                ("P3 Brioche", Decimal("11.00"), 2, "https://images.pexels.com/photos/7884507/pexels-photo-7884507.jpeg?cs=srgb&dl=pexels-ilariam-7884507.jpg&fm=jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft enriched brioche with a tender crumb, great for brunch, toast, or puddings."),          # low stock test
             ],
         }
 
         products_by_name = {}
 
         for producer, rows in catalog.items():
-            for name, price, stock in rows:
+            for name, price, stock, image_url, category, is_organic, food_miles, seasonal_availability, allergens, description in rows:
                 product, _ = Product.objects.get_or_create(
                     producer=producer,
                     name=name,
                     defaults={
                         "price": price,
+                        "image_url": image_url,
+                        "category": category,
+                        "is_organic": is_organic,
+                        "food_miles": food_miles,
+                        "seasonal_availability": seasonal_availability,
+                        "allergens": allergens,
+                        "description": description,
                         "stock_quantity": stock,
                         "low_stock_threshold": 5,
                         "is_active": True,
@@ -189,10 +197,41 @@ class Command(BaseCommand):
                     product.stock_quantity = stock
                 if hasattr(product, "low_stock_threshold"):
                     product.low_stock_threshold = 5
+                if hasattr(product, "image_url"):
+                    product.image_url = image_url
+                if hasattr(product, "category"):
+                    product.category = category
+                if hasattr(product, "is_organic"):
+                    product.is_organic = is_organic
+                if hasattr(product, "food_miles"):
+                    product.food_miles = food_miles
+                if hasattr(product, "seasonal_availability"):
+                    product.seasonal_availability = seasonal_availability
+                if hasattr(product, "allergens"):
+                    product.allergens = allergens
+                if hasattr(product, "description"):
+                    product.description = description
                 if hasattr(product, "is_active"):
                     product.is_active = True
                 product.save()
                 products_by_name[name] = product
+
+        legacy_products = {
+            "P2 Chicken Pack": {
+                "image_url": "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1200&q=80",
+                "category": "meat",
+                "allergens": "",
+                "food_miles": Decimal("14.0"),
+                "seasonal_availability": "all_year",
+                "description": "Prepared local chicken portions for roasting, tray bakes, curries, and weekly meal prep.",
+            },
+        }
+        product_fields = {field.name for field in Product._meta.fields}
+        for name, values in legacy_products.items():
+            update_values = {key: value for key, value in values.items() if key in product_fields}
+            if update_values:
+                Product.objects.filter(name=name).update(**update_values)
+        Product.objects.filter(name="bread").update(is_active=False)
 
         self.stdout.write(self.style.SUCCESS("Products seeded/updated."))
 
@@ -220,9 +259,9 @@ class Command(BaseCommand):
             order = Order.objects.create(
                 customer=customer,
                 status=status,
-                delivery_address=f"{SEED_TAG} Demo Address {idx}, Bristol",
+                delivery_address=f"{SEEDED_ORDER_PREFIX} {idx}, Bristol",
                 customer_phone=getattr(customer, "phone", "07000000000") or "07000000000",
-                special_instructions=f"{SEED_TAG} Ring the bell and leave safely.",
+                special_instructions="Ring the bell and leave safely.",
             )
 
             total_amount = Decimal("0.00")
@@ -259,7 +298,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.CONFIRMED,
-                        note=f"{SEED_TAG} Auto-confirmed for demo",
+                        note="Auto-confirmed by the marketplace",
                         changed_by=admin,
                     )
                     sub.status = ProducerSubOrder.Status.CONFIRMED
@@ -269,7 +308,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.CONFIRMED,
-                        note=f"{SEED_TAG} Confirmed for demo",
+                        note="Confirmed by the producer",
                         changed_by=admin,
                     )
                     current = ProducerSubOrder.Status.CONFIRMED
@@ -277,7 +316,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.READY,
-                        note=f"{SEED_TAG} Packed and ready",
+                        note="Packed and ready",
                         changed_by=producer,
                     )
                     sub.status = ProducerSubOrder.Status.READY
@@ -287,7 +326,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.CONFIRMED,
-                        note=f"{SEED_TAG} Confirmed for demo",
+                        note="Confirmed by the producer",
                         changed_by=admin,
                     )
                     current = ProducerSubOrder.Status.CONFIRMED
@@ -295,7 +334,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.READY,
-                        note=f"{SEED_TAG} Packed and ready",
+                        note="Packed and ready",
                         changed_by=producer,
                     )
                     current = ProducerSubOrder.Status.READY
@@ -303,7 +342,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.DELIVERED,
-                        note=f"{SEED_TAG} Delivered successfully",
+                        note="Delivered successfully",
                         changed_by=admin,
                     )
                     sub.status = ProducerSubOrder.Status.DELIVERED
@@ -313,7 +352,7 @@ class Command(BaseCommand):
                         suborder=sub,
                         old_status=current,
                         new_status=ProducerSubOrder.Status.CANCELLED,
-                        note=f"{SEED_TAG} Cancelled for demo",
+                        note="Cancelled by the customer",
                         changed_by=admin,
                     )
                     sub.status = ProducerSubOrder.Status.CANCELLED
@@ -324,7 +363,7 @@ class Command(BaseCommand):
             order.save(update_fields=["total_amount", "commission_total", "updated_at"])
             return order
 
-        existing_seed_orders = Order.objects.filter(delivery_address__icontains=SEED_TAG).count()
+        existing_seed_orders = Order.objects.filter(delivery_address__startswith=SEEDED_ORDER_PREFIX).count()
         if existing_seed_orders == 0:
             order_specs = [
                 # Single-producer future
@@ -397,12 +436,12 @@ class Command(BaseCommand):
                     [
                         (
                             producers[1],
-                            [("P2 Eggs Tray", 2), ("P2 Milk 1L", 4)],
+                            [("P1 Eggs Tray", 2), ("P2 Milk 1L", 4)],
                             ProducerSubOrder.Status.DELIVERED,
                         ),
                         (
                             producers[2],
-                            [("P3 Wholemeal Loaf", 3), ("P3 Donut Pack", 2)],
+                            [("P3 Croissant Box", 3), ("P3 Donut Pack", 2)],
                             ProducerSubOrder.Status.DELIVERED,
                         ),
                     ],
@@ -428,7 +467,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Orders, suborders, items, and status history seeded."))
         else:
             self.stdout.write(self.style.WARNING(
-                f"Seed-tagged demo orders already exist ({existing_seed_orders}). Skipping order creation."
+                f"Seeded marketplace orders already exist ({existing_seed_orders}). Skipping order creation."
             ))
         # ------------------------------------------------------------------
         # 4) ALERT NOTIFICATIONS (if model exists)
@@ -441,7 +480,7 @@ class Command(BaseCommand):
         if Notification:
             notif_fields = model_field_names(Notification)
 
-            # choose useful demo products for alerts
+            # choose useful products for alerts
             low_stock_products = list(
                 Product.objects.filter(stock_quantity__lte=5).order_by("id")
             )
@@ -481,7 +520,7 @@ class Command(BaseCommand):
                     data["product"] = product
 
                 if "reference" in notif_fields:
-                    data["reference"] = SEED_TAG
+                    data["reference"] = SEED_REFERENCE
 
                 # isolate each insert so one failure does not break the whole seed
                 try:
@@ -498,7 +537,7 @@ class Command(BaseCommand):
                 create_notification(
                     p,
                     "Low stock alert",
-                    f"{SEED_TAG} Product '{product_for_alert.name}' is below threshold.",
+                    f"Product '{product_for_alert.name}' is below threshold.",
                     product=product_for_alert,
                 )
 
@@ -508,7 +547,7 @@ class Command(BaseCommand):
                 create_notification(
                     p,
                     "New incoming order",
-                    f"{SEED_TAG} You have a new producer suborder.",
+                    "You have a new producer suborder.",
                     product=producer_product,
                 )
 
@@ -518,7 +557,7 @@ class Command(BaseCommand):
                 create_notification(
                     c,
                     "Order update",
-                    f"{SEED_TAG} Your order status has changed.",
+                    "Your order status has changed.",
                     product=customer_product,
                 )
 
@@ -530,6 +569,6 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------
         # 6) Final summary
         # ------------------------------------------------------------------
-        self.stdout.write(self.style.SUCCESS("Full demo seed completed successfully."))
+        self.stdout.write(self.style.SUCCESS("Marketplace seed completed successfully."))
         self.stdout.write(f"Login accounts use password: {DEFAULT_PASSWORD}")
         self.stdout.write("Suggested test logins: admin, producer1, producer2, producer3, customer1, customer2, customer3")

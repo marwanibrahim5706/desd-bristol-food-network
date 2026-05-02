@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
@@ -165,3 +165,16 @@ class AuthenticationAuthorisationTests(TestCase):
         response = self.client.get(reverse("market_payments:cart"))
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response["Location"])
+
+    def test_stale_login_form_redirects_to_fresh_login_page(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        response = csrf_client.post(
+            reverse("accounts:login"),
+            {
+                "identifier": "customer@test.com",
+                "password": "StrongPass123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/?csrf=expired", response["Location"])

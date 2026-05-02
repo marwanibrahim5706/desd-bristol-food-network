@@ -40,9 +40,10 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+      gap: 18px;
       margin-top: 16px;
+      align-items: start;
     }
 
     .card {
@@ -71,7 +72,7 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 16px;
-      padding: 14px 0;
+      padding: 12px 0;
       border-bottom: 1px solid #e5e7eb;
     }
 
@@ -159,17 +160,16 @@
       border: 0;
       background: transparent;
       color: #6b7280;
-      padding: 8px 0 0;
+      padding: 6px 0 0;
     }
 
     .totals {
-      margin-top: 16px;
-      padding-top: 4px;
+      margin-top: 4px;
       border-top: 1px solid #e5e7eb;
     }
 
     .grand-total {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
     }
 
@@ -181,15 +181,14 @@
     .stack {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 16px;
+      gap: 12px;
+      margin-top: 18px;
     }
 
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 18px;
+      gap: 14px 12px;
     }
 
     .form-grid .full {
@@ -200,7 +199,7 @@
       display: block;
       font-size: 13px;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 7px;
     }
 
     input,
@@ -209,10 +208,118 @@
       width: 100%;
       border: 1px solid #d1d5db;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 11px 12px;
       font: inherit;
       background: #fff;
       color: #111827;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    .payment-card {
+      padding: 22px;
+    }
+
+    .payment-form {
+      margin-top: 0;
+    }
+
+    .delivery-fields {
+      padding-top: 18px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .delivery-field {
+      min-width: 0;
+    }
+
+    .producer-delivery-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .payment-submit {
+      margin-top: 16px;
+      min-height: 48px;
+    }
+
+    .clear-cart-form {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .checkout-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .favourite-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .favourite-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      text-decoration: none;
+      color: inherit;
+      background: #fafafa;
+    }
+
+    .favourite-item:hover {
+      background: #f3f4f6;
+    }
+
+    .favourite-thumb,
+    .favourite-thumb-placeholder {
+      width: 92px;
+      height: 92px;
+      border-radius: 14px;
+      object-fit: cover;
+      flex: 0 0 92px;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+    }
+
+    .favourite-thumb-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .favourite-copy {
+      min-width: 0;
+    }
+
+    .favourite-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .favourite-desc {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
+    .favourite-link-btn {
+      width: auto;
     }
 
     @media (max-width: 800px) {
@@ -237,31 +344,38 @@
       .form-grid {
         grid-template-columns: 1fr;
       }
+
+      .favourite-item {
+        flex-direction: column;
+      }
+
+      .favourite-thumb,
+      .favourite-thumb-placeholder {
+        width: 100%;
+        height: 170px;
+        flex-basis: auto;
+      }
     }
   </style>
 </head>
 <body>
-  {% include "includes/logout_button.html" %}
+  {% include "includes/site_nav.html" %}
   <div class="wrap">
     <div class="top">
       <div>
         <h1>Payment</h1>
         <div class="muted">Review your order, then continue to the hosted card payment page.</div>
       </div>
-
-      <a class="muted" href="/admin/">Admin</a>
     </div>
 
-    <div class="actions">
-      <a class="btn-secondary" style="width:auto;" href="{% url 'market_payments:cart' %}">View Cart</a>
-      <a class="btn-secondary" style="width:auto;" href="/">Continue Shopping</a>
-
-      {% if payment_status %}
+    {% if payment_status %}
+      <div class="actions">
         <span class="pill neutral">{{ payment_status }}</span>
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
 
     <div class="grid">
+      <div class="checkout-layout">
       <div class="card">
         <div class="row" style="margin-bottom: 12px;">
           <h2 class="section-title" style="margin:0;">Order summary</h2>
@@ -302,8 +416,10 @@
         {% endif %}
 
       </div>
+      {% include "market_payments/includes/favourite_recipes_panel.html" %}
+      </div>
 
-      <div class="card">
+      <div class="card payment-card">
         <h2 class="section-title">Payment summary</h2>
 
         <div class="totals">
@@ -324,47 +440,49 @@
         </div>
 
         <div class="stack">
-          <form method="post" action="{% url 'market_payments:pay_now' %}">
+          <form class="payment-form" method="post" action="{% url 'market_payments:pay_now' %}">
             {% csrf_token %}
-            <div class="form-grid">
+            <div class="form-grid delivery-fields">
               <div class="full">
                 <label for="delivery_address">Delivery address</label>
                 <textarea id="delivery_address" name="delivery_address" required>{{ delivery_address }}</textarea>
               </div>
-              <div>
+              <div class="delivery-field">
                 <label for="customer_phone">Phone number</label>
                 <input id="customer_phone" name="customer_phone" value="{{ customer_phone }}" />
               </div>
               {% if single_producer_only %}
-                <div>
+                <div class="delivery-field">
                   <label for="delivery_date">Delivery date</label>
                   <input id="delivery_date" name="delivery_date" type="datetime-local" min="{{ min_delivery_at }}" required />
                 </div>
               {% endif %}
               <input type="hidden" name="payment_method" value="demo_card" />
               {% if not single_producer_only %}
-                {% for section in producer_sections %}
-                  <div class="full">
-                    <label for="delivery_date_{{ section.producer.id }}">
-                      Delivery date for {{ section.producer_name }}
-                    </label>
-                    <input
-                      id="delivery_date_{{ section.producer.id }}"
-                      name="delivery_date_{{ section.producer.id }}"
-                      type="datetime-local"
-                      min="{{ min_delivery_at }}"
-                      required
-                    />
-                  </div>
-                {% endfor %}
+                <div class="full producer-delivery-list">
+                  {% for section in producer_sections %}
+                    <div class="delivery-field">
+                      <label for="delivery_date_{{ section.producer.id }}">
+                        Delivery date for {{ section.producer_name }}
+                      </label>
+                      <input
+                        id="delivery_date_{{ section.producer.id }}"
+                        name="delivery_date_{{ section.producer.id }}"
+                        type="datetime-local"
+                        min="{{ min_delivery_at }}"
+                        required
+                      />
+                    </div>
+                  {% endfor %}
+                </div>
               {% endif %}
             </div>
-            <button type="submit" class="btn">
+            <button type="submit" class="btn payment-submit">
               Continue to Card Payment
             </button>
           </form>
 
-          <form method="post" action="{% url 'market_payments:clear_cart' %}">
+          <form class="clear-cart-form" method="post" action="{% url 'market_payments:clear_cart' %}">
             {% csrf_token %}
             <button type="submit" class="clear-btn">Clear cart</button>
           </form>

@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -27,13 +28,17 @@ from .services import (
     build_recent_finance_activity,
     build_recurring_template_from_order,
     build_settlement_dashboard_rows,
-    build_settlement_summaries,
     calculate_running_period_summaries,
     count_processed_orders,
     find_payment_snapshot_for_market_order,
     generate_order_from_recurring,
     generate_weekly_settlements,
+    get_recurring_order_preview,
+    get_settlement_suborders,
     settlement_week_bounds,
+    update_recurring_order_delivery_schedule,
+    update_recurring_order_details,
+    update_recurring_order_status,
     update_next_instance_overrides,
 )
 
@@ -190,6 +195,10 @@ def _build_admin_finance_context(request, *, current_section):
     settlement_source_qs = base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED)
     if producer_filter:
         settlement_source_qs = settlement_source_qs.filter(producer_id=producer_filter)
+    if date_from:
+        settlement_source_qs = settlement_source_qs.filter(delivery_date__date__gte=date_from)
+    if date_to:
+        settlement_source_qs = settlement_source_qs.filter(delivery_date__date__lte=date_to)
     producers = list(
         ProducerSubOrder.objects.select_related("producer")
         .order_by("producer__username")
@@ -352,20 +361,16 @@ def producer_settlements_dashboard(request):
     date_to = (request.GET.get("date_to") or "").strip()
     settlement_week = (request.GET.get("settlement_week") or "").strip()
 
-    filtered_delivered_qs = apply_finance_filters(
+    delivered_source_qs = apply_finance_filters(
         base_finance_queryset().filter(producer=request.user),
         status_filter=ProducerSubOrder.Status.DELIVERED,
         date_from=date_from,
         date_to=date_to,
     )
-    suborders_qs = filtered_delivered_qs
-    suborders = list(suborders_qs)
+    suborders_qs = delivered_source_qs
     all_settlements = build_settlement_dashboard_rows(
         list(
-            base_finance_queryset().filter(
-                producer=request.user,
-                status=ProducerSubOrder.Status.DELIVERED,
-            )
+            delivered_source_qs
         ),
         producer=request.user,
         settlement_week=settlement_week,
@@ -570,14 +575,15 @@ def export_settlement_csv(request):
     if not producer_id or not week_start:
         return HttpResponseBadRequest("Producer and week_start are required.")
 
-    qs = base_finance_queryset().filter(
-        producer_id=producer_id,
-        status=ProducerSubOrder.Status.DELIVERED,
+    record = (
+        Settlement.objects.filter(producer_id=producer_id, week_start=week_start)
+        .prefetch_related("included_suborders__order__customer")
+        .first()
     )
-    matching = [
-        suborder for suborder in qs
-        if settlement_week_bounds(suborder.delivery_date)[0].isoformat() == week_start
-    ]
+    matching = list(record.included_suborders.all()) if record else get_settlement_suborders(
+        producer_id=producer_id,
+        week_start=date.fromisoformat(week_start),
+    )
     if not matching:
         return HttpResponseBadRequest("No delivered suborders found for that settlement.")
 
@@ -585,6 +591,11 @@ def export_settlement_csv(request):
         raise PermissionDenied("You can only export your own settlements.")
 
     producer = matching[0].producer
+    week_end = (
+        record.week_end.isoformat()
+        if record
+        else settlement_week_bounds(matching[0].delivery_date)[1].isoformat()
+    )
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="settlement_{producer.username}_{week_start}.csv"'
@@ -592,6 +603,8 @@ def export_settlement_csv(request):
     writer = csv.writer(response)
     writer.writerow(["producer", producer.business_name or producer.username])
     writer.writerow(["week_start", week_start])
+    writer.writerow(["week_end", week_end])
+    writer.writerow(["settlement_status", record.get_status_display() if record else "Pending generation"])
     writer.writerow([])
     writer.writerow([
         "suborder_id", "order_id", "customer", "delivery_date",
@@ -617,7 +630,16 @@ def export_settlement_csv(request):
 
 @login_required
 def recurring_orders_dashboard(request):
-    recurring_orders = RecurringOrder.objects.filter(customer=request.user).order_by("next_run_date", "id")
+    recurring_orders = []
+    earliest_delivery = timezone.now() + timedelta(hours=48)
+    for recurring_order in RecurringOrder.objects.filter(customer=request.user).order_by("next_run_date", "id"):
+        recurring_order.preview = get_recurring_order_preview(recurring_order)
+        recurring_order.next_instance_overrides_json = json.dumps(
+            recurring_order.next_instance_overrides or {},
+            indent=2,
+        )
+        recurring_order.earliest_delivery_date = earliest_delivery.date().isoformat()
+        recurring_orders.append(recurring_order)
     return render(
         request,
         "market_finance/recurring_orders.html",
@@ -635,12 +657,15 @@ def create_recurring_order_from_order(request, order_id):
         id=order_id,
         customer=request.user,
     )
+    template = build_recurring_template_from_order(order)
+    preferred_delivery_time = template.get("preferred_delivery_time")
     recurring_order = RecurringOrder.objects.create(
         customer=request.user,
-        template_order_data=build_recurring_template_from_order(order),
+        template_order_data=template,
+        preferred_delivery_time=datetime.strptime(preferred_delivery_time, "%H:%M").time() if preferred_delivery_time else None,
         next_run_date=timezone.localdate() + timedelta(days=7),
     )
-    messages.success(request, f"Recurring order #{recurring_order.id} created.")
+    messages.success(request, "Your weekly repeat order has been created.")
     return redirect("market_finance:recurring_orders_dashboard")
 
 
@@ -650,14 +675,87 @@ def update_recurring_order_next_instance(request, recurring_order_id):
         return HttpResponseBadRequest("POST required.")
 
     recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
-    raw_overrides = (request.POST.get("overrides_json") or "").strip()
     try:
-        overrides = json.loads(raw_overrides or "{}")
+        if "special_instructions" in request.POST:
+            overrides = {"special_instructions": (request.POST.get("special_instructions") or "").strip()}
+        else:
+            raw_overrides = (request.POST.get("overrides_json") or "").strip()
+            overrides = json.loads(raw_overrides or "{}")
         update_next_instance_overrides(recurring_order, overrides)
-    except Exception as exc:
-        messages.error(request, str(exc))
+    except Exception:
+        messages.error(request, "We could not update your note. Please try again.")
     else:
-        messages.success(request, f"Next instance updated for recurring order #{recurring_order.id}.")
+        messages.success(request, "Your next repeat order has been updated.")
+    return redirect("market_finance:recurring_orders_dashboard")
+
+
+@login_required
+def change_recurring_order_status(request, recurring_order_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
+    status = (request.POST.get("status") or "").strip().upper()
+    friendly_status_messages = {
+        RecurringOrder.Status.ACTIVE: "Your repeat order has been resumed.",
+        RecurringOrder.Status.PAUSED: "Your repeat order has been paused.",
+        RecurringOrder.Status.CANCELLED: "Your repeat order has been cancelled.",
+    }
+    try:
+        update_recurring_order_status(recurring_order, status)
+    except ValidationError:
+        messages.error(request, "We could not update this repeat order. Please try again.")
+    except Exception:
+        messages.error(request, "Something went wrong while updating this repeat order.")
+    else:
+        messages.success(request, friendly_status_messages.get(status, "Your repeat order has been updated."))
+    return redirect("market_finance:recurring_orders_dashboard")
+
+
+@login_required
+def update_recurring_order_time(request, recurring_order_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
+    delivery_date = (request.POST.get("next_run_date") or "").strip()
+    delivery_time = (request.POST.get("preferred_delivery_time") or "").strip()
+    try:
+        update_recurring_order_delivery_schedule(recurring_order, delivery_date, delivery_time)
+    except ValidationError:
+        messages.error(request, "Please choose a delivery day and time at least 48 hours from now.")
+    except Exception:
+        messages.error(request, "We could not update the delivery day and time. Please try again.")
+    else:
+        messages.success(request, "Your delivery day and time have been updated.")
+    return redirect("market_finance:recurring_orders_dashboard")
+
+
+@login_required
+def update_recurring_order_details_view(request, recurring_order_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
+    quantities = {
+        key.removeprefix("quantity_"): value
+        for key, value in request.POST.items()
+        if key.startswith("quantity_")
+    }
+    try:
+        update_recurring_order_details(
+            recurring_order,
+            delivery_address=request.POST.get("delivery_address", ""),
+            customer_phone=request.POST.get("customer_phone", ""),
+            special_instructions=request.POST.get("special_instructions", ""),
+            quantities=quantities,
+        )
+    except ValidationError as exc:
+        messages.error(request, exc.messages[0] if getattr(exc, "messages", None) else "Please check the repeat order details.")
+    except Exception:
+        messages.error(request, "We could not update this repeat order. Please try again.")
+    else:
+        messages.success(request, "Your repeat order has been updated.")
     return redirect("market_finance:recurring_orders_dashboard")
 
 
@@ -669,8 +767,32 @@ def run_recurring_order_now(request, recurring_order_id):
     recurring_order = get_object_or_404(RecurringOrder, id=recurring_order_id, customer=request.user)
     try:
         order = generate_order_from_recurring(recurring_order)
-    except Exception as exc:
-        messages.error(request, str(exc))
+    except ValidationError:
+        messages.error(request, "This repeat order cannot be placed right now. Please check the items and try again.")
+    except Exception:
+        messages.error(request, "We could not place this repeat order. Please try again.")
     else:
-        messages.success(request, f"Recurring order generated as order #{order.id}.")
+        messages.success(request, f"Order #{order.id} has been placed from your repeat order.")
+    return redirect("market_finance:recurring_orders_dashboard")
+
+
+@login_required
+def run_due_recurring_orders_now(request):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required.")
+
+    due_orders = RecurringOrder.objects.filter(customer=request.user, status=RecurringOrder.Status.ACTIVE, next_run_date__lte=timezone.localdate())
+    generated = 0
+    for recurring_order in due_orders:
+        try:
+            generate_order_from_recurring(recurring_order)
+        except Exception:
+            messages.error(request, "One of your repeat orders could not be placed.")
+        else:
+            generated += 1
+
+    if generated:
+        messages.success(request, "Your due repeat orders have been placed.")
+    elif not due_orders.exists():
+        messages.info(request, "No due recurring orders were ready to generate.")
     return redirect("market_finance:recurring_orders_dashboard")

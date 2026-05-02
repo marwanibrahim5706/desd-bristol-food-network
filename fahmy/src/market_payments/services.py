@@ -23,7 +23,7 @@ def calculate_commission_breakdown(subtotal):
     """
     Return platform commission and producer payout for a given subtotal.
 
-    This keeps the 5% / 95% rule in one place for tests and demo explanation.
+    This keeps the 5% / 95% rule in one place for tests and reporting.
     """
     subtotal = quantize_money(subtotal)
     commission_amount = quantize_money(subtotal * COMMISSION_RATE)

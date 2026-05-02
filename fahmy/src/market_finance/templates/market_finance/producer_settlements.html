@@ -59,6 +59,7 @@
   </style>
 </head>
 <body>
+  {% include "includes/site_nav.html" %}
   <div class="wrap">
     <section class="topbar">
       <div>
@@ -100,10 +101,10 @@
     {% if settlement_week %}
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
         {% if previous_week_query %}
-          <a class="button secondary" href="/finance/producer/settlements/{{ previous_week_query }}">Previous week</a>
+          <a class="button secondary" href="{% url 'market_finance:producer_settlements_dashboard' %}{{ previous_week_query }}">Previous week</a>
         {% endif %}
         {% if next_week_query %}
-          <a class="button secondary" href="/finance/producer/settlements/{{ next_week_query }}">Next week</a>
+          <a class="button secondary" href="{% url 'market_finance:producer_settlements_dashboard' %}{{ next_week_query }}">Next week</a>
         {% endif %}
       </div>
     {% endif %}

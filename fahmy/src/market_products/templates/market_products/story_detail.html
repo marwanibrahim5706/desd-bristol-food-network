@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ story.title }}</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin:0; background:#f6f7fb; color:#111827; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px; }
+    .card { background:white; border:1px solid #e5e7eb; border-radius:18px; padding:20px; margin-top:14px; }
+    .thumb { width:100%; max-height:360px; object-fit:cover; border-radius:14px; border:1px solid #e5e7eb; margin:12px 0; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; margin-right:6px; }
+    .muted { color:#6b7280; }
+  </style>
+</head>
+<body>
+  {% include "includes/site_nav.html" %}
+  <div class="wrap">
+    <a class="muted" href="{% url 'producer_profile' story.producer.id %}">← Back to producer profile</a>
+    <div class="card">
+      <h1 style="margin:0 0 8px;">{{ story.title }}</h1>
+      <div class="muted">{{ story.producer.business_name|default:story.producer.username }} • {{ story.get_seasonal_tag_display }}</div>
+      <div style="margin-top:10px;"><span class="pill">Farm story</span></div>
+      {% if story.image_url %}
+        <img class="thumb" src="{{ story.image_url }}" alt="{{ story.title }}">
+      {% endif %}
+      <p><strong>Summary</strong><br>{{ story.summary|linebreaksbr }}</p>
+      <p><strong>Story</strong><br>{{ story.body|linebreaksbr }}</p>
+      {% if story.educational_content %}
+        <p><strong>Educational content</strong><br>{{ story.educational_content|linebreaksbr }}</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

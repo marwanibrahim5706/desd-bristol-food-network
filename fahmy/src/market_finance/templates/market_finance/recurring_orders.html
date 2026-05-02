@@ -1,50 +1,479 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Recurring Orders</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Repeat Orders</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 0; background: #f5f7fb; color: #111827; }
-    .wrap { max-width: 1040px; margin: 0 auto; padding: 24px; }
-    .card { background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-    .muted { color: #6b7280; }
-    textarea { width: 100%; min-height: 100px; }
-    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #111827; color: white; cursor: pointer; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #f6f7fb;
+      color: #111827;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+    .pageHead {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 34px;
+      letter-spacing: 0;
+    }
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .quickLinks,
+    .actions,
+    .buttonRow {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn,
+    .btnSecondary,
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid #111827;
+      background: #111827;
+      color: #fff;
+      text-decoration: none;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .btnSecondary {
+      background: #fff;
+      color: #111827;
+      border-color: #d1d5db;
+    }
+    .btnDanger {
+      background: #fff;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+    .msgWrap {
+      margin: 16px 0;
+    }
+    .msg {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+    .repeatCard {
+      margin-top: 16px;
+      padding: 24px;
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(17,24,39,.06);
+    }
+    .repeatHeader {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .repeatTitle {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .status.paused {
+      background: #fff7ed;
+      color: #9a3412;
+    }
+    .status.cancelled {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .summaryGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .summaryBox {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #fafafa;
+    }
+    .summaryBox span {
+      display: block;
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+    .summaryBox strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+    .summaryBox input,
+    .itemQtyInput {
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      padding: 9px 12px;
+      font: inherit;
+      font-weight: 800;
+      color: #111827;
+      background: #fff;
+    }
+    .itemQtyInput {
+      width: 86px;
+      text-align: center;
+    }
+    .section {
+      margin-top: 18px;
+    }
+    .section h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .itemList {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #eef0f4;
+    }
+    .item:last-child {
+      border-bottom: 0;
+    }
+    .itemName {
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .itemMeta {
+      margin-top: 4px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .itemQty {
+      flex: 0 0 auto;
+      min-width: 58px;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 800;
+    }
+    .warning {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+    }
+    .repeatTotals {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      background: #fafafa;
+      display: grid;
+      gap: 10px;
+    }
+    .totalLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: #6b7280;
+      font-weight: 700;
+    }
+    .totalLine strong {
+      color: #111827;
+    }
+    .totalLine.final {
+      padding-top: 10px;
+      border-top: 1px solid #e5e7eb;
+      color: #111827;
+      font-size: 18px;
+      font-weight: 900;
+    }
+    .noteForm {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+    }
+    label {
+      display: block;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 92px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      padding: 12px;
+      font: inherit;
+      resize: vertical;
+      background: #fff;
+      color: #111827;
+    }
+    .timeForm {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .timeForm label {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    input[type="date"],
+    input[type="time"] {
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      padding: 9px 12px;
+      font: inherit;
+      font-weight: 800;
+      color: #111827;
+      background: #fff;
+    }
+    .empty {
+      margin-top: 18px;
+      padding: 26px;
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      text-align: center;
+    }
+    @media (max-width: 760px) {
+      .summaryGrid {
+        grid-template-columns: 1fr;
+      }
+      .repeatCard {
+        padding: 18px;
+      }
+      .item {
+        align-items: flex-start;
+      }
+      .itemQty {
+        min-width: 48px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Recurring Orders</h1>
-    <p class="muted">Manage weekly recurring orders and one-off changes for the next generated order.</p>
-    {% for recurring_order in recurring_orders %}
-      <div class="card">
-        <h2 style="margin-top:0;">Recurring Order #{{ recurring_order.id }}</h2>
-        <p class="muted">
-          Next run: {{ recurring_order.next_run_date }}.
-          {% if recurring_order.active %}Active{% else %}Paused{% endif %}
-        </p>
-        <p><strong>Template:</strong> {{ recurring_order.template_order_data }}</p>
-        <p><strong>Next instance overrides:</strong> {{ recurring_order.next_instance_overrides }}</p>
+  {% include "includes/site_nav.html" %}
+  <main class="wrap">
+    <div class="pageHead">
+      <div>
+        <h1>Repeat Orders</h1>
+        <div class="muted">Your weekly orders in one place. You can pause, cancel, add a note, or place the next one early.</div>
+      </div>
+    </div>
 
-        <form method="post" action="{% url 'market_finance:update_recurring_order_next_instance' recurring_order.id %}">
-          {% csrf_token %}
-          <label for="overrides_{{ recurring_order.id }}">Overrides JSON</label>
-          <textarea id="overrides_{{ recurring_order.id }}" name="overrides_json" placeholder='{"special_instructions": "Leave by the back door"}'></textarea>
-          <div style="margin-top:12px;">
-            <button type="submit">Save next instance changes</button>
+    {% if messages %}
+      <div class="msgWrap">
+        {% for m in messages %}
+          <div class="msg">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if recurring_orders %}
+      {% for recurring_order in recurring_orders %}
+        <article class="repeatCard">
+          <div class="repeatHeader">
+            <div>
+              <div class="repeatTitle">
+                <h2>Weekly Order #{{ recurring_order.id }}</h2>
+                {% if recurring_order.status == "ACTIVE" %}
+                  <span class="status">Active</span>
+                {% elif recurring_order.status == "PAUSED" %}
+                  <span class="status paused">Paused</span>
+                {% else %}
+                  <span class="status cancelled">Cancelled</span>
+                {% endif %}
+              </div>
+              <div class="muted" style="margin-top:8px;">
+                Next order: {{ recurring_order.next_run_date|date:"d M Y" }}{% if recurring_order.preferred_delivery_time %} at {{ recurring_order.preferred_delivery_time|time:"H:i" }}{% endif %}
+              </div>
+            </div>
+
+            <div class="actions">
+              {% if recurring_order.status == "ACTIVE" %}
+                <form class="timeForm" method="post" action="{% url 'market_finance:update_recurring_order_time' recurring_order.id %}">
+                  {% csrf_token %}
+                  <label for="date_{{ recurring_order.id }}">Delivery day</label>
+                  <input id="date_{{ recurring_order.id }}" type="date" name="next_run_date" value="{{ recurring_order.next_run_date|date:'Y-m-d' }}" min="{{ recurring_order.earliest_delivery_date }}" required>
+                  <label for="time_{{ recurring_order.id }}">Time</label>
+                  <input id="time_{{ recurring_order.id }}" type="time" name="preferred_delivery_time" value="{% if recurring_order.preferred_delivery_time %}{{ recurring_order.preferred_delivery_time|time:'H:i' }}{% else %}{{ recurring_order.template_order_data.preferred_delivery_time|default:'12:00' }}{% endif %}" required>
+                  <button type="submit">Change Day and Time</button>
+                </form>
+                <form method="post" action="{% url 'market_finance:change_recurring_order_status' recurring_order.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="PAUSED">
+                  <button type="submit" class="btnSecondary">Pause</button>
+                </form>
+              {% elif recurring_order.status == "PAUSED" %}
+                <form method="post" action="{% url 'market_finance:change_recurring_order_status' recurring_order.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="ACTIVE">
+                  <button type="submit">Resume</button>
+                </form>
+              {% endif %}
+
+              {% if recurring_order.status != "CANCELLED" %}
+                <form method="post" action="{% url 'market_finance:change_recurring_order_status' recurring_order.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="CANCELLED">
+                  <button type="submit" class="btnDanger">Cancel</button>
+                </form>
+              {% endif %}
+            </div>
           </div>
-        </form>
 
-        <form method="post" action="{% url 'market_finance:run_recurring_order_now' recurring_order.id %}" style="margin-top:12px;">
-          {% csrf_token %}
-          <button type="submit">Generate next order now</button>
-        </form>
+          <form method="post" action="{% url 'market_finance:update_recurring_order_details' recurring_order.id %}">
+            {% csrf_token %}
+            <div class="summaryGrid">
+              <label class="summaryBox" for="address_{{ recurring_order.id }}">
+                <span>Delivery address</span>
+                <input id="address_{{ recurring_order.id }}" name="delivery_address" value="{{ recurring_order.template_order_data.delivery_address|default:'' }}" required>
+              </label>
+              <label class="summaryBox" for="phone_{{ recurring_order.id }}">
+                <span>Phone</span>
+                <input id="phone_{{ recurring_order.id }}" name="customer_phone" value="{{ recurring_order.template_order_data.customer_phone|default:'' }}" required>
+              </label>
+              <div class="summaryBox">
+                <span>Repeats</span>
+                <strong>Every {{ recurring_order.next_run_date|date:"l" }}{% if recurring_order.preferred_delivery_time %} at {{ recurring_order.preferred_delivery_time|time:"H:i" }}{% endif %}</strong>
+              </div>
+            </div>
+
+            <section class="section">
+              <h3>Items</h3>
+              <ul class="itemList">
+                {% for item in recurring_order.preview.items %}
+                  <li class="item">
+                    <div>
+                      <div class="itemName">{% if item.product %}{{ item.product.name }}{% else %}Unavailable product{% endif %}</div>
+                      <div class="itemMeta">
+                        {% if item.product %}
+                          {{ item.product.producer.business_name|default:item.product.producer.username }} · £{{ item.unit_price }} each · £{{ item.line_total }}
+                        {% endif %}
+                        {% if not item.is_available %}
+                          <strong style="color:#991b1b;">Needs attention</strong>
+                        {% endif %}
+                      </div>
+                    </div>
+                    {% if item.product %}
+                      <label for="quantity_{{ recurring_order.id }}_{{ item.product.id }}" class="muted">Quantity</label>
+                      <input class="itemQtyInput" id="quantity_{{ recurring_order.id }}_{{ item.product.id }}" type="number" min="1" name="quantity_{{ item.product.id }}" value="{{ item.quantity }}" required>
+                    {% else %}
+                      <div class="itemQty">x{{ item.quantity }}</div>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+
+              {% if recurring_order.preview.issues %}
+                <div class="warning">
+                  {% for issue in recurring_order.preview.issues %}
+                    <div>{{ issue }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <div class="repeatTotals" aria-label="Weekly cart estimate">
+                <div class="totalLine">
+                  <span>Weekly subtotal</span>
+                  <strong>£{{ recurring_order.preview.subtotal }}</strong>
+                </div>
+                <div class="totalLine">
+                  <span>Platform commission (5%)</span>
+                  <strong>£{{ recurring_order.preview.commission }}</strong>
+                </div>
+                <div class="totalLine final">
+                  <span>Estimated weekly total</span>
+                  <strong>£{{ recurring_order.preview.total }}</strong>
+                </div>
+              </div>
+            </section>
+
+            {% if recurring_order.status != "CANCELLED" %}
+              <div class="noteForm">
+              <label for="note_{{ recurring_order.id }}">Note for the next order</label>
+              <textarea id="note_{{ recurring_order.id }}" name="special_instructions" placeholder="Example: leave by the back door, or ring when outside.">{{ recurring_order.template_order_data.special_instructions }}</textarea>
+              <div class="buttonRow" style="margin-top:12px;">
+                <button type="submit">Save Changes</button>
+              </div>
+              </div>
+            {% endif %}
+          </form>
+        </article>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        <h2>No repeat orders yet</h2>
+        <p class="muted">After you place an order, you can turn it into a weekly repeat from your order history.</p>
       </div>
-    {% empty %}
-      <div class="card">
-        <p>No recurring orders yet.</p>
-      </div>
-    {% endfor %}
-  </div>
+    {% endif %}
+  </main>
 </body>
 </html>

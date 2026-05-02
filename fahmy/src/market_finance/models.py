@@ -16,6 +16,11 @@ class RecurringOrder(models.Model):
     class Frequency(models.TextChoices):
         WEEKLY = "WEEKLY", "Weekly"
 
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        PAUSED = "PAUSED", "Paused"
+        CANCELLED = "CANCELLED", "Cancelled"
+
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -26,8 +31,14 @@ class RecurringOrder(models.Model):
         choices=Frequency.choices,
         default=Frequency.WEEKLY,
     )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
     template_order_data = models.JSONField(default=dict)
     next_instance_overrides = models.JSONField(default=dict, blank=True)
+    preferred_delivery_time = models.TimeField(blank=True, null=True)
     next_run_date = models.DateField()
     active = models.BooleanField(default=True)
     last_run_at = models.DateTimeField(blank=True, null=True)
@@ -54,3 +65,13 @@ class RecurringOrder(models.Model):
 
         if not isinstance(self.next_instance_overrides, dict):
             raise ValidationError({"next_instance_overrides": "Next instance overrides must be a JSON object."})
+
+        if self.status == self.Status.CANCELLED and self.active:
+            raise ValidationError({"active": "Cancelled recurring orders cannot remain active."})
+
+        if self.status == self.Status.ACTIVE and not self.active:
+            raise ValidationError({"active": "Active recurring orders must remain enabled."})
+
+    def save(self, *args, **kwargs):
+        self.active = self.status == self.Status.ACTIVE
+        super().save(*args, **kwargs)

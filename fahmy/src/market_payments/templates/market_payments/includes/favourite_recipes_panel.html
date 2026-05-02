@@ -1,0 +1,28 @@
+{% if favourite_recipes %}
+  <div class="card favourite-card">
+    <div class="row" style="margin-bottom: 14px;">
+      <div>
+        <h2 class="section-title" style="margin:0;">Saved favourites</h2>
+        <div class="muted">Quick links to recipes you have already saved.</div>
+      </div>
+    </div>
+
+    <div class="favourite-list">
+      {% for recipe in favourite_recipes %}
+        <a class="favourite-item" href="{% url 'recipe_detail' recipe.id %}">
+          {% if recipe.image_url %}
+            <img class="favourite-thumb" src="{{ recipe.image_url }}" alt="{{ recipe.title }}" loading="lazy">
+          {% else %}
+            <div class="favourite-thumb favourite-thumb-placeholder">{{ recipe.title }}</div>
+          {% endif %}
+          <div class="favourite-copy">
+            <div class="favourite-title">{{ recipe.title }}</div>
+            <div class="item-meta">{{ recipe.producer_name }} · {{ recipe.seasonal_tag }}</div>
+            <div class="favourite-desc">{{ recipe.description|truncatechars:90 }}</div>
+            <div class="item-meta">{{ recipe.product_count }} linked product{{ recipe.product_count|pluralize }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ recipe.title }}</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin:0; background:#f6f7fb; color:#111827; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+    .card { background:white; border:1px solid #e5e7eb; border-radius:18px; padding:20px; margin-top:14px; }
+    .grid { display:grid; grid-template-columns:1.1fr .9fr; gap:14px; }
+    .thumb { width:100%; max-height:340px; object-fit:cover; border-radius:14px; border:1px solid #e5e7eb; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; margin-right:6px; }
+    .muted { color:#6b7280; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; cursor:pointer; }
+    @media (max-width: 860px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  {% include "includes/site_nav.html" %}
+  <div class="wrap">
+    <a class="muted" href="{% url 'producer_profile' recipe.producer.id %}">← Back to producer profile</a>
+    <div class="card">
+      <h1 style="margin:0 0 8px;">{{ recipe.title }}</h1>
+      <div class="muted">{{ recipe.producer.business_name|default:recipe.producer.username }} • {{ recipe.get_seasonal_tag_display }}</div>
+      <div style="margin-top:10px;">
+        <span class="pill">{{ recipe.get_status_display }}</span>
+        <span class="pill">{{ recipe.products.count }} linked product{{ recipe.products.count|pluralize }}</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        {% if recipe.image_url %}
+          <img class="thumb" src="{{ recipe.image_url }}" alt="{{ recipe.title }}">
+        {% endif %}
+        <p>{{ recipe.description|linebreaksbr }}</p>
+        <h3>Ingredients</h3>
+        <p>{{ recipe.ingredients|linebreaksbr }}</p>
+        <h3>Instructions</h3>
+        <p>{{ recipe.instructions|linebreaksbr }}</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Storage & Freshness</h3>
+        <p><strong>Storage guidance</strong><br>{{ recipe.storage_guidance|default:"No storage guidance provided yet."|linebreaksbr }}</p>
+        <p><strong>Freshness guidance</strong><br>{{ recipe.freshness_guidance|default:"No freshness guidance provided yet."|linebreaksbr }}</p>
+        <h3>Linked products</h3>
+        {% for product in recipe.products.all %}
+          <div style="padding:10px 0; border-top:1px solid #e5e7eb;">
+            <a href="{% url 'product_detail' product.id %}"><strong>{{ product.name }}</strong></a>
+            <div class="muted">£{{ product.price }} • {{ product.get_category_display }}</div>
+          </div>
+        {% empty %}
+          <p class="muted">No linked products.</p>
+        {% endfor %}
+        {% if request.user.is_authenticated and request.user.role == "CUSTOMER" %}
+          <form method="post" action="{% url 'toggle_favourite_recipe' recipe.id %}" style="margin-top:14px;">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'recipe_detail' recipe.id %}">
+            <button type="submit">{% if is_favourited %}Remove Favourite{% else %}Save Favourite{% endif %}</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
