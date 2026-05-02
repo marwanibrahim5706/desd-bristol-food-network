@@ -3,392 +3,149 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Producer Dashboard • Products</title>
+  <title>Producer Dashboard &bull; Products</title>
   <style>
     {% include "market_orders/includes/producer_theme_styles.html" %}
-
-    .page { animation: fadeUp .45s ease-out both; }
-    @keyframes fadeUp {
-      from { opacity:0; transform: translateY(10px); }
-      to { opacity:1; transform: translateY(0); }
-    }
-
-    .layout{
-      min-height:100vh;
-      display:grid;
-      grid-template-columns:280px 1fr;
-    }
-
-    .sidebar{
-      position:sticky;
-      top:0;
-      height:100vh;
-      padding:18px 14px;
-      background: linear-gradient(180deg, rgba(30,41,59,.82), rgba(15,23,42,.94));
-      border-right:1px solid var(--line);
-      backdrop-filter: blur(16px);
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:12px 12px 16px;
-      border-bottom:1px solid var(--line);
-      margin-bottom:14px;
-    }
-
-    .logo{
-      width:40px;
-      height:40px;
-    }
-
-    .brand h1{ font-size:14px; margin:0; letter-spacing:.3px; }
-    .brand p{ margin:2px 0 0; color:var(--muted); font-size:12px; }
-
-    .nav{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      padding:8px 6px;
-    }
-
-    .nav a{
-      color:var(--text);
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:12px 12px;
-      border-radius:16px;
-      border:1px solid transparent;
-      transition:transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
-    }
-
-    .nav a:hover{
-      transform:translateY(-1px);
-      background:rgba(30,41,59,.86);
-      border-color:rgba(59,130,246,.2);
-    }
-
-    .nav .active{
-      background:rgba(37,99,235,.14);
-      border-color:rgba(59,130,246,.34);
-      box-shadow:inset 3px 0 0 rgba(59,130,246,.9);
-    }
-
-    .icon{
-      width:28px;
-      height:28px;
-      display:grid;
-      place-items:center;
-      border-radius:10px;
-      background:rgba(17,24,39,.72);
-      border:1px solid rgba(55,65,81,.9);
-      font-size:14px;
-    }
-
-    .profile{
-      position:absolute;
-      left:14px;
-      right:14px;
-      bottom:14px;
-      padding:12px;
-      border-radius:16px;
-      background:rgba(17,24,39,.58);
-      border:1px solid rgba(55,65,81,.9);
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
-    .avatar{
-      width:36px;
-      height:36px;
-      border-radius:14px;
-      background:rgba(30,41,59,.78);
-      border:1px solid rgba(55,65,81,.9);
-      display:grid;
-      place-items:center;
-      font-weight:700;
-    }
-
-    .profile small{ color:var(--muted); display:block; margin-top:2px; }
-
-    .main{
-      padding:22px 22px 36px;
-    }
-
-    .topbar{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      justify-content:space-between;
-      align-items:flex-end;
-      margin-bottom:16px;
-    }
-
-    .headline h2{ margin:0; font-size:22px; letter-spacing:.2px; }
-    .headline p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
-
-    .stats{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .stat{
-      min-width:160px;
-      background:rgba(17,24,39,.58);
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:16px;
-      padding:10px 12px;
-      transition:transform .15s ease;
-    }
-
-    .stat:hover{ transform:translateY(-1px); }
-    .stat .k{ color:var(--muted); font-size:12px; }
-    .stat .v{ font-size:18px; font-weight:700; margin-top:2px; }
-
-    .toolbar{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      padding:12px;
-      background:rgba(17,24,39,.58);
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:16px;
-      margin-bottom:14px;
-    }
-
-    .toolbarActions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
 
     .productsGrid{
       display:grid;
       grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:14px;
+      gap:20px;
     }
 
     .productCard{
-      background:linear-gradient(180deg, rgba(30,41,59,.74), rgba(17,24,39,.92));
-      border:1px solid rgba(55,65,81,.9);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:16px;
-      transition:transform .18s ease, border-color .18s ease;
+      background:var(--surface);
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+      background:linear-gradient(135deg, #ffffff, #fffaf2);
     }
 
-    .productCard:hover{
-      transform:translateY(-2px);
-      border-color:rgba(59,130,246,.32);
+    .productCard h2{
+      margin:0;
+      font-size:18px;
     }
 
-    .productHeader{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:flex-start;
-      margin-bottom:12px;
-    }
     .productThumb{
       width:100%;
       height:180px;
       object-fit:cover;
       border-radius:16px;
-      border:1px solid rgba(100,116,139,.35);
+      border:1px solid var(--line-soft);
       margin-bottom:14px;
       display:block;
-    }
-
-    .productHeader h3{
-      margin:0;
-      font-size:18px;
-      letter-spacing:.2px;
+      background:var(--accent-sage);
     }
 
     .productMeta{
-      margin:0 0 14px;
+      margin:8px 0 18px;
       color:var(--muted);
       font-size:13px;
     }
 
-    .details{
-      display:grid;
-      gap:10px;
-      margin-bottom:14px;
+    .detailList{
+      margin:0 0 18px;
+      padding:0;
+      list-style:none;
     }
 
-    .detailRow{
+    .detailList li{
       display:flex;
       justify-content:space-between;
-      gap:10px;
-      font-size:13px;
-      padding:8px 0;
-      border-bottom:1px dashed rgba(71,85,105,.55);
+      gap:16px;
+      padding:12px 0;
+      border-bottom:1px solid var(--line-soft);
+      font-size:14px;
     }
 
-    .detailRow:last-child{ border-bottom:none; }
-
-    .chips{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
+    .detailList li:last-child{ border-bottom:0; }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
 
     .emptyState{
-      padding:22px;
-      border-radius:var(--radius);
+      background:var(--surface);
+      border:1px dashed var(--line);
+      border-radius:22px;
+      padding:38px;
+      text-align:center;
     }
 
-    .emptyState h3{
-      margin:0 0 8px;
-      font-size:18px;
-    }
-
-    @media (max-width: 1100px) {
-      .productsGrid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-    }
-
-    @media (max-width: 900px) {
-      .layout{ grid-template-columns:1fr; }
-      .sidebar{
-        position:relative;
-        height:auto;
-      }
-      .profile{
-        position:static;
-        margin-top:18px;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .productsGrid{ grid-template-columns:1fr; }
-    }
+    @media(max-width:1100px){ .productsGrid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+    @media(max-width:720px){ .productsGrid{ grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
-  {% include "includes/site_nav.html" %}
-  <div class="layout page">
-    <aside class="sidebar">
+  {% include "includes/logout_button.html" %}
+  <div class="producerShell">
+    <aside class="producerNav">
       <div class="brand">
-        <div class="logo brandLogo"></div>
+        <div class="brandLogo">P</div>
         <div>
-          <h1>Market Producer</h1>
-          <p>Product Management</p>
+          <h1>Producer Hub</h1>
+          <p>{{ request.user }}</p>
         </div>
       </div>
 
-      <nav class="nav">
-        <a href="{% url 'producer_dashboard' %}">
-          <span class="icon">&#128230;</span>
-          <span>Incoming Orders</span>
-        </a>
-        <a class="active" href="{% url 'producer_product_list' %}">
-          <span class="icon">&#9881;</span>
-          <span>Product management</span>
-        </a>
-        <a href="{% url 'producer_content_dashboard' %}">
-          <span class="icon">&#127859;</span>
-          <span>Content & reviews</span>
-        </a>
+      <nav class="nav" aria-label="Producer navigation">
+        <a href="/orders/producer/"><span class="navIcon">H</span><span>Dashboard</span></a>
+        <a href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
+        <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
+        <a class="active" href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
       </nav>
 
       <div class="profile">
-        <div class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</div>
-        <div>
-          <div style="font-weight:700;">{{ request.user }}</div>
-          <small>Producer session</small>
-        </div>
+        <span class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</span>
+        <span>
+          <strong>{{ request.user }}</strong><br>
+          <span class="muted">Signed in as producer</span>
+        </span>
       </div>
     </aside>
 
-    <main class="main">
-      <div class="topbar">
-        <div class="headline">
-          <h2>My Products</h2>
-          <p>Manage your product catalogue and inventory with the same producer workspace.</p>
+    <main class="producerMain">
+      <header class="pageHeader">
+        <div>
+          <p class="eyebrow">Products</p>
+          <h1>Your product catalogue</h1>
+          <p>Keep product information, stock levels, and customer visibility up to date.</p>
         </div>
+        <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
+      </header>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="k">Total products</div>
-            <div class="v">{{ products|length }}</div>
-          </div>
-          <div class="stat">
-            <div class="k">Active products</div>
-            <div class="v">{{ active_count|default:0 }}</div>
-          </div>
-          <div class="stat">
-            <div class="k">Low stock items</div>
-            <div class="v">{{ low_stock_count|default:0 }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <div class="muted">Review stock levels, update listings, and keep your catalogue current.</div>
-        <div class="toolbarActions">
-          <a class="linkBtn" href="{% url 'producer_product_create' %}">+ Add Product</a>
-          <a class="linkBtn" href="{% url 'producer_content_dashboard' %}">Content Dashboard</a>
-        </div>
-      </div>
+      <section class="summaryGrid" aria-label="Product summary">
+        <div class="summaryTile"><div class="label">Products</div><div class="value">{{ products|length }}</div></div>
+        <div class="summaryTile"><div class="label">Visible to customers</div><div class="value">{{ active_count|default:0 }}</div></div>
+        <div class="summaryTile"><div class="label">Need stock check</div><div class="value">{{ low_stock_count|default:0 }}</div></div>
+      </section>
 
       {% if products %}
-        <div class="productsGrid">
+        <section class="productsGrid" aria-label="Products">
           {% for product in products %}
             <article class="productCard">
               {% if product.image_url %}
                 <img class="productThumb" src="{{ product.image_url }}" alt="{{ product.name }}" onerror="this.onerror=null;this.src='{{ product.image_fallback_url }}';">
               {% endif %}
-              <div class="productHeader">
-                <div>
-                  <h3>{{ product.name }}</h3>
-                  <p class="productMeta">{{ product.get_category_display }}</p>
-                </div>
-              </div>
+              <h2>{{ product.name }}</h2>
+              <p class="productMeta">{{ product.get_category_display }}</p>
 
-              <div class="details">
-                <div class="detailRow">
-                  <span class="muted">Price</span>
-                  <strong class="money">£{{ product.price }}</strong>
-                </div>
-                <div class="detailRow">
-                  <span class="muted">Stock</span>
-                  <strong>{{ product.stock_quantity }}</strong>
-                </div>
-                <div class="detailRow">
-                  <span class="muted">Threshold</span>
-                  <strong>{{ product.low_stock_threshold }}</strong>
-                </div>
-                <div class="detailRow">
-                  <span class="muted">Food miles</span>
-                  <strong>{% if product.food_miles != None %}{{ product.food_miles }}{% else %}Not set{% endif %}</strong>
-                </div>
-                <div class="detailRow">
-                  <span class="muted">Season</span>
-                  <strong>{{ product.get_seasonal_availability_display }}</strong>
-                </div>
+              <ul class="detailList">
+                <li><span class="muted">Price</span><strong class="money">&pound;{{ product.price }}</strong></li>
+                <li><span class="muted">Stock</span><strong>{{ product.stock_quantity }}</strong></li>
+                <li><span class="muted">Low stock alert</span><strong>{{ product.low_stock_threshold }}</strong></li>
+                <li><span class="muted">Food miles</span><strong>{% if product.food_miles != None %}{{ product.food_miles }}{% else %}Not set{% endif %}</strong></li>
+                <li><span class="muted">Season</span><strong>{{ product.get_seasonal_availability_display }}</strong></li>
                 {% if product.allergens %}
-                  <div class="detailRow">
-                    <span class="muted">Allergens</span>
-                    <strong>{{ product.allergens }}</strong>
-                  </div>
+                  <li><span class="muted">Allergens</span><strong>{{ product.allergens }}</strong></li>
                 {% endif %}
-              </div>
+              </ul>
 
               <div class="chips">
                 {% if product.is_active %}
-                  <span class="pill ok">Active</span>
+                  <span class="pill ok">Visible</span>
                 {% else %}
-                  <span class="pill bad">Inactive</span>
+                  <span class="pill bad">Hidden</span>
                 {% endif %}
-
                 {% if product.is_low_stock %}
                   <span class="pill info">Low stock</span>
                 {% endif %}
@@ -397,15 +154,15 @@
                 {% endif %}
               </div>
 
-              <a class="linkBtn ghost" href="{% url 'producer_product_edit' product.id %}">Edit product</a>
+              <a class="linkBtn secondary" href="{% url 'producer_product_edit' product.id %}">Edit product</a>
             </article>
           {% endfor %}
-        </div>
+        </section>
       {% else %}
-        <div class="emptyState surface">
-          <h3>No products yet</h3>
-          <p class="muted">Start by adding your first product to begin managing your catalogue here.</p>
-          <a class="linkBtn" href="{% url 'producer_product_create' %}">+ Add Product</a>
+        <div class="emptyState">
+          <h2>No products yet</h2>
+          <p class="muted">Add your first product so customers can start discovering what you offer.</p>
+          <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
         </div>
       {% endif %}
     </main>

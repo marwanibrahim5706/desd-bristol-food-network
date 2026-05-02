@@ -1,0 +1,172 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Bristol Food Network Admin{% endblock %}
+
+{% block branding %}
+  <div class="producer-admin-brand">
+    <span class="producer-admin-mark">B</span>
+    <span>
+      <strong>Bristol Food Network</strong>
+      <small>Admin workspace</small>
+    </span>
+  </div>
+{% endblock %}
+
+{% block nav-global %}
+  <a class="producer-admin-link" href="/orders/producer/">Producer dashboard</a>
+  <a class="producer-admin-link" href="/finance/admin/dashboard/">Finance workspace</a>
+{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    :root{
+      --primary:#315f52;
+      --secondary:#21483f;
+      --accent:#c66b3d;
+      --primary-fg:#fff;
+      --body-bg:#f5f1e8;
+      --body-fg:#20231f;
+      --body-quiet-color:#68736b;
+      --body-loud-color:#20231f;
+      --header-bg:#ffffff;
+      --header-color:#20231f;
+      --breadcrumbs-bg:#e9f3ef;
+      --breadcrumbs-fg:#315f52;
+      --link-fg:#315f52;
+      --link-hover-color:#21483f;
+      --default-button-bg:#315f52;
+      --default-button-hover-bg:#21483f;
+      --button-bg:#315f52;
+      --button-hover-bg:#21483f;
+      --hairline-color:#ece4d8;
+      --border-color:#ded5c8;
+    }
+
+    body{
+      font-family:"Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 82% 8%, rgba(198,107,61,.14), transparent 30%),
+        radial-gradient(circle at 20% 0%, rgba(49,95,82,.12), transparent 34%),
+        var(--body-bg);
+    }
+
+    #header{
+      min-height:72px;
+      padding:12px 28px;
+      border-bottom:1px solid var(--hairline-color);
+      box-shadow:0 10px 24px rgba(55,45,34,.06);
+    }
+
+    .producer-admin-brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:var(--body-fg);
+    }
+
+    .producer-admin-brand strong{
+      display:block;
+      font-size:16px;
+      line-height:1.2;
+    }
+
+    .producer-admin-brand small{
+      display:block;
+      margin-top:3px;
+      color:var(--body-quiet-color);
+      font-size:12px;
+    }
+
+    .producer-admin-mark{
+      width:38px;
+      height:38px;
+      display:grid;
+      place-items:center;
+      border-radius:14px;
+      background:linear-gradient(135deg, var(--primary), var(--accent));
+      color:#fff;
+      font-weight:900;
+    }
+
+    #user-tools,
+    #user-tools a{ color:var(--body-quiet-color); }
+
+    .producer-admin-link{
+      display:inline-flex;
+      align-items:center;
+      min-height:36px;
+      margin-left:8px;
+      padding:0 12px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid var(--border-color);
+      color:var(--primary);
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    #content{
+      padding:32px;
+    }
+
+    .module,
+    .dashboard .module,
+    #content-main .module,
+    .inline-group{
+      border:1px solid var(--hairline-color);
+      border-radius:18px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+    }
+
+    .module h2,
+    .module caption,
+    .inline-group h2{
+      background:linear-gradient(135deg, #ffffff, #fff3e4);
+      color:var(--body-fg);
+      font-weight:900;
+      letter-spacing:-.01em;
+      padding:14px 18px;
+    }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+    }
+
+    td,
+    th{
+      padding:13px 14px;
+      border-color:var(--hairline-color);
+    }
+
+    input,
+    select,
+    textarea,
+    .vTextField{
+      border-radius:12px;
+      border:1px solid var(--border-color);
+      padding:10px 12px;
+      background:#fff;
+    }
+
+    .button,
+    input[type=submit],
+    input[type=button],
+    .submit-row input{
+      border-radius:12px;
+      padding:10px 15px;
+      font-weight:900;
+      box-shadow:none;
+    }
+
+    .submit-row{
+      border:1px solid var(--hairline-color);
+      border-radius:18px;
+      background:#fff;
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+    }
+  </style>
+{% endblock %}

@@ -263,10 +263,16 @@ def producer_product_list(request):
         raise PermissionDenied("Producer access required.")
 
     products = Product.objects.filter(producer=request.user).order_by("-id")
+    active_count = products.filter(is_active=True).count()
+    low_stock_count = sum(1 for product in products if product.is_low_stock)
     return render(
         request,
         "market_products/producer_product_list.html",
-        {"products": products},
+        {
+            "products": products,
+            "active_count": active_count,
+            "low_stock_count": low_stock_count,
+        },
     )
 
 

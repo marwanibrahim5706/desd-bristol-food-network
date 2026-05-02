@@ -662,3 +662,212 @@
     justify-content: flex-start;
   }
 }
+
+/* Admin finance uses the same friendly workspace language as the producer portal while preserving all admin controls. */
+.layout{
+  grid-template-columns:260px minmax(0, 1fr);
+}
+
+.sidebar{
+  padding:26px 20px;
+  background:rgba(255,255,255,.84);
+  border-right:1px solid var(--line-soft);
+  backdrop-filter:blur(18px);
+}
+
+.main{
+  padding:36px;
+  max-width:1400px;
+  width:100%;
+}
+
+.brand,
+.profile,
+.filters,
+.card,
+.stat,
+.activity,
+.exportCard,
+.settlementCard,
+.settlementPanel,
+.tableWrap,
+.settlementTableWrap{
+  border-color:var(--line-soft);
+  background:#fff;
+  color:var(--text);
+  box-shadow:0 12px 28px rgba(55,45,34,.06);
+}
+
+.brand{
+  padding-bottom:18px;
+  margin-bottom:22px;
+}
+
+.logo,
+.icon,
+.avatar{
+  border:0;
+  background:linear-gradient(135deg, var(--primary), var(--warm));
+  color:#fff;
+}
+
+.nav{
+  gap:8px;
+  padding:0;
+}
+
+.nav a{
+  min-height:46px;
+  padding:11px 12px;
+  border-radius:14px;
+  color:var(--secondary);
+}
+
+.nav a:hover{
+  background:#f5efe4;
+  border-color:transparent;
+  color:var(--text);
+}
+
+.nav .active{
+  background:linear-gradient(135deg, var(--surface-tint), #fff3e4);
+  border-color:transparent;
+  color:var(--primary-strong);
+  box-shadow:inset 4px 0 0 var(--primary);
+}
+
+.profile{
+  background:linear-gradient(135deg, #ffffff, #fff5e9);
+  border-radius:16px;
+}
+
+.topbar{
+  gap:24px;
+  margin-bottom:26px;
+  padding:24px;
+  border:1px solid var(--line-soft);
+  border-radius:24px;
+  background:linear-gradient(135deg, #ffffff, #fff3e4);
+  box-shadow:0 12px 28px rgba(55,45,34,.06);
+}
+
+.headline h2{
+  color:var(--text);
+  font-size:34px;
+  letter-spacing:-.03em;
+}
+
+.headline p,
+.hint,
+.muted,
+.stat .k,
+.message,
+.sectionHeader p,
+.sub{
+  color:var(--muted);
+}
+
+.stats{
+  gap:14px;
+}
+
+.stat{
+  min-width:174px;
+  border-radius:18px;
+  padding:16px 18px;
+}
+
+.stat .v{
+  color:var(--text);
+  font-size:24px;
+}
+
+.filters{
+  gap:14px;
+  padding:20px;
+  margin-bottom:26px;
+  border-radius:22px;
+}
+
+.filters input[type="date"]{
+  border-color:var(--line);
+  background:#fff;
+  color:var(--text);
+}
+
+.filters input[type="date"]:focus{
+  border-color:var(--primary);
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(47,79,79,.14);
+}
+
+.message{
+  background:#fff;
+  border-color:var(--line-soft);
+  border-radius:14px;
+}
+
+.section{
+  margin-top:30px;
+}
+
+.sectionHeader{
+  margin-bottom:18px;
+}
+
+.card,
+.exportCard,
+.settlementCard{
+  border-radius:22px;
+  overflow:hidden;
+}
+
+.cardHeader,
+.settlementHero{
+  background:linear-gradient(135deg, #ffffff, var(--accent-blue));
+  border-color:var(--line-soft);
+  padding:22px;
+}
+
+.cardBody,
+.detailsInner,
+.settlementBody{
+  gap:24px;
+  padding:22px;
+}
+
+.detailsPanel,
+.cardFooter,
+.settlementActions{
+  border-color:var(--line-soft);
+  background:#fcfbf8;
+}
+
+.miniBox,
+.box,
+.totals,
+.producerStat,
+.settlementStat{
+  border-color:var(--line-soft);
+  background:linear-gradient(135deg, #ffffff, var(--accent-sage));
+  color:var(--text);
+}
+
+.tableWrap,
+.settlementTableWrap{
+  border-radius:22px;
+  overflow-x:auto;
+}
+
+.dataTable th,
+.settlementTable th{
+  background:#f7f3eb;
+  color:var(--secondary);
+}
+
+.dataTable td,
+.settlementTable td,
+.dataTable th,
+.settlementTable th{
+  border-color:var(--line-soft);
+}
