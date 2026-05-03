@@ -871,3 +871,431 @@
 .settlementTable th{
   border-color:var(--line-soft);
 }
+
+/* Final admin-finance polish: quiet operational workspace, consistent light surfaces. */
+:root{
+  --page:#f4f7f9;
+  --surface:#ffffff;
+  --surface-soft:#f8fafc;
+  --surface-tint:#e8f3f1;
+  --accent-blue:#edf4fb;
+  --accent-sage:#edf6f2;
+  --accent-soft:#fff7e6;
+  --text:#111827;
+  --secondary:#52606d;
+  --muted:#6b7280;
+  --line:#d7dee6;
+  --line-soft:#e6ebf0;
+  --primary:#25635a;
+  --primary-strong:#174c45;
+  --warm:#b86b2f;
+  --shadow:0 14px 34px rgba(15,23,42,.07);
+  --radius:12px;
+}
+
+body{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.74), rgba(244,247,249,.92) 220px),
+    var(--page);
+  color:var(--text);
+}
+
+.layout{
+  grid-template-columns:248px minmax(0, 1fr);
+}
+
+.sidebar{
+  background:rgba(255,255,255,.92);
+  border-right:1px solid var(--line-soft);
+  box-shadow:6px 0 24px rgba(15,23,42,.04);
+}
+
+.brand{
+  border-bottom:1px solid var(--line-soft);
+  padding:8px 8px 18px;
+}
+
+.brand h1{
+  color:var(--text);
+  font-size:16px;
+}
+
+.brand p,
+.profile small{
+  color:var(--muted);
+}
+
+.nav a{
+  border-radius:10px;
+  min-height:42px;
+  padding:10px 12px;
+}
+
+.icon{
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  background:#eef3f7;
+  color:var(--primary-strong);
+}
+
+.nav a.active .icon,
+.nav a:hover .icon{
+  background:#dcece8;
+}
+
+.profile{
+  background:#fff;
+  border:1px solid var(--line-soft);
+  box-shadow:var(--shadow);
+}
+
+.avatar,
+.logo{
+  border-radius:10px;
+  background:linear-gradient(135deg, var(--primary), #2f7d68);
+}
+
+.main{
+  max-width:1480px;
+  padding:30px;
+}
+
+.topbar{
+  display:grid;
+  grid-template-columns:minmax(280px, .9fr) minmax(520px, 1.25fr);
+  align-items:stretch;
+  gap:22px;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.headline{
+  border:1px solid var(--line-soft);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:var(--shadow);
+  padding:22px;
+}
+
+.headline h2{
+  font-size:30px;
+  line-height:1.15;
+  letter-spacing:0;
+}
+
+.headline p{
+  max-width:680px;
+  font-size:14px;
+  line-height:1.55;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:12px;
+}
+
+.stat{
+  min-width:0;
+  border:1px solid var(--line-soft);
+  border-radius:12px;
+  background:#fff;
+  padding:16px;
+  box-shadow:var(--shadow);
+}
+
+.stat:hover,
+.card:hover{
+  transform:none;
+}
+
+.stat .k{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+.stat .v{
+  margin-top:8px;
+  font-size:23px;
+  line-height:1.15;
+}
+
+.filters{
+  display:grid;
+  grid-template-columns:repeat(6, minmax(130px, 1fr));
+  gap:14px;
+  align-items:end;
+  padding:16px;
+  border:1px solid var(--line-soft);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+
+.filters label{
+  color:var(--secondary);
+  font-size:12px;
+}
+
+.filters input,
+.filters select,
+.filters input[type="date"]{
+  width:100%;
+  min-height:42px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--text);
+}
+
+.filterActions{
+  align-items:flex-end;
+}
+
+.hint{
+  grid-column:1 / -1;
+  font-size:13px;
+}
+
+.quickFilters{
+  margin-top:-10px;
+  margin-bottom:8px;
+}
+
+.quickFilters a{
+  background:#fff;
+  border-color:var(--line);
+  color:var(--secondary);
+  border-radius:999px;
+}
+
+.quickFilters a.active{
+  color:var(--primary-strong);
+  border-color:#b8d8d0;
+  background:#e8f3f1;
+}
+
+.sectionHeader h3{
+  font-size:19px;
+  color:var(--text);
+}
+
+.card,
+.exportCard,
+.settlementCard,
+.tableWrap,
+.settlementTableWrap,
+.workspaceNote,
+.activityRow,
+.empty{
+  border:1px solid var(--line-soft);
+  border-radius:14px;
+  background:#fff;
+  color:var(--text);
+  box-shadow:var(--shadow);
+}
+
+.cardHeader,
+.settlementHero{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  gap:16px;
+  background:#fbfdff;
+  border-bottom:1px solid var(--line-soft);
+  padding:18px;
+}
+
+.cardBody,
+.detailsInner,
+.settlementBody{
+  padding:18px;
+}
+
+.cardFooter,
+.settlementActions{
+  background:#f8fafc;
+  border-top:1px solid var(--line-soft);
+}
+
+.miniCard,
+.miniBox,
+.box,
+.totals,
+.producerStat,
+.settlementPanel{
+  border:1px solid var(--line-soft);
+  border-radius:12px;
+  background:#f8fafc;
+  color:var(--text);
+  box-shadow:none;
+}
+
+.settlementStat{
+  background:transparent;
+  border:0;
+  border-bottom:1px solid var(--line-soft);
+  border-radius:0;
+}
+
+.settlementStat:last-child{
+  border-bottom:0;
+}
+
+.workspaceNote{
+  padding:14px 16px;
+  color:var(--secondary);
+  background:#f8fafc;
+}
+
+.activityRow{
+  align-items:center;
+  background:#fff;
+}
+
+.activityRow .title,
+.meta .id,
+.miniCard .value,
+.settlementHero h4{
+  color:var(--text);
+}
+
+.chip,
+.pill{
+  border-color:var(--line);
+  background:#f8fafc;
+  color:var(--secondary);
+}
+
+.chip.ok,
+.pill.ok{
+  background:#e8f7ef;
+  color:#176342;
+  border-color:#b9e6cc;
+}
+
+.chip.status,
+.pill.status,
+.chip.info,
+.pill.info{
+  background:#eaf2fb;
+  color:#255c8a;
+  border-color:#c9def1;
+}
+
+.row{
+  border-bottom:1px solid var(--line-soft);
+  font-size:13px;
+}
+
+.row:last-child{
+  border-bottom:0;
+}
+
+.money{
+  font-family:"Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.dataTable,
+.settlementTable{
+  background:#fff;
+}
+
+.dataTable th,
+.settlementTable th{
+  background:#f1f5f9;
+  color:#475569;
+  font-weight:800;
+}
+
+.dataTable td,
+.settlementTable td{
+  background:#fff;
+  color:var(--text);
+}
+
+.dataTable tbody tr:hover td,
+.settlementTable tbody tr:hover td{
+  background:#f8fafc;
+}
+
+.detailsPanel{
+  background:#fff;
+  border-top:1px solid var(--line-soft);
+}
+
+.message.success{
+  border-color:#b9e6cc;
+  background:#e8f7ef;
+  color:#176342;
+}
+
+.message.error{
+  border-color:#f4c7c7;
+  background:#fff1f1;
+  color:#991b1b;
+}
+
+@media (max-width: 1240px){
+  .topbar{
+    grid-template-columns:1fr;
+  }
+
+  .stats,
+  .grid.three{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
+  .filters{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px){
+  .layout{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    position:relative;
+    height:auto;
+  }
+
+  .profile{
+    position:relative;
+    left:auto;
+    right:auto;
+    bottom:auto;
+    margin-top:16px;
+  }
+
+  .main{
+    padding:20px 16px 30px;
+  }
+}
+
+@media (max-width: 720px){
+  .stats,
+  .grid,
+  .grid.three,
+  .filters,
+  .cardHeader,
+  .settlementHero{
+    grid-template-columns:1fr;
+  }
+
+  .chips,
+  .settlementHeroMeta{
+    justify-content:flex-start;
+  }
+
+  .headline h2{
+    font-size:26px;
+  }
+}
