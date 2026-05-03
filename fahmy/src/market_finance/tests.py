@@ -494,6 +494,32 @@ class AdminFinanceDashboardTests(TestCase):
         self.assertContains(response, "Year To Date")
         self.assertContains(response, "£7.50")
 
+    def test_admin_finance_nav_does_not_show_customer_buying_links(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("market_finance:admin_finance_dashboard"))
+
+        self.assertContains(response, "<small>Admin</small>", html=True)
+        self.assertContains(response, ">Finance<")
+        self.assertContains(response, ">Admin<")
+        self.assertNotContains(response, 'href="/discover/"')
+        self.assertNotContains(response, 'href="/payments/cart/"')
+        self.assertNotContains(response, 'href="/payments/orders/"')
+        self.assertNotContains(response, 'href="/finance/recurring/"')
+
+    def test_customer_nav_keeps_marketplace_buying_links(self):
+        self.client.force_login(self.customer)
+        response = self.client.get(reverse("discovery_alt"))
+
+        self.assertContains(response, ">Discover<")
+        self.assertContains(response, ">Cart<")
+        self.assertContains(response, ">Orders<")
+        self.assertContains(response, ">Repeat Orders<")
+        self.assertNotContains(response, ">Finance<")
+        self.assertNotContains(response, ">Admin<")
+
+    def test_admin_dashboard_reports_settlements_exports_and_order_detail_render(self):
+        self.client.force_login(self.admin)
+
         reports_response = self.client.get(reverse("market_finance:admin_finance_reports"))
         self.assertContains(reports_response, "Financial Reports")
         self.assertContains(reports_response, "Commission Report")

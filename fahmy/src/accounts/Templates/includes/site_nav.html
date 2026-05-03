@@ -167,26 +167,28 @@
         <span class="siteBrandMark" aria-hidden="true"></span>
         <span class="siteBrandText">
           Bristol Food Network
-          <small>{{ user.get_role_display|default:"Marketplace" }}</small>
+          {% if user.is_staff or user.is_superuser or user.role == "ADMIN" %}
+            <small>Admin</small>
+          {% else %}
+            <small>{{ user.get_role_display|default:"Marketplace" }}</small>
+          {% endif %}
         </span>
       </a>
 
       <nav class="siteNavLinks" aria-label="Primary">
-        <a href="{% url 'discovery_alt' %}" {% if request.path == "/discover/" or request.path == "/" %}aria-current="page"{% endif %}>Discover</a>
-        <a href="{% url 'market_payments:cart' %}" {% if request.path == "/payments/cart/" %}aria-current="page"{% endif %}>Cart</a>
-        <a href="{% url 'market_payments:order_history' %}" {% if request.path == "/payments/orders/" %}aria-current="page"{% endif %}>Orders</a>
-        <a href="{% url 'market_finance:recurring_orders_dashboard' %}" {% if request.path == "/finance/recurring/" %}aria-current="page"{% endif %}>Repeat Orders</a>
-
-        {% if user.role == "PRODUCER" %}
+        {% if user.is_staff or user.is_superuser or user.role == "ADMIN" %}
+          <a href="{% url 'market_finance:admin_finance_dashboard' %}" {% if request.path == "/finance/admin/dashboard/" %}aria-current="page"{% endif %}>Finance</a>
+          <a href="/admin/" {% if request.path == "/admin/" %}aria-current="page"{% endif %}>Admin</a>
+        {% elif user.role == "PRODUCER" %}
           <a href="{% url 'producer_dashboard' %}" {% if request.path == "/orders/producer/dashboard/" %}aria-current="page"{% endif %}>Producer Orders</a>
           <a href="{% url 'producer_product_list' %}" {% if request.path == "/producer/products/" %}aria-current="page"{% endif %}>Products</a>
           <a href="{% url 'producer_content_dashboard' %}" {% if request.path == "/producer/content/" %}aria-current="page"{% endif %}>Content</a>
           <a href="{% url 'market_finance:producer_settlements_dashboard' %}" {% if request.path == "/finance/producer/settlements/" %}aria-current="page"{% endif %}>Settlements</a>
-        {% endif %}
-
-        {% if user.is_staff or user.is_superuser or user.role == "ADMIN" %}
-          <a href="{% url 'market_finance:admin_finance_dashboard' %}" {% if request.path == "/finance/admin/dashboard/" %}aria-current="page"{% endif %}>Finance</a>
-          <a href="/admin/" {% if request.path == "/admin/" %}aria-current="page"{% endif %}>Admin</a>
+        {% else %}
+          <a href="{% url 'discovery_alt' %}" {% if request.path == "/discover/" or request.path == "/" %}aria-current="page"{% endif %}>Discover</a>
+          <a href="{% url 'market_payments:cart' %}" {% if request.path == "/payments/cart/" %}aria-current="page"{% endif %}>Cart</a>
+          <a href="{% url 'market_payments:order_history' %}" {% if request.path == "/payments/orders/" %}aria-current="page"{% endif %}>Orders</a>
+          <a href="{% url 'market_finance:recurring_orders_dashboard' %}" {% if request.path == "/finance/recurring/" %}aria-current="page"{% endif %}>Repeat Orders</a>
         {% endif %}
       </nav>
 
