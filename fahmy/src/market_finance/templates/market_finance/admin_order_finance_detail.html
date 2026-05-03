@@ -7,7 +7,6 @@
   <style>{% include "market_finance/includes/admin_finance_theme_styles.html" %}</style>
 </head>
 <body>
-  {% include "includes/site_nav.html" %}
   <div class="layout page">
     <aside class="sidebar">
       <div class="brand">
@@ -34,6 +33,10 @@
         <a href="{% url 'market_finance:admin_finance_exports' %}">
           <span class="icon">↓</span>
           <span>Exports</span>
+        </a>
+        <a href="/admin/">
+          <span class="icon">⚙</span>
+          <span>Django Admin</span>
         </a>
       </nav>
 
