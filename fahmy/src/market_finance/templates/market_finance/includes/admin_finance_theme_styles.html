@@ -1187,6 +1187,13 @@ body{
   border-color:#c9def1;
 }
 
+.chip.danger,
+.pill.danger{
+  background:#fff1f1;
+  color:#991b1b;
+  border-color:#f4c7c7;
+}
+
 .row{
   border-bottom:1px solid var(--line-soft);
   font-size:13px;
@@ -1240,6 +1247,49 @@ body{
   border-color:#f4c7c7;
   background:#fff1f1;
   color:#991b1b;
+}
+
+.settlementBody,
+.settlementMain,
+.settlementPanel,
+.settlementTableWrap{
+  min-width:0;
+}
+
+.settlementTableWrap{
+  display:block;
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.settlementTable{
+  min-width:760px;
+}
+
+.settlementPaidButton{
+  border-color:#d9b66a;
+  background:#fff7e6;
+  color:#7a4a10;
+}
+
+.settlementPaidButton:hover{
+  background:#f8e8bd;
+  color:#4c2d08;
+}
+
+.payoutReference{
+  display:inline-block;
+  max-width:100%;
+  padding:6px 10px;
+  border:1px solid #b9e6cc;
+  border-radius:999px;
+  background:#e8f7ef;
+  color:#176342;
+  font-weight:800;
+  line-height:1.2;
+  overflow-wrap:anywhere;
 }
 
 @media (max-width: 1240px){

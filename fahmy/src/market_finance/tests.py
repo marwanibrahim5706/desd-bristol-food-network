@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
@@ -23,6 +24,8 @@ from .services import (
     generate_order_from_recurring,
     generate_weekly_settlements,
     get_settlement_suborders,
+    PayoutApiResult,
+    send_settlement_payout,
     settlement_week_bounds,
     update_recurring_order_status,
 )
@@ -94,6 +97,49 @@ class SettlementGenerationTests(TestCase):
             week_start=settlement.week_start,
         )
         self.assertEqual(eligible, [])
+
+    @patch("market_finance.services.request_external_payout_api")
+    def test_send_settlement_payout_uses_external_api_and_records_reference(self, mock_payout_api):
+        mock_payout_api.return_value = PayoutApiResult(
+            success=True,
+            reference="PAYOUT-20260503-0001-0001",
+            message="Payout instruction accepted by demo external payout API. No real money moved.",
+        )
+        settlement = generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer,
+            week_start=settlement_week_bounds(self.suborder.delivery_date)[0],
+        )[0]
+
+        result = send_settlement_payout(settlement)
+
+        settlement.refresh_from_db()
+        self.assertTrue(result.success)
+        self.assertEqual(settlement.status, Settlement.Status.PAID)
+        self.assertEqual(settlement.payout_reference, "PAYOUT-20260503-0001-0001")
+        self.assertEqual(settlement.payout_provider, "payments_service_demo_payout")
+        self.assertIsNotNone(settlement.payout_requested_at)
+        self.assertIsNotNone(settlement.paid_at)
+        self.assertEqual(settlement.payout_error, "")
+        mock_payout_api.assert_called_once_with(settlement)
+
+    def test_send_settlement_payout_failure_keeps_settlement_retryable(self):
+        settlement = generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer,
+            week_start=settlement_week_bounds(self.suborder.delivery_date)[0],
+        )[0]
+        settlement.payout_amount = Decimal("0.00")
+        settlement.save(update_fields=["payout_amount"])
+
+        result = send_settlement_payout(settlement)
+
+        settlement.refresh_from_db()
+        self.assertFalse(result.success)
+        self.assertEqual(settlement.status, Settlement.Status.FAILED)
+        self.assertEqual(settlement.payout_reference, "")
+        self.assertIn("zero-value", settlement.payout_error)
+        self.assertIsNone(settlement.paid_at)
 
 
 class RecurringOrderGenerationTests(TestCase):
@@ -494,14 +540,52 @@ class AdminFinanceDashboardTests(TestCase):
         self.assertContains(response, "Year To Date")
         self.assertContains(response, "£7.50")
 
+    def test_ytd_period_overrides_stale_date_inputs_for_tc025_totals(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("market_finance:admin_finance_dashboard"),
+            {
+                "period": "ytd",
+                "date_from": "2026-04-20",
+                "date_to": "2026-05-03",
+            },
+        )
+
+        self.assertContains(response, 'value="2026-01-01"')
+        self.assertContains(response, "£150.00")
+        self.assertContains(response, "£7.50")
+        self.assertContains(response, "£142.50")
+
+    def test_custom_date_range_can_show_empty_report_without_breaking_ytd_summary(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("market_finance:admin_finance_dashboard"),
+            {
+                "period": "custom",
+                "date_from": "2026-04-01",
+                "date_to": "2026-04-02",
+            },
+        )
+
+        self.assertContains(response, 'value="2026-04-01"')
+        self.assertContains(response, "Selected period")
+        self.assertContains(response, "£0.00")
+        self.assertContains(response, "Year To Date")
+        self.assertContains(response, "£7.50")
+
     def test_admin_finance_nav_does_not_show_customer_buying_links(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("market_finance:admin_finance_dashboard"))
 
         self.assertNotContains(response, 'class="siteNav"')
+        self.assertContains(response, 'class="sessionLogout"')
+        self.assertContains(response, ">Log out<")
         self.assertContains(response, ">Overview<")
         self.assertContains(response, ">Financial Reports<")
         self.assertContains(response, ">Settlements<")
+        self.assertContains(response, ">Payout Receipts<")
         self.assertContains(response, ">Exports<")
         self.assertContains(response, ">Django Admin<")
         self.assertNotContains(response, 'href="/discover/"')
@@ -534,6 +618,10 @@ class AdminFinanceDashboardTests(TestCase):
         settlements_response = self.client.get(reverse("market_finance:admin_finance_settlements"))
         self.assertContains(settlements_response, "Settlement Monitoring")
 
+        payouts_response = self.client.get(reverse("market_finance:admin_finance_payouts"))
+        self.assertContains(payouts_response, "Payout Receipts")
+        self.assertContains(payouts_response, "No payout receipts yet")
+
         exports_page = self.client.get(reverse("market_finance:admin_finance_exports"))
         self.assertContains(exports_page, "Exports & Downloads")
         self.assertContains(exports_page, "Download CSV")
@@ -565,6 +653,7 @@ class AdminFinanceDashboardTests(TestCase):
             reverse("market_finance:admin_finance_dashboard"),
             reverse("market_finance:admin_finance_reports"),
             reverse("market_finance:admin_finance_settlements"),
+            reverse("market_finance:admin_finance_payouts"),
             reverse("market_finance:admin_finance_exports"),
             reverse("market_finance:admin_order_finance_detail", args=[self.order.id]),
             reverse("market_finance:export_admin_finance_csv"),
@@ -598,6 +687,125 @@ class AdminFinanceDashboardTests(TestCase):
         self.assertContains(response, "Stored")
         self.assertContains(response, "Contributing orders")
         self.assertContains(response, f"#{self.order.id}")
+        self.assertContains(response, "Send producer payout")
+        self.assertNotContains(response, "Confirm payout sent")
+
+    @patch("market_finance.services.request_external_payout_api")
+    def test_admin_can_send_settlement_payout_through_external_api(self, mock_payout_api):
+        mock_payout_api.return_value = PayoutApiResult(
+            success=True,
+            reference="PAYOUT-20260503-0002-0002",
+            message="Payout instruction accepted by demo external payout API. No real money moved.",
+        )
+        settlement = generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer_one,
+            week_start=settlement_week_bounds(self.suborder_one.delivery_date)[0],
+        )[0]
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("market_finance:send_settlement_payout", args=[settlement.id]),
+            follow=True,
+        )
+
+        settlement.refresh_from_db()
+        self.assertEqual(settlement.status, Settlement.Status.PAID)
+        self.assertEqual(settlement.payout_reference, "PAYOUT-20260503-0002-0002")
+        self.assertContains(response, "External payout sent")
+        self.assertContains(response, settlement.payout_reference)
+        self.assertContains(response, "Payout sent")
+        self.assertNotContains(response, "Send producer payout")
+
+        receipts_response = self.client.get(reverse("market_finance:admin_finance_payouts"))
+        self.assertContains(receipts_response, "Sent Payout Receipts")
+        self.assertContains(receipts_response, settlement.payout_reference)
+        self.assertContains(receipts_response, "£76.00")
+        self.assertContains(receipts_response, "Payments API")
+        self.assertNotContains(receipts_response, "payments_service_demo_payout")
+        self.assertContains(receipts_response, "CSV")
+
+    def test_payout_receipts_only_include_external_api_references(self):
+        api_settlement = generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer_one,
+            week_start=settlement_week_bounds(self.suborder_one.delivery_date)[0],
+        )[0]
+        api_settlement.status = Settlement.Status.PAID
+        api_settlement.paid_at = timezone.now()
+        api_settlement.payout_provider = "payments_service_demo_payout"
+        api_settlement.payout_reference = "PAYOUT-20260503-0001-0001"
+        api_settlement.save(
+            update_fields=["status", "paid_at", "payout_provider", "payout_reference"]
+        )
+
+        legacy_settlement = generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer_two,
+            week_start=settlement_week_bounds(self.suborder_two.delivery_date)[0],
+        )[0]
+        legacy_settlement.status = Settlement.Status.PAID
+        legacy_settlement.paid_at = timezone.now()
+        legacy_settlement.payout_provider = "demo_external_payout_api"
+        legacy_settlement.payout_reference = "DEMO-PO-20260503-0002-0002"
+        legacy_settlement.save(
+            update_fields=["status", "paid_at", "payout_provider", "payout_reference"]
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("market_finance:admin_finance_payouts"))
+
+        self.assertContains(response, "PAYOUT-20260503-0001-0001")
+        self.assertNotContains(response, "DEMO-PO-20260503-0002-0002")
+
+    def test_settlement_week_picker_is_not_restricted_by_report_date_range(self):
+        older_order = Order.objects.create(
+            customer=self.customer,
+            status=Order.Status.COMPLETED,
+            total_amount=Decimal("100.00"),
+            commission_total=Decimal("5.00"),
+        )
+        older_delivery = timezone.now() - timedelta(days=21)
+        older_suborder = ProducerSubOrder.objects.create(
+            order=older_order,
+            producer=self.producer_one,
+            status=ProducerSubOrder.Status.DELIVERED,
+            delivery_date=older_delivery,
+            subtotal=Decimal("100.00"),
+            commission_amount=Decimal("5.00"),
+            producer_payout_amount=Decimal("95.00"),
+        )
+        older_week = settlement_week_bounds(older_delivery)[0]
+        current_week = settlement_week_bounds(self.suborder_one.delivery_date)[0]
+        generate_weekly_settlements(actor=self.admin)
+
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("market_finance:admin_finance_settlements"),
+            {
+                "period": "custom",
+                "date_from": current_week.isoformat(),
+                "date_to": (current_week + timedelta(days=6)).isoformat(),
+            },
+        )
+
+        self.assertContains(response, f'value="{older_week.isoformat()}"')
+        self.assertContains(response, f'value="{current_week.isoformat()}"')
+        self.assertContains(response, f"#{older_suborder.order.id}")
+
+        selected_response = self.client.get(
+            reverse("market_finance:admin_finance_settlements"),
+            {
+                "period": "custom",
+                "date_from": current_week.isoformat(),
+                "date_to": (current_week + timedelta(days=6)).isoformat(),
+                "settlement_week": current_week.isoformat(),
+            },
+        )
+
+        self.assertContains(selected_response, f'value="{older_week.isoformat()}"')
+        self.assertContains(selected_response, f'value="{current_week.isoformat()}"')
+        self.assertNotContains(selected_response, f"#{older_suborder.order.id}")
 
     def test_settlement_csv_export_is_limited_to_owner_for_producers(self):
         generate_weekly_settlements(

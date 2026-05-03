@@ -7,6 +7,26 @@
   <style>{% include "market_finance/includes/admin_finance_theme_styles.html" %}</style>
 </head>
 <body>
+  {% include "includes/logout_button.html" %}
+  <style>
+    .sessionLogout {
+      top: 24px;
+      right: 28px;
+    }
+    .sessionLogout button {
+      min-height: 48px;
+      padding: 12px 18px;
+      border-radius: 999px;
+    }
+    .main {
+      padding-top: 84px;
+    }
+    @media (max-width: 980px) {
+      .main {
+        padding-top: 76px;
+      }
+    }
+  </style>
   <div class="layout page">
     <aside class="sidebar">
       <div class="brand">
@@ -29,6 +49,10 @@
         <a class="{% if current_section == 'settlements' %}active{% endif %}" href="{% url 'market_finance:admin_finance_settlements' %}{{ settlement_query }}">
           <span class="icon">⇄</span>
           <span>Settlements</span>
+        </a>
+        <a class="{% if current_section == 'payouts' %}active{% endif %}" href="{% url 'market_finance:admin_finance_payouts' %}{{ report_query }}">
+          <span class="icon">▣</span>
+          <span>Payout Receipts</span>
         </a>
         <a class="{% if current_section == 'exports' %}active{% endif %}" href="{% url 'market_finance:admin_finance_exports' %}{{ report_query }}">
           <span class="icon">↓</span>
@@ -69,6 +93,9 @@
           {% elif current_section == "settlements" %}
             <h2>Settlement Monitoring</h2>
             <p>Review weekly settlement periods, generate payout records, and confirm payment status across producers without mixing into the producer dashboard.</p>
+          {% elif current_section == "payouts" %}
+            <h2>Payout Receipts</h2>
+            <p>Review producer payouts sent through the external payout API, including provider references, dates, and settlement weeks.</p>
           {% else %}
             <h2>Exports & Downloads</h2>
             <p>Download the current admin report in CSV, Excel-compatible, or PDF formats with the exact filters currently applied.</p>
@@ -152,7 +179,7 @@
 
         <div class="filterActions">
           <button type="submit">Apply filters</button>
-          <a class="linkBtn ghost" href="{% if current_section == 'reports' %}{% url 'market_finance:admin_finance_reports' %}{% elif current_section == 'settlements' %}{% url 'market_finance:admin_finance_settlements' %}{% elif current_section == 'exports' %}{% url 'market_finance:admin_finance_exports' %}{% else %}{% url 'market_finance:admin_finance_dashboard' %}{% endif %}">Reset</a>
+          <a class="linkBtn ghost" href="{% if current_section == 'reports' %}{% url 'market_finance:admin_finance_reports' %}{% elif current_section == 'settlements' %}{% url 'market_finance:admin_finance_settlements' %}{% elif current_section == 'payouts' %}{% url 'market_finance:admin_finance_payouts' %}{% elif current_section == 'exports' %}{% url 'market_finance:admin_finance_exports' %}{% else %}{% url 'market_finance:admin_finance_dashboard' %}{% endif %}">Reset</a>
         </div>
 
         <div class="hint">Filters affect the metrics, order drilldowns, producer totals, and export output together.</div>
@@ -160,7 +187,7 @@
 
       <div class="quickFilters">
         {% for option in period_choices %}
-          <a class="{% if period == option.value %}active{% endif %}" href="{% if current_section == 'reports' %}{% url 'market_finance:admin_finance_reports' %}{% elif current_section == 'settlements' %}{% url 'market_finance:admin_finance_settlements' %}{% elif current_section == 'exports' %}{% url 'market_finance:admin_finance_exports' %}{% else %}{% url 'market_finance:admin_finance_dashboard' %}{% endif %}?period={{ option.value }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if producer_filter %}&producer={{ producer_filter }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}">
+          <a class="{% if period == option.value %}active{% endif %}" href="{% if current_section == 'reports' %}{% url 'market_finance:admin_finance_reports' %}{% elif current_section == 'settlements' %}{% url 'market_finance:admin_finance_settlements' %}{% elif current_section == 'payouts' %}{% url 'market_finance:admin_finance_payouts' %}{% elif current_section == 'exports' %}{% url 'market_finance:admin_finance_exports' %}{% else %}{% url 'market_finance:admin_finance_dashboard' %}{% endif %}?period={{ option.value }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if producer_filter %}&producer={{ producer_filter }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}">
             {{ option.label }}
           </a>
         {% endfor %}
@@ -542,7 +569,9 @@
                     <div class="settlementHeroMeta">
                       {% if settlement.record %}
                         {% if settlement.record.status == "PAID" %}
-                          <span class="chip ok">Paid</span>
+                          <span class="chip ok">Payout sent</span>
+                        {% elif settlement.record.status == "FAILED" %}
+                          <span class="chip danger">Payout failed</span>
                         {% else %}
                           <span class="chip status">Generated</span>
                         {% endif %}
@@ -561,7 +590,10 @@
                           <div class="settlementStat"><span class="label">Gross sales</span><strong class="money">£{{ settlement.gross_sales|floatformat:2 }}</strong></div>
                           <div class="settlementStat"><span class="label">Commission deducted</span><strong class="money">£{{ settlement.commission|floatformat:2 }}</strong></div>
                           <div class="settlementStat"><span class="label">Producer payout</span><strong class="money">£{{ settlement.payout|floatformat:2 }}</strong></div>
-                          <div class="settlementStat"><span class="label">Record status</span><strong>{% if settlement.record %}{{ settlement.record.get_status_display }}{% else %}Pending generation{% endif %}</strong></div>
+                          <div class="settlementStat"><span class="label">Payout status</span><strong>{% if settlement.record %}{{ settlement.record.get_status_display }}{% else %}Pending generation{% endif %}</strong></div>
+                          {% if settlement.record and settlement.record.payout_reference %}
+                            <div class="settlementStat"><span class="label">API reference</span><strong>{{ settlement.record.payout_reference }}</strong></div>
+                          {% endif %}
                         </div>
                       </section>
 
@@ -620,25 +652,34 @@
                   <div class="settlementActions">
                     <span class="hint">
                       {% if settlement.record %}
-                        Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}{% if settlement.record.paid_at %} • Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}{% endif %}
+                        Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}{% if settlement.record.paid_at %} • Payout sent {{ settlement.record.paid_at|date:"M d, Y H:i" }}{% endif %}
+                        {% if settlement.record.status == "PAID" and settlement.record.payout_reference %}
+                          <br>External payout API reference: {{ settlement.record.payout_reference }}.
+                        {% elif settlement.record.status == "FAILED" %}
+                          <br>The external payout API failed{% if settlement.record.payout_error %}: {{ settlement.record.payout_error }}{% endif %}. Check the details and retry the payout.
+                        {% else %}
+                          <br>Send the producer payout through the external payout service. The settlement will be marked paid only after the API accepts it.
+                        {% endif %}
                       {% elif settlement.has_data %}
-                        Delivered orders exist for this producer-week, but no settlement record has been stored yet.
+                        Delivered orders exist for this producer-week. Generate the payout record before sending the producer payout.
                       {% endif %}
                     </span>
 
                     <div class="filterActions">
                       {% if settlement.has_data %}
-                        <form method="post" action="{% url 'market_finance:generate_settlement' %}">
-                          {% csrf_token %}
-                          <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
-                          <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
-                          <button type="submit" class="ghost">{% if settlement.record %}Refresh stored record{% else %}Generate stored record{% endif %}</button>
-                        </form>
+                        {% if not settlement.record %}
+                          <form method="post" action="{% url 'market_finance:generate_settlement' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="producer_id" value="{{ settlement.producer.id }}">
+                            <input type="hidden" name="week_start" value="{{ settlement.week_start|date:'Y-m-d' }}">
+                            <button type="submit" class="ghost">Generate payout record</button>
+                          </form>
+                        {% endif %}
                         <a class="linkBtn" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ settlement.producer.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download CSV</a>
                         {% if settlement.record and settlement.record.status != "PAID" %}
-                          <form method="post" action="{% url 'market_finance:mark_settlement_paid' settlement.record.id %}">
+                          <form method="post" action="{% url 'market_finance:send_settlement_payout' settlement.record.id %}" onsubmit="return confirm('Send this producer payout through the demo external payout API?');">
                             {% csrf_token %}
-                            <button type="submit">Mark paid</button>
+                            <button type="submit" class="settlementPaidButton">{% if settlement.record.status == "FAILED" %}Retry payout{% else %}Send producer payout{% endif %}</button>
                           </form>
                         {% endif %}
                       {% endif %}
@@ -651,6 +692,74 @@
             <div class="empty">
               <h3>No settlement-ready records</h3>
               <p style="margin:0;">Delivered suborders will appear here once orders move through the full lifecycle.</p>
+            </div>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      {% if current_section == "payouts" %}
+        <div class="workspaceNote">
+          These receipts are created only after the external payout API accepts a producer payout instruction. The provider reference is the audit link for the simulated no-money payout service.
+        </div>
+
+        <section class="section">
+          <div class="sectionHeader">
+            <div>
+              <h3>Sent Payout Receipts</h3>
+              <p>{{ sent_payouts|length }} payout receipts found for the current filters.</p>
+            </div>
+          </div>
+
+          <div class="grid three">
+            <article class="miniCard">
+              <div class="label">Receipts</div>
+              <div class="value">{{ sent_payouts|length }}</div>
+            </article>
+            <article class="miniCard">
+              <div class="label">Total paid out</div>
+              <div class="value money">£{{ sent_payout_total|floatformat:2 }}</div>
+            </article>
+            <article class="miniCard">
+              <div class="label">Provider</div>
+              <div class="value">Payments API</div>
+            </article>
+          </div>
+
+          {% if sent_payouts %}
+            <div class="tableWrap">
+              <table class="dataTable">
+                <thead>
+                  <tr>
+                    <th>Receipt</th>
+                    <th>Producer</th>
+                    <th>Settlement week</th>
+                    <th>Amount</th>
+                    <th>Sent</th>
+                    <th>Reference</th>
+                    <th>Export</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for payout in sent_payouts %}
+                    <tr>
+                      <td>#{{ payout.id }}</td>
+                      <td>{{ payout.producer.business_name|default:payout.producer.username }}</td>
+                      <td>{{ payout.week_start|date:"d M Y" }} - {{ payout.week_end|date:"d M Y" }}</td>
+                      <td class="money">£{{ payout.payout_amount|floatformat:2 }}</td>
+                      <td>{{ payout.paid_at|date:"d M Y, H:i" }}</td>
+                      <td><span class="payoutReference">{{ payout.payout_reference }}</span></td>
+                      <td>
+                        <a href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ payout.producer.id }}&week_start={{ payout.week_start|date:'Y-m-d' }}">CSV</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty">
+              <h3>No payout receipts yet</h3>
+              <p style="margin:0;">Sent payouts will appear here after the external payout API accepts a settlement payment.</p>
             </div>
           {% endif %}
         </section>

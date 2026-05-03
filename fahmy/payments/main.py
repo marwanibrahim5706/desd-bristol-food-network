@@ -30,6 +30,16 @@ class CalculateRequest(BaseModel):
     producer_subtotals: list[ProducerLine] = Field(default_factory=list)
 
 
+class PayoutRequest(BaseModel):
+    settlement_id: int
+    producer_id: int
+    producer_name: str = ""
+    week_start: str
+    week_end: str
+    amount: Decimal = Field(..., gt=0)
+    currency: str = "GBP"
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "payments"}
@@ -75,6 +85,29 @@ def calculate(payload: CalculateRequest):
             "commission_amount": str(commission_amount),
             "producer_payout_amount": str(producer_payout_amount),
             "producer_breakdown": producer_breakdown,
+        }
+    )
+
+
+@app.post("/api/payouts/send")
+def send_payout(payload: PayoutRequest):
+    """
+    Demo external payout API.
+
+    This endpoint accepts payout instructions over HTTP and returns a provider
+    reference, but it does not connect to a bank or move real money.
+    """
+    amount = quantize_money(payload.amount)
+    reference = f"PAYOUT-{payload.week_start.replace('-', '')}-{payload.producer_id:04d}-{payload.settlement_id:04d}"
+    return JSONResponse(
+        {
+            "success": True,
+            "reference": reference,
+            "message": "Payout instruction accepted by demo external payout API. No real money moved.",
+            "provider": "payments_service_demo_payout",
+            "amount": str(amount),
+            "currency": payload.currency,
+            "real_money_moved": False,
         }
     )
 

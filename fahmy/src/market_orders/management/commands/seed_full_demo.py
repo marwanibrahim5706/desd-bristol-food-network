@@ -11,11 +11,13 @@ from django.utils import timezone
 
 from market_products.models import Product
 from market_orders.models import Order, ProducerSubOrder, OrderItem, SubOrderStatusEvent
+from market_finance.services import generate_weekly_settlements
 
 
 COMMISSION_RATE = Decimal("0.05")
 DEFAULT_PASSWORD = "Fahmy123$"
 SEEDED_ORDER_PREFIX = "Customer Address"
+TC025_ORDER_PREFIX = "TC-025 Finance Seed"
 SEED_REFERENCE = "market_seed"
 
 
@@ -468,6 +470,89 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING(
                 f"Seeded marketplace orders already exist ({existing_seed_orders}). Skipping order creation."
+            ))
+
+        # ------------------------------------------------------------------
+        # 3b) TC-025 FINANCE REPORTING DATA
+        # ------------------------------------------------------------------
+        # The finance admin test case requires at least two weeks of completed
+        # orders and explicit examples for £100 and £150 commission checks.
+        existing_tc025_orders = Order.objects.filter(delivery_address__startswith=TC025_ORDER_PREFIX).count()
+        if existing_tc025_orders == 0:
+            def build_tc025_order(customer, delivery_dt, producer_lines, idx):
+                order = Order.objects.create(
+                    customer=customer,
+                    status=Order.Status.COMPLETED,
+                    delivery_address=f"{TC025_ORDER_PREFIX} {idx}, Bristol",
+                    customer_phone=getattr(customer, "phone", "07000000000") or "07000000000",
+                    special_instructions="Finance reporting seed order.",
+                )
+                total_amount = Decimal("0.00")
+                commission_total = Decimal("0.00")
+
+                for producer, amount, product_name in producer_lines:
+                    product = Product.objects.filter(producer=producer, name=product_name).first()
+                    if product is None:
+                        product = Product.objects.filter(producer=producer).order_by("id").first()
+                    sub = ProducerSubOrder.objects.create(
+                        order=order,
+                        producer=producer,
+                        status=ProducerSubOrder.Status.DELIVERED,
+                        delivery_date=delivery_dt,
+                    )
+                    OrderItem.objects.create(
+                        suborder=sub,
+                        product=product,
+                        product_name=product.name if product else "Finance reporting item",
+                        unit_price=amount,
+                        quantity=1,
+                    )
+                    sub.subtotal = amount
+                    sub.commission_amount = (amount * COMMISSION_RATE).quantize(Decimal("0.01"))
+                    sub.producer_payout_amount = (amount - sub.commission_amount).quantize(Decimal("0.01"))
+                    sub.save(update_fields=["subtotal", "commission_amount", "producer_payout_amount", "updated_at"])
+                    SubOrderStatusEvent.objects.create(
+                        suborder=sub,
+                        old_status=ProducerSubOrder.Status.READY,
+                        new_status=ProducerSubOrder.Status.DELIVERED,
+                        note="Delivered successfully for finance reporting.",
+                        changed_by=admin,
+                    )
+                    total_amount += sub.subtotal
+                    commission_total += sub.commission_amount
+
+                order.total_amount = total_amount.quantize(Decimal("0.01"))
+                order.commission_total = commission_total.quantize(Decimal("0.01"))
+                order.save(update_fields=["total_amount", "commission_total", "updated_at"])
+                return order
+
+            build_tc025_order(
+                customers[0],
+                now - timedelta(days=10),
+                [(producers[0], Decimal("100.00"), "P1 Apples Box")],
+                1,
+            )
+            build_tc025_order(
+                customers[1],
+                now - timedelta(days=3),
+                [
+                    (producers[0], Decimal("80.00"), "P1 Tomatoes Crate"),
+                    (producers[1], Decimal("70.00"), "P2 Cheese 500g"),
+                ],
+                2,
+            )
+            build_tc025_order(
+                customers[2],
+                now - timedelta(days=17),
+                [(producers[2], Decimal("248.50"), "P3 Croissant Box")],
+                3,
+            )
+            generate_weekly_settlements(actor=admin)
+            self.stdout.write(self.style.SUCCESS("TC-025 finance reporting orders and settlements seeded."))
+        else:
+            generate_weekly_settlements(actor=admin)
+            self.stdout.write(self.style.WARNING(
+                f"TC-025 finance reporting orders already exist ({existing_tc025_orders}). Refreshed settlements."
             ))
         # ------------------------------------------------------------------
         # 4) ALERT NOTIFICATIONS (if model exists)

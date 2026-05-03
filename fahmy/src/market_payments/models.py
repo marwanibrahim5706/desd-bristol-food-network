@@ -110,6 +110,7 @@ class Payment(models.Model):
 class Settlement(models.Model):
     class Status(models.TextChoices):
         GENERATED = "GENERATED", "Generated"
+        FAILED = "FAILED", "Payout failed"
         PAID = "PAID", "Paid"
 
     producer = models.ForeignKey(
@@ -135,6 +136,10 @@ class Settlement(models.Model):
         related_name="generated_settlements",
     )
     generated_at = models.DateTimeField(auto_now_add=True)
+    payout_provider = models.CharField(max_length=50, blank=True, default="")
+    payout_reference = models.CharField(max_length=120, blank=True, default="")
+    payout_error = models.TextField(blank=True, default="")
+    payout_requested_at = models.DateTimeField(blank=True, null=True)
     paid_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:

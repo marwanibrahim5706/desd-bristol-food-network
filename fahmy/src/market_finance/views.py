@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -35,6 +36,7 @@ from .services import (
     generate_weekly_settlements,
     get_recurring_order_preview,
     get_settlement_suborders,
+    send_settlement_payout,
     settlement_week_bounds,
     update_recurring_order_delivery_schedule,
     update_recurring_order_details,
@@ -48,6 +50,7 @@ ADMIN_PERIOD_PRESETS = {
     "14d": {"label": "Previous 2 weeks", "days": 14},
     "month": {"label": "This month", "mode": "month"},
     "ytd": {"label": "Year to date", "mode": "ytd"},
+    "custom": {"label": "Custom date range", "mode": "custom"},
 }
 
 
@@ -121,7 +124,7 @@ def _resolve_admin_period_filters(request):
     date_from = (request.GET.get("date_from") or "").strip()
     date_to = (request.GET.get("date_to") or "").strip()
 
-    if not date_from and not date_to:
+    if period != "custom":
         preset = ADMIN_PERIOD_PRESETS[period]
         if preset.get("days"):
             start = today - timedelta(days=preset["days"] - 1)
@@ -157,6 +160,26 @@ def _build_querystring(params, exclude=None):
     return f"?{urlencode(filtered)}"
 
 
+def _build_sent_payouts(*, producer_filter="", q="", date_from="", date_to=""):
+    payouts = Settlement.objects.select_related("producer").filter(
+        status=Settlement.Status.PAID,
+        payout_provider="payments_service_demo_payout",
+    ).exclude(payout_reference="")
+    if producer_filter:
+        payouts = payouts.filter(producer_id=producer_filter)
+    if q:
+        payouts = payouts.filter(
+            Q(producer__username__icontains=q)
+            | Q(producer__business_name__icontains=q)
+            | Q(payout_reference__icontains=q)
+        )
+    if date_from:
+        payouts = payouts.filter(paid_at__date__gte=date_from)
+    if date_to:
+        payouts = payouts.filter(paid_at__date__lte=date_to)
+    return list(payouts.order_by("-paid_at", "-id"))
+
+
 def _build_admin_finance_context(request, *, current_section):
     if not is_admin(request.user):
         raise PermissionDenied("Admin access required.")
@@ -184,6 +207,8 @@ def _build_admin_finance_context(request, *, current_section):
         date_from=date_from,
         date_to=date_to,
     )
+    if not status_filter:
+        suborders_qs = suborders_qs.filter(status=ProducerSubOrder.Status.DELIVERED)
 
     suborders = list(suborders_qs)
     order_summaries = build_order_finance_summaries(suborders)
@@ -195,9 +220,9 @@ def _build_admin_finance_context(request, *, current_section):
     settlement_source_qs = base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED)
     if producer_filter:
         settlement_source_qs = settlement_source_qs.filter(producer_id=producer_filter)
-    if date_from:
+    if current_section != "settlements" and date_from:
         settlement_source_qs = settlement_source_qs.filter(delivery_date__date__gte=date_from)
-    if date_to:
+    if current_section != "settlements" and date_to:
         settlement_source_qs = settlement_source_qs.filter(delivery_date__date__lte=date_to)
     producers = list(
         ProducerSubOrder.objects.select_related("producer")
@@ -214,16 +239,24 @@ def _build_admin_finance_context(request, *, current_section):
             producer_users.append(producer_obj)
 
     running_summaries = calculate_running_period_summaries()
-    all_settlements = build_settlement_dashboard_rows(
-        list(settlement_source_qs),
+    settlement_source = list(settlement_source_qs)
+    all_settlement_weeks = build_settlement_dashboard_rows(settlement_source)
+    settlements = build_settlement_dashboard_rows(
+        settlement_source,
         settlement_week=settlement_week,
     )
 
-    available_weeks, previous_week, next_week = _settlement_week_navigation(all_settlements, settlement_week)
-    settlements = all_settlements
+    available_weeks, previous_week, next_week = _settlement_week_navigation(all_settlement_weeks, settlement_week)
 
     paid_settlement_count = Settlement.objects.count()
     paid_producer_count = Settlement.objects.values("producer_id").distinct().count()
+    sent_payouts = _build_sent_payouts(
+        producer_filter=producer_filter,
+        q=q,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    sent_payout_total = sum((payout.payout_amount for payout in sent_payouts), Decimal("0.00"))
 
     return {
         "suborders": suborders,
@@ -243,6 +276,8 @@ def _build_admin_finance_context(request, *, current_section):
         "processed_order_count": processed_order_count,
         "paid_settlement_count": paid_settlement_count,
         "paid_producer_count": paid_producer_count,
+        "sent_payouts": sent_payouts,
+        "sent_payout_total": sent_payout_total,
         "available_weeks": available_weeks,
         "previous_week_query": _querystring_with_week(request, previous_week),
         "next_week_query": _querystring_with_week(request, next_week),
@@ -281,6 +316,11 @@ def admin_finance_reports(request):
 @login_required
 def admin_finance_settlements(request):
     return _render_admin_finance_workspace(request, current_section="settlements")
+
+
+@login_required
+def admin_finance_payouts(request):
+    return _render_admin_finance_workspace(request, current_section="payouts")
 
 
 @login_required
@@ -337,7 +377,7 @@ def generate_settlement(request):
 
 
 @login_required
-def mark_settlement_paid(request, settlement_id):
+def send_settlement_payout_view(request, settlement_id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST required.")
 
@@ -345,10 +385,22 @@ def mark_settlement_paid(request, settlement_id):
         raise PermissionDenied("Admin access required.")
 
     settlement = get_object_or_404(Settlement, id=settlement_id)
-    settlement.status = Settlement.Status.PAID
-    settlement.paid_at = timezone.now()
-    settlement.save(update_fields=["status", "paid_at"])
-    messages.success(request, f"Settlement #{settlement.id} marked as paid.")
+    try:
+        result = send_settlement_payout(settlement)
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+        return redirect("market_finance:admin_finance_settlements")
+
+    if result.success:
+        messages.success(
+            request,
+            f"External payout sent for settlement #{settlement.id}. Reference: {result.reference}.",
+        )
+    else:
+        messages.error(
+            request,
+            f"External payout failed for settlement #{settlement.id}: {result.message}",
+        )
     return redirect("market_finance:admin_finance_settlements")
 
 

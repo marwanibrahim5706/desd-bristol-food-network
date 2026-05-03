@@ -1,8 +1,13 @@
 from collections import Counter, defaultdict
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -19,6 +24,15 @@ FINANCE_PROCESSED_STATUSES = {
     ProducerSubOrder.Status.READY,
     ProducerSubOrder.Status.DELIVERED,
 }
+
+PAYOUT_API_PROVIDER = "payments_service_demo_payout"
+
+
+@dataclass(frozen=True)
+class PayoutApiResult:
+    success: bool
+    reference: str = ""
+    message: str = ""
 
 
 def apply_finance_filters(queryset, *, status_filter="", producer_filter="", q="", date_from="", date_to=""):
@@ -172,6 +186,87 @@ def build_recent_finance_activity(suborders, *, limit=6):
 
     activity.sort(key=lambda item: item["timestamp"], reverse=True)
     return activity[:limit]
+
+
+def request_external_payout_api(settlement):
+    """
+    Send the payout instruction to the external payments service over HTTP.
+
+    The external service returns a real API response and provider reference,
+    but this prototype endpoint does not move real money.
+    """
+    if settlement.payout_amount <= Decimal("0.00"):
+        return PayoutApiResult(
+            success=False,
+            message="The payout service rejected a zero-value payout.",
+        )
+
+    endpoint = f"{settings.PAYMENTS_SERVICE_URL.rstrip('/')}/api/payouts/send"
+    payload = {
+        "settlement_id": settlement.id,
+        "producer_id": settlement.producer_id,
+        "producer_name": settlement.producer.business_name or settlement.producer.username,
+        "week_start": settlement.week_start.isoformat(),
+        "week_end": settlement.week_end.isoformat(),
+        "amount": str(settlement.payout_amount),
+        "currency": "GBP",
+    }
+    request = Request(
+        endpoint,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=5) as response:
+            parsed = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return PayoutApiResult(
+            success=False,
+            message=f"External payout API unavailable: {exc}",
+        )
+
+    return PayoutApiResult(
+        success=bool(parsed.get("success")),
+        reference=str(parsed.get("reference") or ""),
+        message=str(parsed.get("message") or ""),
+    )
+
+
+def send_settlement_payout(settlement):
+    """
+    Send a settlement payout through the external payout API.
+    """
+    if settlement.status == Settlement.Status.PAID:
+        raise ValidationError("This settlement has already been paid.")
+
+    result = request_external_payout_api(settlement)
+    settlement.payout_provider = PAYOUT_API_PROVIDER
+    settlement.payout_requested_at = timezone.now()
+
+    if result.success:
+        settlement.status = Settlement.Status.PAID
+        settlement.paid_at = settlement.payout_requested_at
+        settlement.payout_reference = result.reference
+        settlement.payout_error = ""
+    else:
+        settlement.status = Settlement.Status.FAILED
+        settlement.paid_at = None
+        settlement.payout_reference = ""
+        settlement.payout_error = result.message
+
+    settlement.save(
+        update_fields=[
+            "status",
+            "paid_at",
+            "payout_provider",
+            "payout_reference",
+            "payout_error",
+            "payout_requested_at",
+        ]
+    )
+    return result
 
 
 def build_producer_finance_summaries(suborders):
@@ -569,9 +664,14 @@ def generate_weekly_settlements(*, actor, producer=None, week_start=None):
             settlement.commission_amount = summary["commission"]
             settlement.payout_amount = summary["payout"]
             settlement.suborder_count = summary["suborder_count"]
-            settlement.status = Settlement.Status.GENERATED
             settlement.generated_by = actor
-            settlement.paid_at = None
+            if settlement.status != Settlement.Status.PAID:
+                settlement.status = Settlement.Status.GENERATED
+                settlement.paid_at = None
+                settlement.payout_provider = ""
+                settlement.payout_reference = ""
+                settlement.payout_error = ""
+                settlement.payout_requested_at = None
             settlement.save()
             settlement.included_suborders.set(suborders)
             settlements.append(settlement)
