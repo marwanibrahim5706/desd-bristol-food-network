@@ -41,7 +41,7 @@
         <h1 style="margin:0 0 8px;">{{ product.name }}</h1>
         <div class="muted">
           Producer:
-          <a href="{% url 'producer_profile' product.producer.id %}">{{ product.producer.business_name|default:product.producer.username }}</a>
+          <a href="{% url 'producer_profile' product.producer.id %}">{{ product.producer.display_name }}</a>
         </div>
 
         <div class="metaRow">
@@ -166,7 +166,7 @@
             {% if review.producer_response %}
               <div class="recipeCard">
                 <strong>Producer response</strong>
-                <div class="muted">{{ review.product.producer.business_name|default:review.product.producer.username }} • {{ review.producer_responded_at|date:"d M Y, H:i" }}</div>
+                <div class="muted">{{ review.product.producer.display_name }} • {{ review.producer_responded_at|date:"d M Y, H:i" }}</div>
                 <p style="margin-bottom:0;">{{ review.producer_response|linebreaksbr }}</p>
               </div>
             {% endif %}

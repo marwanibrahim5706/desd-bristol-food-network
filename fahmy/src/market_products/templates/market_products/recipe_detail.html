@@ -22,7 +22,7 @@
     <a class="muted" href="{% url 'producer_profile' recipe.producer.id %}">← Back to producer profile</a>
     <div class="card">
       <h1 style="margin:0 0 8px;">{{ recipe.title }}</h1>
-      <div class="muted">{{ recipe.producer.business_name|default:recipe.producer.username }} • {{ recipe.get_seasonal_tag_display }}</div>
+      <div class="muted">{{ recipe.producer.display_name }} • {{ recipe.get_seasonal_tag_display }}</div>
       <div style="margin-top:10px;">
         <span class="pill">{{ recipe.get_status_display }}</span>
         <span class="pill">{{ recipe.products.count }} linked product{{ recipe.products.count|pluralize }}</span>

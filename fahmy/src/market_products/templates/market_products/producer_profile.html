@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{{ producer.business_name|default:producer.username }}</title>
+  <title>{{ producer.display_name }}</title>
   <style>
     body { font-family: system-ui, Arial, sans-serif; margin:0; background:#f6f7fb; color:#111827; }
     .wrap { max-width: 1080px; margin: 0 auto; padding: 24px; }
@@ -22,7 +22,7 @@
   <div class="wrap">
     <a class="muted" href="{% url 'discovery' %}">← Back to discovery</a>
     <div class="card">
-      <h1 style="margin:0 0 8px;">{{ producer.business_name|default:producer.username }}</h1>
+      <h1 style="margin:0 0 8px;">{{ producer.display_name }}</h1>
       <div class="muted">Producer profile, recipes, and farm stories.</div>
     </div>
 

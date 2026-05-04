@@ -434,8 +434,9 @@
               <option value="1" {% if filters.available == "1" %}selected{% endif %}>Available only</option>
             </select>
             <select class="control-md" name="organic">
-              <option value="">Organic and non-organic</option>
+              <option value="" {% if not filters.organic %}selected{% endif %}>All</option>
               <option value="1" {% if filters.organic == "1" %}selected{% endif %}>Organic only</option>
+              <option value="0" {% if filters.organic == "0" %}selected{% endif %}>Non-organic only</option>
             </select>
             <select class="control-md" name="season">
               <option value="">Any season</option>
@@ -479,6 +480,7 @@
       {% if filters.category %}<span class="pill">Category filtered</span>{% endif %}
       {% if filters.available == "1" %}<span class="pill ok">In stock only</span>{% endif %}
       {% if filters.organic == "1" %}<span class="pill ok">Organic only</span>{% endif %}
+      {% if filters.organic == "0" %}<span class="pill">Non-organic only</span>{% endif %}
       {% if filters.season %}<span class="pill">Season: {{ filters.season }}</span>{% endif %}
       {% for label in avoided_category_labels %}<span class="pill">Avoiding {{ label }}</span>{% endfor %}
       {% if filters.max_food_miles %}<span class="pill">Within {{ filters.max_food_miles }} miles</span>{% endif %}
@@ -497,7 +499,7 @@
             </div>
 
             <div class="muted" style="margin-top:6px;">
-              Producer: {{ p.producer.username }}
+              Producer: {{ p.producer.display_name }}
             </div>
 
             {% if p.description %}

@@ -124,6 +124,28 @@
       color: #315f52;
     }
 
+    .loginPage .rememberChoice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: -2px 0 18px;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .loginPage .rememberChoice input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: #315f52;
+      box-shadow: none;
+    }
+
+    .loginPage .rememberChoice span {
+      line-height: 1.3;
+    }
+
     .loginPage .submit {
       background: linear-gradient(135deg, #315f52, #21483f);
       color: #fff;
@@ -233,6 +255,11 @@
                 </button>
               </div>
             </div>
+
+            <label class="rememberChoice" for="remember_me">
+              <input id="remember_me" type="checkbox" name="remember_me" value="1">
+              <span>Remember me</span>
+            </label>
 
             <button class="submit" type="submit">Sign In</button>
           </form>
