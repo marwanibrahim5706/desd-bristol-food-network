@@ -230,9 +230,11 @@ def _build_admin_finance_context(request, *, current_section):
     order_count = len({suborder.order_id for suborder in suborders})
     processed_order_count = count_processed_orders(suborders)
     recent_activity = build_recent_finance_activity(suborders)
-    settlement_source_qs = base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED)
-    if producer_filter:
-        settlement_source_qs = settlement_source_qs.filter(producer_id=producer_filter)
+    settlement_source_qs = apply_finance_filters(
+        base_finance_queryset().filter(status=ProducerSubOrder.Status.DELIVERED),
+        producer_filter=producer_filter,
+        q=q,
+    )
     if current_section != "settlements" and date_from:
         settlement_source_qs = settlement_source_qs.filter(delivery_date__date__gte=date_from)
     if current_section != "settlements" and date_to:
@@ -253,10 +255,11 @@ def _build_admin_finance_context(request, *, current_section):
 
     running_summaries = calculate_running_period_summaries()
     settlement_source = list(settlement_source_qs)
-    all_settlement_weeks = build_settlement_dashboard_rows(settlement_source)
+    all_settlement_weeks = build_settlement_dashboard_rows(settlement_source, q=q)
     settlements = build_settlement_dashboard_rows(
         settlement_source,
         settlement_week=settlement_week,
+        q=q,
     )
 
     available_weeks, previous_week, next_week = _settlement_week_navigation(all_settlement_weeks, settlement_week)
@@ -445,6 +448,15 @@ def producer_settlements_dashboard(request):
     settlements = all_settlements
 
     totals = aggregate_finance_totals(suborders_qs)
+    today = timezone.localdate()
+    tax_year_start = date(today.year if today.month >= 4 else today.year - 1, 4, 1)
+    tax_year_totals = aggregate_finance_totals(
+        base_finance_queryset().filter(
+            producer=request.user,
+            status=ProducerSubOrder.Status.DELIVERED,
+            delivery_date__date__gte=tax_year_start,
+        )
+    )
 
     return render(
         request,
@@ -454,6 +466,10 @@ def producer_settlements_dashboard(request):
             "gross_sales": totals["gross_sales"],
             "total_commission": totals["total_commission"],
             "total_payouts": totals["total_payouts"],
+            "tax_year_start": tax_year_start,
+            "tax_year_gross_sales": tax_year_totals["gross_sales"],
+            "tax_year_commission": tax_year_totals["total_commission"],
+            "tax_year_payouts": tax_year_totals["total_payouts"],
             "date_from": date_from,
             "date_to": date_to,
             "settlement_week": settlement_week,
@@ -649,7 +665,7 @@ def export_settlement_csv(request):
 
     record = (
         Settlement.objects.filter(producer_id=producer_id, week_start=week_start)
-        .prefetch_related("included_suborders__order__customer")
+        .prefetch_related("included_suborders__order__customer", "included_suborders__items")
         .first()
     )
     matching = list(record.included_suborders.all()) if record else get_settlement_suborders(
@@ -676,20 +692,30 @@ def export_settlement_csv(request):
     writer.writerow(["producer", producer.business_name or producer.username])
     writer.writerow(["week_start", week_start])
     writer.writerow(["week_end", week_end])
-    writer.writerow(["settlement_status", record.get_status_display() if record else "Pending generation"])
+    writer.writerow(["settlement_status", "Processed" if record and record.status == Settlement.Status.PAID else "Pending Bank Transfer"])
+    writer.writerow(["payment_reference", record.payout_receipt_reference if record else ""])
+    writer.writerow(["generated_at", record.generated_at.isoformat() if record else ""])
+    writer.writerow(["paid_at", record.paid_at.isoformat() if record and record.paid_at else ""])
     writer.writerow([])
     writer.writerow([
-        "suborder_id", "order_id", "customer", "delivery_date",
-        "subtotal", "commission_amount", "producer_payout_amount",
+        "suborder_id", "order_id", "customer", "delivery_date", "items_sold",
+        "subtotal", "commission_rate", "commission_amount", "producer_payout_rate", "producer_payout_amount",
     ])
     for suborder in matching:
+        items_sold = "; ".join(
+            f"{item.product_name} x{item.quantity} @ {item.unit_price:.2f}"
+            for item in suborder.items.all()
+        )
         writer.writerow([
             suborder.id,
             suborder.order.id,
             suborder.order.customer.username,
             suborder.delivery_date.isoformat(),
+            items_sold,
             suborder.subtotal,
+            "5%",
             suborder.commission_amount,
+            "95%",
             suborder.producer_payout_amount,
         ])
 

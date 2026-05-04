@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import ProtectedError
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -33,6 +33,42 @@ from .services import (
     recipe_is_favourited_by_user,
     user_can_review_product,
 )
+
+
+def _producer_directory_queryset(query=""):
+    producers = (
+        get_user_model()
+        .objects.filter(role="PRODUCER", products__is_active=True)
+        .annotate(
+            active_product_count=Count("products", filter=Q(products__is_active=True), distinct=True),
+            published_recipe_count=Count(
+                "recipes",
+                filter=Q(
+                    recipes__status=Recipe.Status.PUBLISHED,
+                    recipes__moderation_status=Recipe.ModerationStatus.APPROVED,
+                ),
+                distinct=True,
+            ),
+            published_story_count=Count(
+                "farm_stories",
+                filter=Q(
+                    farm_stories__status=FarmStory.Status.PUBLISHED,
+                    farm_stories__moderation_status=FarmStory.ModerationStatus.APPROVED,
+                ),
+                distinct=True,
+            ),
+        )
+        .filter(active_product_count__gt=0)
+    )
+    if query:
+        producers = producers.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(business_name__icontains=query)
+            | Q(products__name__icontains=query)
+            | Q(products__description__icontains=query)
+        ).distinct()
+    return producers.order_by("business_name", "username")
 
 
 def discovery(request):
@@ -162,6 +198,19 @@ def discovery(request):
             "seasons": Product.SEASON_CHOICES,
             "pagination_query": pagination_params.urlencode(),
             "sort": sort,
+        },
+    )
+
+
+def producer_directory(request):
+    q = (request.GET.get("q") or "").strip()
+    producers = list(_producer_directory_queryset(q))
+    return render(
+        request,
+        "market_products/producer_directory.html",
+        {
+            "producers": producers,
+            "q": q,
         },
     )
 

@@ -505,6 +505,32 @@ class AdminFinanceDashboardTests(TestCase):
             commission_amount=Decimal("3.50"),
             producer_payout_amount=Decimal("66.50"),
         )
+        self.product_one = Product.objects.create(
+            producer=self.producer_one,
+            name="Finance Apples",
+            price=Decimal("40.00"),
+            stock_quantity=10,
+        )
+        self.product_two = Product.objects.create(
+            producer=self.producer_two,
+            name="Finance Bread",
+            price=Decimal("35.00"),
+            stock_quantity=10,
+        )
+        OrderItem.objects.create(
+            suborder=self.suborder_one,
+            product=self.product_one,
+            product_name=self.product_one.name,
+            unit_price=Decimal("40.00"),
+            quantity=2,
+        )
+        OrderItem.objects.create(
+            suborder=self.suborder_two,
+            product=self.product_two,
+            product_name=self.product_two.name,
+            unit_price=Decimal("35.00"),
+            quantity=2,
+        )
         payment_order = PaymentOrder.objects.create(
             user=self.customer,
             subtotal=Decimal("150.00"),
@@ -759,6 +785,38 @@ class AdminFinanceDashboardTests(TestCase):
         self.assertNotContains(response, 'name="status"')
         self.assertContains(response, "Audit source: <b>Delivered producer suborders</b>", html=True)
 
+    def test_settlement_search_filters_pending_and_stored_rows(self):
+        generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer_one,
+            week_start=settlement_week_bounds(self.suborder_one.delivery_date)[0],
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("market_finance:admin_finance_settlements"),
+            {"q": "Bristol Valley"},
+        )
+
+        self.assertContains(response, "Bristol Valley Farm")
+        self.assertContains(response, "Producer: <b>Bristol Valley Farm</b>", html=True)
+        self.assertNotContains(response, "Producer: <b>Harbour Bakery</b>", html=True)
+
+        customer_response = self.client.get(
+            reverse("market_finance:admin_finance_settlements"),
+            {"q": "finance_customer_2"},
+        )
+
+        self.assertContains(customer_response, "Bristol Valley Farm")
+        self.assertContains(customer_response, "Harbour Bakery")
+
+        empty_response = self.client.get(
+            reverse("market_finance:admin_finance_settlements"),
+            {"q": "no matching settlement"},
+        )
+
+        self.assertContains(empty_response, "No settlement-ready records")
+
     @patch("market_finance.services.request_external_payout_api")
     def test_admin_can_send_settlement_payout_through_external_api(self, mock_payout_api):
         mock_payout_api.return_value = PayoutApiResult(
@@ -910,7 +968,50 @@ class AdminFinanceDashboardTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("settlement_status,Generated", response.content.decode("utf-8"))
+        self.assertIn("settlement_status,Pending Bank Transfer", response.content.decode("utf-8"))
+
+    def test_tc012_producer_weekly_settlement_page_and_tax_report_are_complete(self):
+        settlement = generate_weekly_settlements(
+            actor=self.admin,
+            producer=self.producer_one,
+            week_start=settlement_week_bounds(self.suborder_one.delivery_date)[0],
+        )[0]
+        settlement.status = Settlement.Status.PAID
+        settlement.paid_at = timezone.now()
+        settlement.payout_provider = "external_payout_api"
+        settlement.payout_reference = "PAYOUT-20260503-0001-0001"
+        settlement.save(update_fields=["status", "paid_at", "payout_provider", "payout_reference"])
+
+        self.client.force_login(self.producer_one)
+        response = self.client.get(reverse("market_finance:producer_settlements_dashboard"))
+
+        self.assertContains(response, "Weekly payouts")
+        self.assertContains(response, "Processed")
+        self.assertContains(response, "Tax year payout")
+        self.assertContains(response, "80.00")
+        self.assertContains(response, "4.00")
+        self.assertContains(response, "76.00")
+        self.assertContains(response, "Order #")
+        self.assertContains(response, "finance_customer_2")
+        self.assertContains(response, "Finance Apples x2")
+        self.assertContains(response, "PAYOUT-20260503-0001-0001")
+        self.assertNotContains(response, "Finance Bread")
+
+        csv_response = self.client.get(
+            reverse("market_finance:export_settlement_csv"),
+            {
+                "producer_id": self.producer_one.id,
+                "week_start": settlement.week_start.isoformat(),
+            },
+        )
+        csv_content = csv_response.content.decode("utf-8")
+        self.assertEqual(csv_response.status_code, 200)
+        self.assertIn("settlement_status,Processed", csv_content)
+        self.assertIn("payment_reference,PAYOUT-20260503-0001-0001", csv_content)
+        self.assertIn("items_sold", csv_content)
+        self.assertIn("Finance Apples x2 @ 40.00", csv_content)
+        self.assertIn("commission_rate,commission_amount,producer_payout_rate,producer_payout_amount", csv_content)
+        self.assertIn("5%,4.00,95%,76.00", csv_content)
 
 
 class FinancePdfTests(TestCase):

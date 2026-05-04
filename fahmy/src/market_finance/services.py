@@ -579,7 +579,40 @@ def get_settlement_suborders(*, producer_id=None, week_start=None, record=None):
     return eligible
 
 
-def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week=""):
+def _settlement_row_matches_query(row, query):
+    query = (query or "").strip().lower()
+    if not query:
+        return True
+
+    producer = row["producer"]
+    searchable_values = [
+        getattr(producer, "username", ""),
+        getattr(producer, "email", ""),
+        getattr(producer, "business_name", ""),
+        str(row["week_start"]),
+        str(row["week_end"]),
+    ]
+    record = row.get("record")
+    if record is not None:
+        searchable_values.extend([str(record.id), record.payout_reference])
+
+    for suborder in row.get("suborders", []):
+        searchable_values.extend(
+            [
+                str(suborder.id),
+                str(suborder.order_id),
+                getattr(suborder.order.customer, "username", ""),
+                getattr(suborder.order.customer, "email", ""),
+                getattr(suborder.producer, "username", ""),
+                getattr(suborder.producer, "business_name", ""),
+            ]
+        )
+        searchable_values.extend(item.product_name for item in suborder.items.all())
+
+    return any(query in str(value).lower() for value in searchable_values if value)
+
+
+def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week="", q=""):
     candidate_summaries = build_settlement_summaries(suborders)
     if producer is not None:
         settlement_records = Settlement.objects.filter(producer=producer)
@@ -628,6 +661,9 @@ def build_settlement_dashboard_rows(suborders, *, producer=None, settlement_week
                 "is_pending": True,
             }
         )
+
+    if q:
+        rows = [row for row in rows if _settlement_row_matches_query(row, q)]
 
     return sorted(
         rows,
