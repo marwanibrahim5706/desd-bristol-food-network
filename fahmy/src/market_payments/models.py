@@ -168,3 +168,13 @@ class Settlement(models.Model):
     def total_payout(self):
         """Compatibility alias for total producer payout."""
         return self.payout_amount
+
+    @property
+    def payout_receipt_reference(self):
+        if (
+            self.payout_provider == "external_payout_api"
+            and self.payout_reference
+            and not self.payout_reference.startswith("DEMO-")
+        ):
+            return self.payout_reference
+        return ""

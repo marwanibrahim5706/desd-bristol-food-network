@@ -25,7 +25,7 @@ FINANCE_PROCESSED_STATUSES = {
     ProducerSubOrder.Status.DELIVERED,
 }
 
-PAYOUT_API_PROVIDER = "payments_service_demo_payout"
+PAYOUT_API_PROVIDER = "external_payout_api"
 
 
 @dataclass(frozen=True)
@@ -238,7 +238,7 @@ def send_settlement_payout(settlement):
     """
     Send a settlement payout through the external payout API.
     """
-    if settlement.status == Settlement.Status.PAID:
+    if settlement.status == Settlement.Status.PAID and settlement.payout_receipt_reference:
         raise ValidationError("This settlement has already been paid.")
 
     result = request_external_payout_api(settlement)
@@ -309,17 +309,53 @@ def find_payment_snapshot_for_market_order(order):
     """
     Match a marketplace order to the stored payment snapshot for admin tracing.
     """
-    return (
+    market_signature = sorted(
+        (item.product_name, str(item.unit_price), item.quantity)
+        for suborder in order.producer_suborders.prefetch_related("items").all()
+        for item in suborder.items.all()
+    )
+
+    candidates = list(
         PaymentSnapshot.objects.select_related("order")
+        .prefetch_related("order__items")
         .filter(
             order__user=order.customer,
             subtotal=order.total_amount,
             commission_amount=order.commission_total,
-            order__created_at__gte=order.created_at - timedelta(minutes=5),
-            order__created_at__lte=order.created_at + timedelta(minutes=5),
         )
         .order_by("-created_at", "-id")
-        .first()
+    )
+    if not candidates:
+        return None
+
+    if market_signature:
+        exact_matches = []
+        for payment in candidates:
+            payment_signature = sorted(
+                (item.product_name, str(item.unit_price), item.quantity)
+                for item in payment.order.items.all()
+            )
+            if payment_signature == market_signature:
+                exact_matches.append(payment)
+        if exact_matches:
+            return min(
+                exact_matches,
+                key=lambda payment: abs((payment.order.created_at - order.created_at).total_seconds()),
+            )
+
+    close_matches = [
+        payment for payment in candidates
+        if order.created_at - timedelta(minutes=10) <= payment.order.created_at <= order.created_at + timedelta(minutes=10)
+    ]
+    if close_matches:
+        return min(
+            close_matches,
+            key=lambda payment: abs((payment.order.created_at - order.created_at).total_seconds()),
+        )
+
+    return min(
+        candidates,
+        key=lambda payment: abs((payment.order.created_at - order.created_at).total_seconds()),
     )
 
 
@@ -665,7 +701,8 @@ def generate_weekly_settlements(*, actor, producer=None, week_start=None):
             settlement.payout_amount = summary["payout"]
             settlement.suborder_count = summary["suborder_count"]
             settlement.generated_by = actor
-            if settlement.status != Settlement.Status.PAID:
+            valid_paid_record = settlement.status == Settlement.Status.PAID and settlement.payout_receipt_reference
+            if not valid_paid_record:
                 settlement.status = Settlement.Status.GENERATED
                 settlement.paid_at = None
                 settlement.payout_provider = ""

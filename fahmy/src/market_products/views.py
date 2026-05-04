@@ -9,8 +9,10 @@ from django.db.models import ProtectedError
 from django.db.models import Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from accounts.permissions import is_customer, is_producer
+from market_alerts.models import Notification
 
 from .forms import (
     FarmStoryForm,
@@ -313,7 +315,14 @@ def producer_product_edit(request, pk: int):
     if request.method == "POST":
         form = ProductForm(request.POST, instance=product)
         if form.is_valid():
-            form.save()
+            product = form.save()
+            if not product.is_low_stock:
+                Notification.objects.filter(
+                    user=request.user,
+                    product=product,
+                    type=Notification.Type.LOW_STOCK,
+                    is_resolved=False,
+                ).update(is_resolved=True, resolved_at=timezone.now())
             return redirect("producer_product_list")
     else:
         form = ProductForm(instance=product)

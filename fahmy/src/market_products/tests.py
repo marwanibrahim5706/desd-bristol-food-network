@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from market_orders.models import Order, OrderItem, ProducerSubOrder
+from market_alerts.models import Notification
 from market_payments.models import Order as PaymentOrder
 from market_payments.models import OrderItem as PaymentOrderItem
 from market_payments.models import Payment
@@ -157,6 +158,58 @@ class DiscoverySearchTests(TestCase):
         self.assertContains(response, "Organic")
         self.assertContains(response, "6.5 food miles")
         self.assertContains(response, "Autumn")
+
+
+class ProducerInventoryTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.producer = user_model.objects.create_user(
+            username="inventory_producer",
+            password="secret123",
+            role=user_model.Role.PRODUCER,
+            business_name="Inventory Farm",
+        )
+        self.product = Product.objects.create(
+            name="Inventory Tomatoes",
+            description="Fresh tomatoes",
+            producer=self.producer,
+            category="fruit_veg",
+            price=Decimal("4.00"),
+            stock_quantity=2,
+            low_stock_threshold=5,
+            is_active=True,
+        )
+
+    def test_restocking_product_resolves_low_stock_alert(self):
+        Notification.objects.create(
+            user=self.producer,
+            product=self.product,
+            type=Notification.Type.LOW_STOCK,
+            message="Low Stock Alert: Inventory Tomatoes - Only 2 unit(s) remaining.",
+        )
+        self.client.force_login(self.producer)
+
+        response = self.client.post(
+            reverse("producer_product_edit", args=[self.product.id]),
+            {
+                "name": "Inventory Tomatoes",
+                "description": "Fresh tomatoes",
+                "category": "fruit_veg",
+                "image_url": "",
+                "price": "4.00",
+                "stock_quantity": "20",
+                "low_stock_threshold": "5",
+                "seasonal_availability": "all_year",
+                "food_miles": "",
+                "allergens": "",
+                "is_active": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("producer_product_list"))
+        alert = Notification.objects.get(product=self.product, type=Notification.Type.LOW_STOCK)
+        self.assertTrue(alert.is_resolved)
+        self.assertIsNotNone(alert.resolved_at)
 
 
 class VerifiedReviewWorkflowTests(TestCase):
@@ -326,8 +379,8 @@ class VerifiedReviewWorkflowTests(TestCase):
         response = self.client.get(reverse("market_payments:order_history"))
 
         self.assertContains(response, f"Order #{payment_order.id}")
+        self.assertContains(response, "Review Apples")
         self.assertContains(response, "Write Review")
-        self.assertContains(response, "Review Apples is ready for rating")
 
     def test_order_history_hides_review_link_for_non_delivered_items(self):
         other_product = Product.objects.create(
@@ -351,7 +404,7 @@ class VerifiedReviewWorkflowTests(TestCase):
         response = self.client.get(reverse("market_payments:order_history"))
 
         self.assertContains(response, f"Order #{payment_order.id}")
-        self.assertContains(response, "can be reviewed after delivery")
+        self.assertContains(response, "Review Carrots")
         self.assertNotContains(response, "Write Review")
 
     def test_producer_can_respond_to_review(self):

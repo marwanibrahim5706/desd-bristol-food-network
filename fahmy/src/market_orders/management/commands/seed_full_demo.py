@@ -12,6 +12,9 @@ from django.utils import timezone
 from market_products.models import Product
 from market_orders.models import Order, ProducerSubOrder, OrderItem, SubOrderStatusEvent
 from market_finance.services import generate_weekly_settlements
+from market_payments.models import Order as PaymentOrder
+from market_payments.models import OrderItem as PaymentOrderItem
+from market_payments.models import Payment
 
 
 COMMISSION_RATE = Decimal("0.05")
@@ -478,7 +481,41 @@ class Command(BaseCommand):
         # The finance admin test case requires at least two weeks of completed
         # orders and explicit examples for £100 and £150 commission checks.
         existing_tc025_orders = Order.objects.filter(delivery_address__startswith=TC025_ORDER_PREFIX).count()
+        def ensure_payment_snapshot(order):
+            if Payment.objects.filter(
+                order__user=order.customer,
+                subtotal=order.total_amount,
+                commission_amount=order.commission_total,
+            ).exists():
+                return
+
+            payment_order = PaymentOrder.objects.create(
+                user=order.customer,
+                subtotal=order.total_amount,
+                commission=order.commission_total,
+                total=(order.total_amount + order.commission_total).quantize(Decimal("0.01")),
+            )
+            for suborder in order.producer_suborders.prefetch_related("items").all():
+                for item in suborder.items.all():
+                    PaymentOrderItem.objects.create(
+                        order=payment_order,
+                        product_name=item.product_name,
+                        unit_price=item.unit_price,
+                        quantity=item.quantity,
+                    )
+                card_types = ["visa_debit", "mastercard_debit", "mastercard_credit"]
+                Payment.objects.create(
+                    order=payment_order,
+                    subtotal=order.total_amount,
+                    commission_amount=order.commission_total,
+                    producer_payout_amount=(order.total_amount - order.commission_total).quantize(Decimal("0.01")),
+                    status=Payment.Status.PAID,
+                    provider=card_types[order.id % len(card_types)],
+                    transaction_reference=f"seed-payment-{order.id}",
+                )
+
         if existing_tc025_orders == 0:
+
             def build_tc025_order(customer, delivery_dt, producer_lines, idx):
                 order = Order.objects.create(
                     customer=customer,
@@ -524,6 +561,7 @@ class Command(BaseCommand):
                 order.total_amount = total_amount.quantize(Decimal("0.01"))
                 order.commission_total = commission_total.quantize(Decimal("0.01"))
                 order.save(update_fields=["total_amount", "commission_total", "updated_at"])
+                ensure_payment_snapshot(order)
                 return order
 
             build_tc025_order(
@@ -550,6 +588,8 @@ class Command(BaseCommand):
             generate_weekly_settlements(actor=admin)
             self.stdout.write(self.style.SUCCESS("TC-025 finance reporting orders and settlements seeded."))
         else:
+            for order in Order.objects.filter(delivery_address__startswith=TC025_ORDER_PREFIX).prefetch_related("producer_suborders__items"):
+                ensure_payment_snapshot(order)
             generate_weekly_settlements(actor=admin)
             self.stdout.write(self.style.WARNING(
                 f"TC-025 finance reporting orders already exist ({existing_tc025_orders}). Refreshed settlements."

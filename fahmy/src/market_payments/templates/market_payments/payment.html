@@ -457,7 +457,7 @@
                   <input id="delivery_date" name="delivery_date" type="datetime-local" min="{{ min_delivery_at }}" required />
                 </div>
               {% endif %}
-              <input type="hidden" name="payment_method" value="demo_card" />
+              <input type="hidden" name="payment_method" value="visa_debit" />
               {% if not single_producer_only %}
                 <div class="full producer-delivery-list">
                   {% for section in producer_sections %}

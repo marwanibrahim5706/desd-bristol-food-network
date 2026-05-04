@@ -32,6 +32,17 @@ docker compose up --build
 docker compose run --rm web python src/manage.py migrate
 ```
 
+4. Run Django checks and tests:
+
+```bash
+docker compose run --rm web python src/manage.py check
+docker compose run --rm web python src/manage.py migrate --check
+docker compose run --rm web python src/manage.py test
+```
+
+The test command uses the configured app-label test runner so it discovers the
+marketplace tests under `src/`.
+
 ## Service URLs
 
 - Django web app: `http://localhost:8000`

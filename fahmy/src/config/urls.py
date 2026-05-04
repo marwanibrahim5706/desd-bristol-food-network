@@ -10,7 +10,7 @@ def home(request):
         return redirect("accounts:login")
 
     if request.user.is_superuser or request.user.is_staff:
-        return redirect("/admin/")
+        return redirect("/finance/admin/dashboard/")
 
     if getattr(request.user, "role", None) == User.Role.PRODUCER:
         return redirect("/orders/producer/")
@@ -19,7 +19,7 @@ def home(request):
         return redirect("/discover/")
 
     if getattr(request.user, "role", None) == User.Role.ADMIN:
-        return redirect("/admin/")
+        return redirect("/finance/admin/dashboard/")
 
     return redirect("accounts:login")
 

@@ -145,6 +145,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "market_accounts.User"
+TEST_RUNNER = "config.test_runner.AppLabelTestRunner"
 
 LOGIN_URL = "/accounts/login/"
 CSRF_FAILURE_VIEW = "accounts.views.csrf_failure"

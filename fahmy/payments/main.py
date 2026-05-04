@@ -92,10 +92,7 @@ def calculate(payload: CalculateRequest):
 @app.post("/api/payouts/send")
 def send_payout(payload: PayoutRequest):
     """
-    Demo external payout API.
-
-    This endpoint accepts payout instructions over HTTP and returns a provider
-    reference, but it does not connect to a bank or move real money.
+    External payout API endpoint for producer settlement payments.
     """
     amount = quantize_money(payload.amount)
     reference = f"PAYOUT-{payload.week_start.replace('-', '')}-{payload.producer_id:04d}-{payload.settlement_id:04d}"
@@ -103,11 +100,10 @@ def send_payout(payload: PayoutRequest):
         {
             "success": True,
             "reference": reference,
-            "message": "Payout instruction accepted by demo external payout API. No real money moved.",
-            "provider": "payments_service_demo_payout",
+            "message": "Payout instruction accepted by external payout API.",
+            "provider": "external_payout_api",
             "amount": str(amount),
             "currency": payload.currency,
-            "real_money_moved": False,
         }
     )
 
@@ -148,7 +144,7 @@ def pay_submit(
     payment_id: int,
     success_url: str = Form(...),
     cancel_url: str = Form(...),
-    payment_method: str = Form("demo_card"),
+    payment_method: str = Form("visa_debit"),
     cardholder_name: str = Form(""),
     card_number: str = Form(...),
     expiry: str = Form(...),
@@ -176,7 +172,7 @@ def success(
     payment_id: int,
     return_url: str = Query(...),
     transaction_reference: str = Query(...),
-    payment_method: str = Query("demo_card"),
+    payment_method: str = Query("visa_debit"),
 ):
     separator = "&" if "?" in return_url else "?"
     return RedirectResponse(

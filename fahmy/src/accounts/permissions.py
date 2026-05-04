@@ -25,8 +25,8 @@ def is_customer(user) -> bool:
 
 
 def can_manage_producer_orders(user) -> bool:
-    return is_admin(user) or is_producer(user)
+    return is_producer(user)
 
 
 def can_use_customer_checkout(user) -> bool:
-    return is_admin(user) or is_customer(user)
+    return is_customer(user)
