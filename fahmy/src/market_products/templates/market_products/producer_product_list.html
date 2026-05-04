@@ -162,7 +162,8 @@
                 <li><span class="muted">Stock</span><strong>{{ product.stock_quantity }}</strong></li>
                 <li><span class="muted">Low stock alert</span><strong>{{ product.low_stock_threshold }}</strong></li>
                 <li><span class="muted">Food miles</span><strong>{% if product.food_miles != None %}{{ product.food_miles }}{% else %}Not set{% endif %}</strong></li>
-                <li><span class="muted">Season</span><strong>{{ product.get_seasonal_availability_display }}</strong></li>
+                <li><span class="muted">Season</span><strong>{{ product.seasonal_status_label }}</strong></li>
+                <li><span class="muted">Availability</span><strong>{{ product.seasonal_range_display }}</strong></li>
                 {% if product.allergens %}
                   <li><span class="muted">Allergens</span><strong>{{ product.allergens }}</strong></li>
                 {% endif %}

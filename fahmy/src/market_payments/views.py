@@ -328,6 +328,9 @@ def add_to_cart(request, product_id):
     if product.stock_quantity <= 0:
         messages.error(request, f"{product.name} is currently out of stock.")
         return redirect(request.POST.get("next") or "market_payments:cart")
+    if not product.is_currently_in_season():
+        messages.error(request, f"{product.name} is out of season. {product.seasonal_range_display}.")
+        return redirect(request.POST.get("next") or "market_payments:cart")
 
     cart = _get_or_create_cart(request.user)
 
@@ -379,6 +382,10 @@ def update_cart_item(request, item_id):
         messages.error(request, f"{item.product.name} is no longer available.")
         item.delete()
         return redirect("market_payments:cart")
+    if not item.product.is_currently_in_season():
+        messages.error(request, f"{item.product.name} is out of season. {item.product.seasonal_range_display}.")
+        item.delete()
+        return redirect("market_payments:cart")
 
     if quantity > item.product.stock_quantity:
         messages.error(
@@ -416,7 +423,7 @@ def reorder_order(request, order_id):
     for suborder in market_items:
         for item in suborder.items.all():
             product = item.product
-            if (not product.is_active) or product.stock_quantity <= 0:
+            if (not product.is_active) or product.stock_quantity <= 0 or not product.is_currently_in_season():
                 unavailable.append(item.product_name)
                 continue
             quantity = min(item.quantity, product.stock_quantity)
@@ -555,6 +562,9 @@ def pay_now(request):
     for ci in cart.items.select_related("product"):
         if not ci.product.is_active:
             messages.error(request, f"{ci.product.name} is no longer available.")
+            return redirect("market_payments:cart")
+        if not ci.product.is_currently_in_season():
+            messages.error(request, f"{ci.product.name} is out of season. {ci.product.seasonal_range_display}.")
             return redirect("market_payments:cart")
 
         if ci.quantity > ci.product.stock_quantity:

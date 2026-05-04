@@ -51,14 +51,14 @@ class Command(BaseCommand):
         # Products
         # ----------------------------
         p1_products = [
-            ("P1 Apples Box", Decimal("40.00"), 50),
-            ("P1 Olive Oil 1L", Decimal("95.00"), 30),
-            ("P1 Carrots Bag", Decimal("15.00"), 80),
+            ("Apples Box", Decimal("40.00"), 50),
+            ("Olive Oil 1L", Decimal("95.00"), 30),
+            ("Carrots Bag", Decimal("15.00"), 80),
         ]
         p2_products = [
-            ("P2 Chicken Pack", Decimal("110.00"), 40),
-            ("P2 Milk 1L", Decimal("18.00"), 120),
-            ("P2 Cheese 500g", Decimal("65.00"), 60),
+            ("Chicken Pack", Decimal("110.00"), 40),
+            ("Milk 1L", Decimal("18.00"), 120),
+            ("Cheese 500g", Decimal("65.00"), 60),
         ]
 
         def get_or_create_product(producer, name, price, stock):
@@ -125,8 +125,8 @@ class Command(BaseCommand):
             )
 
             # Items for producer1
-            p1a = Product.objects.get(producer=producer1, name="P1 Apples Box")
-            p1b = Product.objects.get(producer=producer1, name="P1 Carrots Bag")
+            p1a = Product.objects.get(producer=producer1, name="Apples Box")
+            p1b = Product.objects.get(producer=producer1, name="Carrots Bag")
             OrderItem.objects.create(
                 suborder=sub1,
                 product=p1a,
@@ -143,8 +143,8 @@ class Command(BaseCommand):
             )
 
             # Items for producer2
-            p2a = Product.objects.get(producer=producer2, name="P2 Milk 1L")
-            p2b = Product.objects.get(producer=producer2, name="P2 Cheese 500g")
+            p2a = Product.objects.get(producer=producer2, name="Milk 1L")
+            p2b = Product.objects.get(producer=producer2, name="Cheese 500g")
             OrderItem.objects.create(
                 suborder=sub2,
                 product=p2a,

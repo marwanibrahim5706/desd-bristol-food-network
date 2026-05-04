@@ -50,7 +50,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Use the apples within a week and keep potatoes in a cool dark place.",
                 "seasonal_tag": Recipe.Season.AUTUMN,
                 "image_url": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80",
-                "products": ["P1 Apples Box", "P1 Carrots Bag", "P1 Potatoes Sack", "P1 Olive Oil 1L"],
+                "products": ["Apples Box", "Carrots Bag", "Potatoes Sack", "Olive Oil 1L"],
             },
             {
                 "producer": "producer1",
@@ -73,7 +73,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Store tomatoes at room temperature for the fullest flavour.",
                 "seasonal_tag": Recipe.Season.SUMMER,
                 "image_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tomato%20salad.jpg",
-                "products": ["P1 Tomatoes Crate", "P1 Olive Oil 1L"],
+                "products": ["Tomatoes Crate", "Olive Oil 1L"],
             },
             {
                 "producer": "producer1",
@@ -96,7 +96,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Keep the loaf wrapped at room temperature and apples cool and dry.",
                 "seasonal_tag": Recipe.Season.ALL_YEAR,
                 "image_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bread%20loaf.jpg",
-                "products": ["P1 Fresh Bread", "P1 Apples Box"],
+                "products": ["Fresh Bread", "Apples Box"],
             },
             {
                 "producer": "producer1",
@@ -122,7 +122,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Store eggs cool, keep potatoes in a dark place, and leave tomatoes at room temperature until ripe.",
                 "seasonal_tag": Recipe.Season.ALL_YEAR,
                 "image_url": "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80",
-                "products": ["P1 Eggs Tray", "P1 Potatoes Sack", "P1 Tomatoes Crate", "P1 Olive Oil 1L"],
+                "products": ["Eggs Tray", "Potatoes Sack", "Tomatoes Crate", "Olive Oil 1L"],
             },
             {
                 "producer": "producer2",
@@ -145,7 +145,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Open yogurt close to serving time for the freshest result.",
                 "seasonal_tag": Recipe.Season.ALL_YEAR,
                 "image_url": "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80",
-                "products": ["P2 Cheese 500g", "P2 Yogurt Pack"],
+                "products": ["Cheese 500g", "Yogurt Pack"],
             },
             {
                 "producer": "producer2",
@@ -162,7 +162,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Bring the cheese out of the fridge 10 minutes before cooking for a smoother melt.",
                 "seasonal_tag": Recipe.Season.WINTER,
                 "image_url": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=1200&q=80",
-                "products": ["P2 Cheese 500g"],
+                "products": ["Cheese 500g"],
             },
             {
                 "producer": "producer3",
@@ -179,7 +179,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Refresh the croissants in a low oven for 4 minutes before serving.",
                 "seasonal_tag": Recipe.Season.ALL_YEAR,
                 "image_url": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
-                "products": ["P3 Wholemeal Loaf", "P3 Brioche", "P3 Croissant Box"],
+                "products": ["Wholemeal Loaf", "Brioche", "Croissant Box"],
             },
             {
                 "producer": "producer3",
@@ -196,7 +196,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Keep donuts covered at room temperature and avoid refrigeration.",
                 "seasonal_tag": Recipe.Season.SUMMER,
                 "image_url": "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80",
-                "products": ["P3 Donut Pack"],
+                "products": ["Donut Pack"],
             },
             {
                 "producer": "producer3",
@@ -212,7 +212,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Store in a bread bin or paper bag to preserve crust texture.",
                 "seasonal_tag": Recipe.Season.WINTER,
                 "image_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Soup%20with%20buttered%20bread.jpg",
-                "products": ["P3 Fresh Bread", "P3 Wholemeal Loaf"],
+                "products": ["Fresh Bread", "Wholemeal Loaf"],
             },
         ]
 
@@ -310,7 +310,7 @@ class Command(BaseCommand):
         review_specs = [
             {
                 "username": "reviewer_apples",
-                "product": "P1 Apples Box",
+                "product": "Apples Box",
                 "rating": 5,
                 "comment": "Crisp, sweet, and packed really well. The apples lasted all week and tasted genuinely fresh.",
                 "is_anonymous": False,
@@ -318,7 +318,7 @@ class Command(BaseCommand):
             },
             {
                 "username": "reviewer_potatoes",
-                "product": "P1 Potatoes Sack",
+                "product": "Potatoes Sack",
                 "rating": 4,
                 "comment": "Great roasting potatoes with good texture. A couple were smaller than expected but overall very good quality.",
                 "is_anonymous": True,
@@ -326,7 +326,7 @@ class Command(BaseCommand):
             },
             {
                 "username": "reviewer_milk",
-                "product": "P2 Milk 1L",
+                "product": "Milk 1L",
                 "rating": 5,
                 "comment": "Very fresh and noticeably creamier than supermarket milk. Worked perfectly for breakfasts and cooking.",
                 "is_anonymous": False,
@@ -334,7 +334,7 @@ class Command(BaseCommand):
             },
             {
                 "username": "reviewer_eggs",
-                "product": "P1 Eggs Tray",
+                "product": "Eggs Tray",
                 "rating": 5,
                 "comment": "Reliable quality and excellent for brunch service. Clean shells and rich yolks.",
                 "is_anonymous": False,
@@ -342,7 +342,7 @@ class Command(BaseCommand):
             },
             {
                 "username": "reviewer_loaf",
-                "product": "P3 Wholemeal Loaf",
+                "product": "Wholemeal Loaf",
                 "rating": 5,
                 "comment": "Excellent loaf with a great crust and soft middle. Toasted beautifully the next morning.",
                 "is_anonymous": False,
@@ -350,7 +350,7 @@ class Command(BaseCommand):
             },
             {
                 "username": "reviewer_donuts",
-                "product": "P3 Donut Pack",
+                "product": "Donut Pack",
                 "rating": 4,
                 "comment": "Soft and fresh with a good balance of sweetness. Best on the day, but that is exactly what we wanted.",
                 "is_anonymous": True,

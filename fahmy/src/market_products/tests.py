@@ -1,5 +1,6 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -158,6 +159,69 @@ class DiscoverySearchTests(TestCase):
         self.assertContains(response, "Organic")
         self.assertContains(response, "6.5 food miles")
         self.assertContains(response, "Autumn")
+
+    def test_tc016_seasonal_products_show_dates_and_ordering_state(self):
+        strawberries = Product.objects.create(
+            name="Strawberries",
+            description="Summer fruit",
+            producer=self.producer,
+            category="fruit_veg",
+            price=Decimal("4.50"),
+            stock_quantity=10,
+            is_active=True,
+            seasonal_availability="seasonal",
+            season_start_month=6,
+            season_end_month=8,
+        )
+        potatoes = Product.objects.create(
+            name="Stored Potatoes",
+            description="Stored crop",
+            producer=self.producer,
+            category="fruit_veg",
+            price=Decimal("3.50"),
+            stock_quantity=10,
+            is_active=True,
+            seasonal_availability="all_year",
+        )
+
+        with patch("market_products.models.timezone.localdate", return_value=date(2026, 7, 1)):
+            response = self.client.get(reverse("discovery_alt"), {"q": "Strawberries"})
+            self.assertContains(response, "In season")
+            self.assertContains(response, "Available: June - August")
+            self.assertContains(response, "Add to cart")
+
+        with patch("market_products.models.timezone.localdate", return_value=date(2026, 12, 1)):
+            response = self.client.get(reverse("discovery_alt"), {"q": "Strawberries"})
+            self.assertContains(response, "Out of season")
+            self.assertContains(response, "Available: June - August")
+            self.assertNotContains(response, f'action="{reverse("market_payments:add_to_cart", args=[strawberries.id])}"')
+
+        response = self.client.get(reverse("discovery_alt"), {"q": "Stored Potatoes"})
+        self.assertContains(response, "Available year-round")
+        self.assertNotContains(response, "Out of season")
+
+    def test_add_to_cart_preserves_discovery_page_and_filters(self):
+        for index in range(15):
+            Product.objects.create(
+                name=f"Paged Local Product {index:02d}",
+                description="Local paginated product",
+                producer=self.producer,
+                category="fruit_veg",
+                price=Decimal("1.00"),
+                stock_quantity=5,
+                is_active=True,
+            )
+
+        response = self.client.get(
+            reverse("discovery_alt"),
+            {"page": "2", "category": "fruit_veg", "q": "Paged Local"},
+        )
+
+        self.assertContains(
+            response,
+            'name="next" value="/discover/?page=2&amp;category=fruit_veg&amp;q=Paged+Local"',
+            html=False,
+        )
 
     def test_producers_nav_page_links_to_producer_pages_with_content_counts(self):
         recipe = Recipe.objects.create(

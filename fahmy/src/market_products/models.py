@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 class Product(models.Model):
@@ -16,12 +17,33 @@ class Product(models.Model):
     ]
 
     SEASON_CHOICES = [
+        ("seasonal", "Seasonal date range"),
         ("spring", "Spring"),
         ("summer", "Summer"),
         ("autumn", "Autumn"),
         ("winter", "Winter"),
         ("all_year", "All year"),
     ]
+    MONTH_CHOICES = [
+        (1, "January"),
+        (2, "February"),
+        (3, "March"),
+        (4, "April"),
+        (5, "May"),
+        (6, "June"),
+        (7, "July"),
+        (8, "August"),
+        (9, "September"),
+        (10, "October"),
+        (11, "November"),
+        (12, "December"),
+    ]
+    SEASON_MONTHS = {
+        "spring": (3, 5),
+        "summer": (6, 8),
+        "autumn": (9, 11),
+        "winter": (12, 2),
+    }
 
     name = models.CharField(max_length=255)
 
@@ -37,6 +59,8 @@ class Product(models.Model):
     is_organic = models.BooleanField(default=False)
     food_miles = models.DecimalField(max_digits=6, decimal_places=1, blank=True, null=True)
     seasonal_availability = models.CharField(max_length=20, choices=SEASON_CHOICES, default="all_year")
+    season_start_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, blank=True, null=True)
+    season_end_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, blank=True, null=True)
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -56,6 +80,47 @@ class Product(models.Model):
     @property
     def is_low_stock(self):
         return self.stock_quantity <= self.low_stock_threshold
+
+    def _season_month_bounds(self):
+        if self.seasonal_availability == "all_year":
+            return None
+        if self.season_start_month and self.season_end_month:
+            return self.season_start_month, self.season_end_month
+        return self.SEASON_MONTHS.get(self.seasonal_availability)
+
+    @staticmethod
+    def _month_in_range(month, start_month, end_month):
+        if start_month <= end_month:
+            return start_month <= month <= end_month
+        return month >= start_month or month <= end_month
+
+    @property
+    def seasonal_range_display(self):
+        bounds = self._season_month_bounds()
+        if not bounds:
+            return "Available year-round"
+        month_names = dict(self.MONTH_CHOICES)
+        return f"Available: {month_names[bounds[0]]} - {month_names[bounds[1]]}"
+
+    def is_currently_in_season(self, reference_date=None):
+        if self.seasonal_availability == "all_year":
+            return True
+
+        reference_date = reference_date or timezone.localdate()
+        bounds = self._season_month_bounds()
+        if not bounds:
+            return False
+        return self._month_in_range(reference_date.month, bounds[0], bounds[1])
+
+    @property
+    def seasonal_status_label(self):
+        if self.seasonal_availability == "all_year":
+            return "Available year-round"
+        return "In season" if self.is_currently_in_season() else "Out of season"
+
+    @property
+    def can_be_ordered(self):
+        return self.is_active and self.stock_quantity > 0 and self.is_currently_in_season()
 
     @property
     def published_reviews(self):
