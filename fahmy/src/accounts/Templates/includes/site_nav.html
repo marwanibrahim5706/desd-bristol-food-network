@@ -193,7 +193,7 @@
       </nav>
 
       <div class="siteNavActions">
-        <span class="siteUser">{{ user.username }}</span>
+        <span class="siteUser">{{ user.display_name }}</span>
         <form class="siteLogoutForm" method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}
           <button class="siteLogoutButton" type="submit">Log out</button>

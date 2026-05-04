@@ -48,7 +48,7 @@
       </nav>
       <div class="profile">
         <div>
-          <div style="font-weight:700;">{{ request.user.business_name|default:request.user.username }}</div>
+          <div style="font-weight:700;">{{ request.user.display_name }}</div>
           <small style="color:var(--muted);">Producer session</small>
         </div>
       </div>

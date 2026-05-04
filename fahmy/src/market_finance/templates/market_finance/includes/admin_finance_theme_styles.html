@@ -83,7 +83,7 @@
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: 14px;
+  bottom: 74px;
   padding: 12px;
   border-radius: 16px;
   background: rgba(17,24,39,.58);
@@ -105,6 +105,34 @@
 }
 
 .profile small { color: var(--muted); display: block; margin-top: 2px; }
+
+.adminSidebarLogout {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  margin: 0;
+}
+
+.adminSidebarLogout button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(47,125,104,.45);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(15,23,42,.16);
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.adminSidebarLogout button:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary-strong);
+  background: var(--primary-strong);
+}
 
 .main {
   padding: 22px 22px 36px;
@@ -655,6 +683,7 @@
   .layout { grid-template-columns: 1fr; }
   .sidebar { height: auto; position: relative; }
   .profile { position: relative; margin-top: 10px; }
+  .adminSidebarLogout { position: relative; left: auto; right: auto; bottom: auto; margin: 12px 6px 0; }
   .settlementHero {
     grid-template-columns: 1fr;
   }

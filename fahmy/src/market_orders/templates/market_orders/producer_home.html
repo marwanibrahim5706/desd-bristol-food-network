@@ -401,14 +401,13 @@
   </style>
 </head>
 <body>
-  {% include "includes/logout_button.html" %}
   <div class="producerShell">
     <aside class="producerNav">
       <div class="brand">
         <div class="brandLogo">P</div>
         <div>
           <h1>Producer Hub</h1>
-          <p>{{ request.user }}</p>
+          <p>{{ request.user.display_name }}</p>
         </div>
       </div>
 
@@ -421,19 +420,23 @@
       </nav>
 
       <div class="profile">
-        <span class="avatar">{{ request.user.username|default:"U"|slice:":1"|upper }}</span>
+        <span class="avatar">{{ request.user.display_name|default:"U"|first|upper }}</span>
         <span>
-          <strong>{{ request.user }}</strong><br>
+          <strong>{{ request.user.display_name }}</strong><br>
           <span class="muted">Signed in as producer</span>
         </span>
       </div>
+      <form class="sidebarLogout" method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit">Log out</button>
+      </form>
     </aside>
 
     <main class="producerMain">
       <section class="welcomePanel" aria-label="Producer overview">
         <div>
           <p class="eyebrow">Dashboard</p>
-          <h1>Welcome back, {{ request.user.username|default:"producer" }}</h1>
+          <h1>Welcome back, {{ request.user.display_name|default:"producer" }}</h1>
           <p>This is your starting point. See the key numbers, then jump into orders, products, settlements, or admin when you need more detail.</p>
         </div>
         <div class="todayCard">
