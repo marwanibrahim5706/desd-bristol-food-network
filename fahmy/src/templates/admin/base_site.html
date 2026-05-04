@@ -3,8 +3,8 @@
 {% block title %}Bristol Food Network Admin{% endblock %}
 
 {% block branding %}
-  <div class="producer-admin-brand">
-    <span class="producer-admin-mark">B</span>
+  <div class="site-admin-brand">
+    <span class="site-admin-mark">B</span>
     <span>
       <strong>Bristol Food Network</strong>
       <small>Admin workspace</small>
@@ -13,97 +13,127 @@
 {% endblock %}
 
 {% block nav-global %}
-  <a class="producer-admin-link" href="/orders/producer/">Producer dashboard</a>
-  <a class="producer-admin-link" href="/finance/admin/dashboard/">Finance workspace</a>
+  <a class="site-admin-link" href="/finance/admin/dashboard/">Finance workspace</a>
 {% endblock %}
 
 {% block extrastyle %}
   {{ block.super }}
   <style>
     :root{
-      --primary:#315f52;
-      --secondary:#21483f;
-      --accent:#c66b3d;
+      color-scheme:light;
+      --primary:#25635a;
+      --secondary:#174c45;
+      --accent:#1f6f9f;
       --primary-fg:#fff;
-      --body-bg:#f5f1e8;
-      --body-fg:#20231f;
-      --body-quiet-color:#68736b;
-      --body-loud-color:#20231f;
-      --header-bg:#ffffff;
-      --header-color:#20231f;
-      --breadcrumbs-bg:#e9f3ef;
-      --breadcrumbs-fg:#315f52;
-      --link-fg:#315f52;
-      --link-hover-color:#21483f;
-      --default-button-bg:#315f52;
-      --default-button-hover-bg:#21483f;
-      --button-bg:#315f52;
-      --button-hover-bg:#21483f;
-      --hairline-color:#ece4d8;
-      --border-color:#ded5c8;
+      --body-bg:#f4f7f9;
+      --body-fg:#111827;
+      --body-quiet-color:#64748b;
+      --body-loud-color:#111827;
+      --header-bg:#1f2937;
+      --header-color:#ffffff;
+      --breadcrumbs-bg:#e8f3f1;
+      --breadcrumbs-fg:#174c45;
+      --link-fg:#25635a;
+      --link-hover-color:#174c45;
+      --default-button-bg:#25635a;
+      --default-button-hover-bg:#174c45;
+      --button-bg:#25635a;
+      --button-hover-bg:#174c45;
+      --hairline-color:#e6ebf0;
+      --border-color:#d7dee6;
+      --darkened-bg:#eef3f7;
+      --selected-bg:#e8f3f1;
+      --message-success-bg:#e8f7ef;
+      --message-warning-bg:#fff7e6;
+      --message-error-bg:#fff1f1;
+    }
+
+    html,
+    body{
+      color-scheme:light;
     }
 
     body{
       font-family:"Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(circle at 82% 8%, rgba(198,107,61,.14), transparent 30%),
-        radial-gradient(circle at 20% 0%, rgba(49,95,82,.12), transparent 34%),
-        var(--body-bg);
+      background:var(--body-bg);
+      color:var(--body-fg);
     }
 
     #header{
       min-height:72px;
       padding:12px 28px;
-      border-bottom:1px solid var(--hairline-color);
-      box-shadow:0 10px 24px rgba(55,45,34,.06);
+      background:var(--header-bg);
+      color:var(--header-color);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      box-shadow:0 10px 24px rgba(15,23,42,.12);
     }
 
-    .producer-admin-brand{
+    .site-admin-brand{
       display:flex;
       align-items:center;
       gap:12px;
-      color:var(--body-fg);
+      color:var(--header-color);
     }
 
-    .producer-admin-brand strong{
+    .site-admin-brand strong{
       display:block;
       font-size:16px;
       line-height:1.2;
     }
 
-    .producer-admin-brand small{
+    .site-admin-brand small{
       display:block;
       margin-top:3px;
-      color:var(--body-quiet-color);
+      color:rgba(255,255,255,.68);
       font-size:12px;
     }
 
-    .producer-admin-mark{
+    .site-admin-mark{
       width:38px;
       height:38px;
       display:grid;
       place-items:center;
       border-radius:14px;
-      background:linear-gradient(135deg, var(--primary), var(--accent));
+      background:linear-gradient(135deg, #1fa37a, #2563eb);
       color:#fff;
       font-weight:900;
     }
 
     #user-tools,
-    #user-tools a{ color:var(--body-quiet-color); }
+    #user-tools a{ color:rgba(255,255,255,.74); }
 
-    .producer-admin-link{
+    #user-tools a:hover{
+      color:#fff;
+    }
+
+    .site-admin-link{
       display:inline-flex;
       align-items:center;
       min-height:36px;
       margin-left:8px;
       padding:0 12px;
       border-radius:999px;
-      background:#fff;
-      border:1px solid var(--border-color);
-      color:var(--primary);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.18);
+      color:#fff;
       font-weight:800;
       text-decoration:none;
+    }
+
+    .site-admin-link:hover{
+      background:rgba(255,255,255,.16);
+      color:#fff;
+    }
+
+    #container,
+    #main,
+    #content,
+    #content-main,
+    #content-related,
+    .main,
+    .dashboard{
+      background:var(--body-bg) !important;
+      color:var(--body-fg) !important;
     }
 
     #content{
@@ -115,20 +145,128 @@
     #content-main .module,
     .inline-group{
       border:1px solid var(--hairline-color);
-      border-radius:18px;
+      border-radius:12px;
       overflow:hidden;
       background:#fff;
-      box-shadow:0 12px 28px rgba(55,45,34,.06);
+      box-shadow:0 12px 28px rgba(15,23,42,.06);
+    }
+
+    .module *,
+    #content-related *,
+    #recent-actions-module *{
+      color:inherit;
     }
 
     .module h2,
     .module caption,
-    .inline-group h2{
-      background:linear-gradient(135deg, #ffffff, #fff3e4);
-      color:var(--body-fg);
+    .inline-group h2,
+    caption,
+    .section{
+      background:#f8fafc !important;
+      color:var(--body-fg) !important;
       font-weight:900;
       letter-spacing:-.01em;
       padding:14px 18px;
+      border-bottom:1px solid var(--hairline-color);
+    }
+
+    .module caption a,
+    .module h2 a,
+    .inline-group h2 a,
+    caption a,
+    .section a{
+      color:var(--body-fg) !important;
+    }
+
+    #content-main table,
+    #content-related,
+    #content-related .module,
+    #recent-actions-module,
+    .module table,
+    .results,
+    .results table,
+    .app-list,
+    .model-list,
+    #changelist,
+    #changelist table,
+    .form-row,
+    fieldset,
+    .aligned label{
+      background:#fff !important;
+      color:var(--body-fg) !important;
+    }
+
+    #content-main tr,
+    #content-main tbody tr,
+    #content-related tr,
+    #content-related tbody tr,
+    .results tr,
+    .results tbody tr,
+    .row1,
+    .row2,
+    .app-list tr,
+    .model-list tr{
+      background:#fff !important;
+      color:var(--body-fg) !important;
+    }
+
+    #content-main tr:nth-child(even),
+    #content-related tr:nth-child(even),
+    .results tr:nth-child(even),
+    .app-list tr:nth-child(even),
+    .model-list tr:nth-child(even){
+      background:#f8fafc !important;
+    }
+
+    #content-main td,
+    #content-main th,
+    #content-related td,
+    #content-related th,
+    .results td,
+    .results th,
+    .app-list td,
+    .app-list th,
+    .model-list td,
+    .model-list th,
+    thead th,
+    tbody th{
+      color:var(--body-fg) !important;
+      background:transparent !important;
+    }
+
+    #content-main a,
+    #content-related a,
+    .results a{
+      color:var(--link-fg) !important;
+    }
+
+    #content-related h2,
+    #content-related h3,
+    #recent-actions-module h2,
+    #recent-actions-module h3{
+      color:var(--body-fg) !important;
+      background:#f8fafc !important;
+    }
+
+    #recent-actions-module p,
+    #recent-actions-module li,
+    #recent-actions-module .quiet,
+    #recent-actions-module .mini,
+    .quiet,
+    .help,
+    p.help,
+    div.help{
+      color:var(--body-quiet-color) !important;
+    }
+
+    a:link,
+    a:visited{
+      color:var(--link-fg);
+    }
+
+    a:hover,
+    a:focus{
+      color:var(--link-hover-color);
     }
 
     table{
@@ -150,6 +288,7 @@
       border:1px solid var(--border-color);
       padding:10px 12px;
       background:#fff;
+      color:var(--body-fg);
     }
 
     .button,
@@ -164,9 +303,9 @@
 
     .submit-row{
       border:1px solid var(--hairline-color);
-      border-radius:18px;
+      border-radius:12px;
       background:#fff;
-      box-shadow:0 12px 28px rgba(55,45,34,.06);
+      box-shadow:0 12px 28px rgba(15,23,42,.06);
     }
   </style>
 {% endblock %}

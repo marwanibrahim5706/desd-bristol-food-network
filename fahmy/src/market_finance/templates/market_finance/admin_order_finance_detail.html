@@ -110,8 +110,7 @@
             <div class="cardBody single">
               <div class="totals">
                 <div class="row"><span>Payment status</span><span>{% if payment_snapshot %}{{ payment_snapshot.get_status_display }}{% else %}No payment snapshot found{% endif %}</span></div>
-                <div class="row"><span>Payment provider</span><span>{% if payment_snapshot %}{{ payment_snapshot.provider|title }}{% else %}-{% endif %}</span></div>
-                <div class="row"><span>Commission recorded</span><span class="money">{% if payment_snapshot %}£{{ payment_snapshot.commission_amount|floatformat:2 }}{% else %}-{% endif %}</span></div>
+                <div class="row"><span>Card type</span><span>{% if payment_snapshot %}{{ payment_card_type }}{% else %}-{% endif %}</span></div>
               </div>
             </div>
           </article>

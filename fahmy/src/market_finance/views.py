@@ -53,6 +53,17 @@ ADMIN_PERIOD_PRESETS = {
     "custom": {"label": "Custom date range", "mode": "custom"},
 }
 
+PAYMENT_CARD_TYPE_LABELS = {
+    "visa_debit": "Visa Debit",
+    "visa_credit": "Visa Credit",
+    "mastercard_debit": "Mastercard Debit",
+    "mastercard_credit": "Mastercard Credit",
+    "amex": "American Express",
+    "maestro": "Maestro",
+    "card": "Visa Debit",
+    "demo_card": "Visa Debit",
+}
+
 
 def _settlement_week_navigation(all_settlements, selected_week):
     available_weeks = []
@@ -163,8 +174,8 @@ def _build_querystring(params, exclude=None):
 def _build_sent_payouts(*, producer_filter="", q="", date_from="", date_to=""):
     payouts = Settlement.objects.select_related("producer").filter(
         status=Settlement.Status.PAID,
-        payout_provider="payments_service_demo_payout",
-    ).exclude(payout_reference="")
+        payout_provider="external_payout_api",
+    ).exclude(payout_reference="").exclude(payout_reference__startswith="DEMO-")
     if producer_filter:
         payouts = payouts.filter(producer_id=producer_filter)
     if q:
@@ -185,6 +196,8 @@ def _build_admin_finance_context(request, *, current_section):
         raise PermissionDenied("Admin access required.")
 
     status_filter = (request.GET.get("status") or "").strip()
+    if current_section == "settlements":
+        status_filter = ""
     q = (request.GET.get("q") or "").strip()
     producer_filter = (request.GET.get("producer") or "").strip()
     period, date_from, date_to = _resolve_admin_period_filters(request)
@@ -600,6 +613,12 @@ def admin_order_finance_detail(request, order_id):
         raise PermissionDenied("No producer finance records found for this order.")
 
     payment_snapshot = find_payment_snapshot_for_market_order(order)
+    payment_card_type = ""
+    if payment_snapshot:
+        payment_card_type = PAYMENT_CARD_TYPE_LABELS.get(
+            payment_snapshot.provider,
+            payment_snapshot.provider.replace("_", " ").title(),
+        )
     producer_payout_total = sum(
         (suborder.producer_payout_amount for suborder in suborders),
         Decimal("0.00"),
@@ -612,6 +631,7 @@ def admin_order_finance_detail(request, order_id):
             "order": order,
             "suborders": suborders,
             "payment_snapshot": payment_snapshot,
+            "payment_card_type": payment_card_type,
             "producer_payout_total": producer_payout_total,
         },
     )

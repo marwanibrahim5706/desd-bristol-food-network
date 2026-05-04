@@ -57,8 +57,45 @@ class SingleProducerCheckoutTestCase(TestCase):
         self.recipe.products.set([self.product_one, self.product_two])
         FavouriteRecipe.objects.create(customer=self.customer, recipe=self.recipe)
 
+    def test_customer_cannot_add_out_of_stock_product_to_cart(self):
+        self.client.force_login(self.customer)
+        self.product_one.stock_quantity = 0
+        self.product_one.save(update_fields=["stock_quantity"])
+
+        response = self.client.post(
+            reverse("market_payments:add_to_cart", args=[self.product_one.id]),
+            {"next": reverse("market_payments:cart")},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "currently out of stock")
+        self.assertFalse(CartItem.objects.filter(product=self.product_one).exists())
+
+    def test_customer_cannot_add_more_than_available_stock_to_cart(self):
+        self.client.force_login(self.customer)
+        self.product_one.stock_quantity = 1
+        self.product_one.save(update_fields=["stock_quantity"])
+
+        self.client.post(
+            reverse("market_payments:add_to_cart", args=[self.product_one.id]),
+            {"next": reverse("market_payments:cart")},
+        )
+        response = self.client.post(
+            reverse("market_payments:add_to_cart", args=[self.product_one.id]),
+            {"next": reverse("market_payments:cart")},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Only 1 unit(s)")
+        cart_item = CartItem.objects.get(product=self.product_one)
+        self.assertEqual(cart_item.quantity, 1)
+
     def test_tc007_customer_can_checkout_single_producer_order(self):
         self.client.force_login(self.customer)
+        self.product_two.low_stock_threshold = 19
+        self.product_two.save(update_fields=["low_stock_threshold"])
 
         add_to_cart_url = reverse("market_payments:add_to_cart", args=[self.product_one.id])
         self.client.post(add_to_cart_url, {"next": reverse("market_payments:cart")})
@@ -90,7 +127,7 @@ class SingleProducerCheckoutTestCase(TestCase):
                 "delivery_address": "1 Test Street, Bristol",
                 "customer_phone": "07000111222",
                 "delivery_date": delivery_date,
-                "payment_method": "demo_card",
+                "payment_method": "visa_debit",
                 "card_number": "4242 4242 4242 4242",
                 "card_expiry": "12/34",
             },
@@ -104,7 +141,7 @@ class SingleProducerCheckoutTestCase(TestCase):
 
         payment = Payment.objects.get()
         self.assertEqual(payment.status, Payment.Status.PAID)
-        self.assertEqual(payment.provider, "demo_card")
+        self.assertEqual(payment.provider, "visa_debit")
         self.assertEqual(payment.subtotal, Decimal("32.00"))
         self.assertEqual(payment.commission_amount, Decimal("1.60"))
         self.assertEqual(payment.producer_payout_amount, Decimal("30.40"))
@@ -138,6 +175,13 @@ class SingleProducerCheckoutTestCase(TestCase):
         self.product_two.refresh_from_db()
         self.assertEqual(self.product_one.stock_quantity, 18)
         self.assertEqual(self.product_two.stock_quantity, 19)
+        low_stock_alert = Notification.objects.get(
+            user=self.producer,
+            product=self.product_two,
+            type=Notification.Type.LOW_STOCK,
+        )
+        self.assertIn("Only 19 unit(s) remaining", low_stock_alert.message)
+        self.assertFalse(low_stock_alert.is_resolved)
 
         self.client.force_login(self.producer)
         producer_dashboard = self.client.get("/orders/producer/dashboard/")
@@ -251,7 +295,7 @@ class MultiProducerCheckoutTestCase(TestCase):
                 "customer_phone": "07000999888",
                 f"delivery_date_{self.bristol_valley.id}": bristol_delivery,
                 f"delivery_date_{self.hillside_dairy.id}": hillside_delivery,
-                "payment_method": "demo_card",
+                "payment_method": "visa_debit",
                 "card_number": "4242 4242 4242 4242",
                 "card_expiry": "12/34",
             },
@@ -266,7 +310,7 @@ class MultiProducerCheckoutTestCase(TestCase):
 
         payment = Payment.objects.get()
         self.assertEqual(payment.status, Payment.Status.PAID)
-        self.assertEqual(payment.provider, "demo_card")
+        self.assertEqual(payment.provider, "visa_debit")
         self.assertEqual(payment.subtotal, Decimal("40.00"))
         self.assertEqual(payment.commission_amount, Decimal("2.00"))
         self.assertEqual(payment.producer_payout_amount, Decimal("38.00"))
@@ -432,7 +476,7 @@ class OrderHistoryAndReorderTests(TestCase):
         Payment.objects.create(
             order=payment_order,
             status=Payment.Status.PAID,
-            provider="demo_card",
+            provider="visa_debit",
         )
 
         market_order = MarketOrder.objects.create(

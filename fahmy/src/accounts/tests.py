@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -12,6 +13,7 @@ from market_payments.models import Payment
 
 class RegistrationFlowTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user_model = get_user_model()
 
     def test_customer_registration_creates_customer_role_user(self):
@@ -85,6 +87,13 @@ class AuthenticationAuthorisationTests(TestCase):
             role=self.user_model.Role.PRODUCER,
             business_name="Other Farm",
         )
+        self.admin_user = self.user_model.objects.create_user(
+            username="finance_admin@test.com",
+            email="finance_admin@test.com",
+            password="StrongPass123!",
+            role=self.user_model.Role.ADMIN,
+            is_staff=True,
+        )
 
     def test_login_accepts_email_and_redirects_by_role(self):
         response = self.client.post(
@@ -109,6 +118,28 @@ class AuthenticationAuthorisationTests(TestCase):
 
         self.assertRedirects(response, "/discover/")
 
+    def test_repeated_failed_logins_are_temporarily_limited(self):
+        for _attempt in range(5):
+            response = self.client.post(
+                reverse("accounts:login"),
+                {
+                    "identifier": "customer@test.com",
+                    "password": "WrongPass123!",
+                },
+            )
+            self.assertContains(response, "Invalid credentials")
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "identifier": "customer@test.com",
+                "password": "WrongPass123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 429)
+        self.assertContains(response, "Too many failed sign-in attempts", status_code=429)
+
     def test_logged_out_user_is_redirected_from_producer_dashboard(self):
         response = self.client.get("/orders/producer/dashboard/")
         self.assertEqual(response.status_code, 302)
@@ -119,8 +150,18 @@ class AuthenticationAuthorisationTests(TestCase):
         response = self.client.get("/orders/producer/dashboard/")
         self.assertEqual(response.status_code, 403)
 
+    def test_admin_cannot_access_producer_dashboard(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get("/orders/producer/dashboard/")
+        self.assertEqual(response.status_code, 403)
+
     def test_producer_cannot_access_customer_checkout(self):
         self.client.force_login(self.producer)
+        response = self.client.get(reverse("market_payments:cart"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_cannot_access_customer_checkout(self):
+        self.client.force_login(self.admin_user)
         response = self.client.get(reverse("market_payments:cart"))
         self.assertEqual(response.status_code, 403)
 

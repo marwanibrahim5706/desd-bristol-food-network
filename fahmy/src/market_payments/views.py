@@ -25,7 +25,7 @@ from market_products.models import FavouriteRecipe, Product
 from market_products.models import Review as ProductReview
 
 PAYMENT_PROVIDER_LABELS = {
-    "demo_card": "Card Payment",
+    "demo_card": "Visa Debit",
     "visa_debit": "Visa Debit",
     "visa_credit": "Visa Credit",
     "mastercard_debit": "Mastercard Debit",
@@ -325,6 +325,10 @@ def add_to_cart(request, product_id):
         return redirect("market_payments:cart")
 
     product = get_object_or_404(Product, id=product_id, is_active=True)
+    if product.stock_quantity <= 0:
+        messages.error(request, f"{product.name} is currently out of stock.")
+        return redirect(request.POST.get("next") or "market_payments:cart")
+
     cart = _get_or_create_cart(request.user)
 
     item, created = CartItem.objects.get_or_create(
@@ -334,6 +338,12 @@ def add_to_cart(request, product_id):
     )
 
     if not created:
+        if item.quantity + 1 > product.stock_quantity:
+            messages.error(
+                request,
+                f"Only {product.stock_quantity} unit(s) of {product.name} are available.",
+            )
+            return redirect(request.POST.get("next") or "market_payments:cart")
         item.quantity += 1
         item.save()
 
@@ -502,7 +512,7 @@ def pay_now(request):
 
     delivery_address = (request.POST.get("delivery_address") or request.user.address or "").strip()
     customer_phone = (request.POST.get("customer_phone") or request.user.phone or "").strip()
-    payment_method = (request.POST.get("payment_method") or "demo").strip() or "demo"
+    payment_method = (request.POST.get("payment_method") or "visa_debit").strip() or "visa_debit"
 
     if not delivery_address:
         messages.error(request, "Please provide a delivery address.")
@@ -634,6 +644,19 @@ def pay_now(request):
                 ci.product.stock_quantity = 0
                 ci.product.is_active = False
             ci.product.save(update_fields=["stock_quantity", "is_active"])
+            if ci.product.is_low_stock:
+                Notification.objects.get_or_create(
+                    user=ci.product.producer,
+                    product=ci.product,
+                    type=Notification.Type.LOW_STOCK,
+                    is_resolved=False,
+                    defaults={
+                        "message": (
+                            f"Low Stock Alert: {ci.product.name} - "
+                            f"Only {ci.product.stock_quantity} unit(s) remaining."
+                        )
+                    },
+                )
 
         payment = create_payment_record(
             order=order,
