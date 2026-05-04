@@ -186,6 +186,7 @@
           <a href="{% url 'market_finance:producer_settlements_dashboard' %}" {% if request.path == "/finance/producer/settlements/" %}aria-current="page"{% endif %}>Settlements</a>
         {% else %}
           <a href="{% url 'discovery_alt' %}" {% if request.path == "/discover/" or request.path == "/" %}aria-current="page"{% endif %}>Discover</a>
+          <a href="{% url 'producer_directory' %}" {% if request.path == "/producers/" %}aria-current="page"{% endif %}>Producers</a>
           <a href="{% url 'market_payments:cart' %}" {% if request.path == "/payments/cart/" %}aria-current="page"{% endif %}>Cart</a>
           <a href="{% url 'market_payments:order_history' %}" {% if request.path == "/payments/orders/" %}aria-current="page"{% endif %}>Orders</a>
           <a href="{% url 'market_finance:recurring_orders_dashboard' %}" {% if request.path == "/finance/recurring/" %}aria-current="page"{% endif %}>Repeat Orders</a>

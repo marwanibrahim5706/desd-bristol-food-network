@@ -159,6 +159,48 @@ class DiscoverySearchTests(TestCase):
         self.assertContains(response, "6.5 food miles")
         self.assertContains(response, "Autumn")
 
+    def test_producers_nav_page_links_to_producer_pages_with_content_counts(self):
+        recipe = Recipe.objects.create(
+            producer=self.producer,
+            title="Apple Lunch Box",
+            description="A quick local lunch.",
+            ingredients="Apples",
+            instructions="Pack and serve.",
+            status=Recipe.Status.PUBLISHED,
+            moderation_status=Recipe.ModerationStatus.APPROVED,
+        )
+        recipe.products.add(self.apples)
+        FarmStory.objects.create(
+            producer=self.producer,
+            title="Orchard Week",
+            summary="What is happening at the orchard.",
+            body="Longer story.",
+            status=FarmStory.Status.PUBLISHED,
+            moderation_status=FarmStory.ModerationStatus.APPROVED,
+        )
+
+        response = self.client.get(reverse("producer_directory"), {"q": "Search Farm"})
+
+        self.assertContains(response, "Producers")
+        self.assertContains(response, "Search Farm")
+        self.assertContains(response, reverse("producer_profile", args=[self.producer.id]))
+        self.assertContains(response, "3 items")
+        self.assertContains(response, "1 recipe")
+        self.assertContains(response, "1 story")
+
+    def test_customer_nav_includes_producers_link(self):
+        user = get_user_model().objects.create_user(
+            username="producer_nav_customer",
+            password="secret123",
+            role=get_user_model().Role.CUSTOMER,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("discovery_alt"))
+
+        self.assertContains(response, ">Producers<")
+        self.assertContains(response, reverse("producer_directory"))
+
 
 class ProducerInventoryTests(TestCase):
     def setUp(self):
@@ -330,6 +372,37 @@ class VerifiedReviewWorkflowTests(TestCase):
         self.assertContains(response, "Verified purchase")
         self.assertEqual(Review.objects.count(), 1)
         self.assertEqual(average_product_rating(self.product), Decimal("5"))
+
+    def test_second_customer_can_submit_review_for_same_delivered_product(self):
+        self._create_market_order(
+            customer=self.other_customer,
+            product=self.product,
+            status=ProducerSubOrder.Status.DELIVERED,
+        )
+        create_verified_review(
+            user=self.customer,
+            product=self.product,
+            rating=5,
+            comment="First customer review",
+        )
+        self.client.force_login(self.other_customer)
+
+        response = self.client.post(
+            reverse("submit_review", args=[self.product.id]),
+            {"rating": "4", "comment": "Second customer review"},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Review submitted")
+        self.assertTrue(
+            Review.objects.filter(
+                user=self.other_customer,
+                product=self.product,
+                comment="Second customer review",
+            ).exists()
+        )
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 2)
 
     def test_non_delivered_customer_cannot_submit_review(self):
         undelivered_product = Product.objects.create(

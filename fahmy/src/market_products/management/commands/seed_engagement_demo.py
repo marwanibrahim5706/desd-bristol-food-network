@@ -13,6 +13,16 @@ class Command(BaseCommand):
 
         producers = {user.username: user for user in User.objects.filter(role=User.Role.PRODUCER)}
         customers = {user.username: user for user in User.objects.filter(role=User.Role.CUSTOMER)}
+        review_accounts = {}
+        for username in ["reviewer_apples", "reviewer_potatoes", "reviewer_milk", "reviewer_eggs", "reviewer_loaf", "reviewer_donuts"]:
+            review_accounts[username], _ = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    "email": f"{username}@example.test",
+                    "role": User.Role.CUSTOMER,
+                    "first_name": "Verified customer",
+                },
+            )
         products = {product.name: product for product in Product.objects.select_related("producer")}
 
         recipe_specs = [
@@ -299,7 +309,7 @@ class Command(BaseCommand):
 
         review_specs = [
             {
-                "username": "customer2",
+                "username": "reviewer_apples",
                 "product": "P1 Apples Box",
                 "rating": 5,
                 "comment": "Crisp, sweet, and packed really well. The apples lasted all week and tasted genuinely fresh.",
@@ -307,7 +317,7 @@ class Command(BaseCommand):
                 "producer_response": "Thank you for the lovely feedback. We picked that batch the morning before market and are glad it kept well for you.",
             },
             {
-                "username": "customer2",
+                "username": "reviewer_potatoes",
                 "product": "P1 Potatoes Sack",
                 "rating": 4,
                 "comment": "Great roasting potatoes with good texture. A couple were smaller than expected but overall very good quality.",
@@ -315,7 +325,7 @@ class Command(BaseCommand):
                 "producer_response": "Appreciate the helpful note. We sort by weight range, and we will keep an even closer eye on the next batch.",
             },
             {
-                "username": "customer3",
+                "username": "reviewer_milk",
                 "product": "P2 Milk 1L",
                 "rating": 5,
                 "comment": "Very fresh and noticeably creamier than supermarket milk. Worked perfectly for breakfasts and cooking.",
@@ -323,7 +333,7 @@ class Command(BaseCommand):
                 "producer_response": "That is wonderful to hear. We aim to keep the turnaround from bottling to delivery as short as possible.",
             },
             {
-                "username": "customer3",
+                "username": "reviewer_eggs",
                 "product": "P1 Eggs Tray",
                 "rating": 5,
                 "comment": "Reliable quality and excellent for brunch service. Clean shells and rich yolks.",
@@ -331,7 +341,7 @@ class Command(BaseCommand):
                 "producer_response": "Thank you. We know consistency matters, especially when customers are cooking for groups.",
             },
             {
-                "username": "customer3",
+                "username": "reviewer_loaf",
                 "product": "P3 Wholemeal Loaf",
                 "rating": 5,
                 "comment": "Excellent loaf with a great crust and soft middle. Toasted beautifully the next morning.",
@@ -339,7 +349,7 @@ class Command(BaseCommand):
                 "producer_response": "We are really pleased it held up well the next day. That loaf is one of our favourites for toast too.",
             },
             {
-                "username": "customer3",
+                "username": "reviewer_donuts",
                 "product": "P3 Donut Pack",
                 "rating": 4,
                 "comment": "Soft and fresh with a good balance of sweetness. Best on the day, but that is exactly what we wanted.",
@@ -417,7 +427,7 @@ class Command(BaseCommand):
 
         for spec in review_specs:
             review, created = Review.objects.get_or_create(
-                user=customers[spec["username"]],
+                user=review_accounts[spec["username"]],
                 product=products[spec["product"]],
                 defaults={
                     "rating": spec["rating"],

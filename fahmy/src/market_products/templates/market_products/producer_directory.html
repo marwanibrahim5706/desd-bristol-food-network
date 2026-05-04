@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Producers</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, Arial, sans-serif; margin:0; background:#f6f7fb; color:#111827; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 42px 24px; }
+    .top { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; }
+    h1 { margin:0; font-size:42px; line-height:1.05; }
+    .muted { color:#6b7280; }
+    .producer-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; }
+    .producer-card {
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      padding:18px;
+      min-height:170px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      box-shadow:0 12px 28px rgba(17,24,39,.05);
+      text-decoration:none;
+      color:inherit;
+    }
+    .producer-card:hover { border-color:#bfdbfe; box-shadow:0 16px 34px rgba(37,99,235,.10); }
+    .producer-card strong { font-size:20px; }
+    .meta-pills { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; }
+    .pill { display:inline-block; padding:5px 10px; border-radius:999px; background:#eef2ff; font-size:13px; font-weight:700; }
+    .search-form { display:flex; gap:10px; margin:0 0 22px; }
+    input { flex:1; padding:13px 14px; border:1px solid #d9dee8; border-radius:16px; font:inherit; }
+    button, .btn {
+      border:0;
+      border-radius:14px;
+      background:#111827;
+      color:#fff;
+      padding:13px 16px;
+      font:inherit;
+      font-weight:800;
+      text-decoration:none;
+      cursor:pointer;
+    }
+    .empty { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:24px; }
+    @media (max-width: 900px) { .producer-grid { grid-template-columns:1fr 1fr; } }
+    @media (max-width: 640px) {
+      .top, .search-form { flex-direction:column; align-items:stretch; }
+      .producer-grid { grid-template-columns:1fr; }
+      h1 { font-size:34px; }
+    }
+  </style>
+</head>
+<body>
+  {% include "includes/site_nav.html" %}
+  <main class="wrap">
+    <div class="top">
+      <div>
+        <h1>Producers</h1>
+        <p class="muted">Browse each producer's items, recipes, and farm stories together.</p>
+      </div>
+      <a class="btn" href="{% url 'discovery_alt' %}">Back to Discovery</a>
+    </div>
+
+    <form class="search-form" method="get">
+      <input name="q" value="{{ q }}" placeholder="Search producer or product..." />
+      <button type="submit">Search</button>
+    </form>
+
+    {% if producers %}
+      <section class="producer-grid" aria-label="Producer pages">
+        {% for producer in producers %}
+          <a class="producer-card" href="{% url 'producer_profile' producer.id %}">
+            <strong>{{ producer.business_name|default:producer.username }}</strong>
+            <span class="muted">{{ producer.username }}</span>
+            <div class="meta-pills">
+              <span class="pill">{{ producer.active_product_count }} item{{ producer.active_product_count|pluralize }}</span>
+              <span class="pill">{{ producer.published_recipe_count }} recipe{{ producer.published_recipe_count|pluralize }}</span>
+              <span class="pill">{{ producer.published_story_count }} stor{{ producer.published_story_count|pluralize:"y,ies" }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </section>
+    {% else %}
+      <div class="empty">No producers found.</div>
+    {% endif %}
+  </main>
+</body>
+</html>

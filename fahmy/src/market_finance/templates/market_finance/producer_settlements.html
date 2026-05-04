@@ -61,6 +61,17 @@
 
     .orderList li:last-child{ border-bottom:0; }
 
+    .orderLine{
+      display:grid;
+      gap:6px;
+    }
+
+    .itemBreakdown{
+      margin:6px 0 0;
+      padding-left:18px;
+      color:var(--secondary);
+    }
+
     .totalsBox{
       border:1px solid var(--line-soft);
       border-radius:18px;
@@ -134,7 +145,7 @@
         <div>
           <p class="eyebrow">Settlements</p>
           <h1>Weekly payouts</h1>
-          <p>See delivered orders grouped into weekly settlement reports, with gross sales, commission, and payout totals.</p>
+          <p>See delivered orders grouped into weekly settlement reports, with gross sales, 5% network commission, 95% producer payout, and tax-year totals.</p>
         </div>
         <a class="linkBtn secondary" href="/orders/producer/dashboard/">Back to orders</a>
       </header>
@@ -143,6 +154,7 @@
         <div class="summaryTile"><div class="label">Gross sales</div><div class="value money">&pound;{{ gross_sales|floatformat:2 }}</div></div>
         <div class="summaryTile"><div class="label">Commission</div><div class="value money">&pound;{{ total_commission|floatformat:2 }}</div></div>
         <div class="summaryTile"><div class="label">Payouts</div><div class="value money">&pound;{{ total_payouts|floatformat:2 }}</div></div>
+        <div class="summaryTile"><div class="label">Tax year payout</div><div class="value money">&pound;{{ tax_year_payouts|floatformat:2 }}</div><div class="muted">Since {{ tax_year_start|date:"d M Y" }}</div></div>
       </section>
 
       <section class="toolbar" aria-label="Filter settlements">
@@ -195,11 +207,13 @@
                 </div>
                 <div class="chips">
                   {% if settlement.record and settlement.record.status == "PAID" %}
-                    <span class="chip ok">Paid</span>
+                    <span class="chip ok">Processed</span>
+                  {% elif settlement.record and settlement.record.status == "FAILED" %}
+                    <span class="chip danger">Action needed</span>
                   {% elif settlement.record %}
-                    <span class="chip info">Generated</span>
+                    <span class="chip info">Pending Bank Transfer</span>
                   {% else %}
-                    <span class="chip">Awaiting admin</span>
+                    <span class="chip">Pending settlement generation</span>
                   {% endif %}
                   <span class="chip">{{ settlement.suborder_count }} delivered</span>
                 </div>
@@ -211,8 +225,19 @@
                   <ul class="orderList">
                     {% for suborder in settlement.suborders %}
                       <li>
-                        <strong>Order #{{ suborder.order.id }}</strong>
-                        <span class="muted"> | delivery {{ suborder.delivery_date|date:"M d, Y H:i" }}</span>
+                        <div class="orderLine">
+                          <div>
+                            <strong>Order #{{ suborder.order.id }}</strong>
+                            <span class="muted"> | Customer {{ suborder.order.customer.username }} | delivery {{ suborder.delivery_date|date:"M d, Y H:i" }}</span>
+                          </div>
+                          <ul class="itemBreakdown">
+                            {% for item in suborder.items.all %}
+                              <li>{{ item.product_name }} x{{ item.quantity }} | &pound;{{ item.line_total|floatformat:2 }}</li>
+                            {% empty %}
+                              <li>No item lines recorded for this suborder.</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
                       </li>
                     {% endfor %}
                   </ul>
@@ -224,6 +249,22 @@
                     <div class="row"><span>Gross sales</span><span class="money">&pound;{{ settlement.gross_sales|floatformat:2 }}</span></div>
                     <div class="row"><span>Commission (5%)</span><span class="money">&pound;{{ settlement.commission|floatformat:2 }}</span></div>
                     <div class="row"><strong>Net payout</strong><strong class="money">&pound;{{ settlement.payout|floatformat:2 }}</strong></div>
+                    <div class="row">
+                      <span>Status</span>
+                      <span>
+                        {% if settlement.record and settlement.record.status == "PAID" %}
+                          Processed
+                        {% elif settlement.record and settlement.record.status == "FAILED" %}
+                          Action needed
+                        {% else %}
+                          Pending Bank Transfer
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="row">
+                      <span>Payment reference</span>
+                      <span>{% if settlement.record and settlement.record.payout_receipt_reference %}{{ settlement.record.payout_receipt_reference }}{% else %}Issued after payout processing{% endif %}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -232,12 +273,12 @@
                 <span class="muted">
                   {% if settlement.record %}
                     Generated {{ settlement.record.generated_at|date:"M d, Y H:i" }}
-                    {% if settlement.record.paid_at %} | Paid {{ settlement.record.paid_at|date:"M d, Y H:i" }}{% endif %}
+                    {% if settlement.record.paid_at %} | Processed {{ settlement.record.paid_at|date:"M d, Y H:i" }}{% endif %}
                   {% else %}
                     This report is ready after admin generates the settlement record.
                   {% endif %}
                 </span>
-                <a class="linkBtn secondary" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ request.user.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download CSV</a>
+                <a class="linkBtn secondary" href="{% url 'market_finance:export_settlement_csv' %}?producer_id={{ request.user.id }}&week_start={{ settlement.week_start|date:'Y-m-d' }}">Download tax CSV</a>
               </div>
             </article>
           {% endfor %}

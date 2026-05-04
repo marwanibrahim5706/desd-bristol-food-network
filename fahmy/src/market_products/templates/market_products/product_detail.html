@@ -15,7 +15,10 @@
     .danger { background:#fee2e2; }
     .warn { background:#fff7ed; }
     a { text-decoration:none; color:inherit; }
-    textarea, input, select { width:100%; border:1px solid #d1d5db; border-radius:12px; padding:10px 12px; font:inherit; }
+    textarea, input:not([type="checkbox"]), select { width:100%; border:1px solid #d1d5db; border-radius:12px; padding:10px 12px; font:inherit; }
+    textarea { min-height:150px; resize:vertical; }
+    input[type="checkbox"] { width:18px; height:18px; margin:0; accent-color:#111827; }
+    input[type="number"] { max-width:120px; }
     button { padding: 10px 14px; border-radius: 10px; border: 1px solid #111827; background: #111827; color: white; cursor: pointer; }
     .sectionTitle { margin:0 0 10px; font-size:20px; }
     .review { border-top:1px solid #e5e7eb; padding-top:12px; margin-top:12px; }
@@ -25,6 +28,12 @@
     .metaRow { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
     .thumb { width:100%; max-height:220px; object-fit:cover; border-radius:14px; border:1px solid #e5e7eb; margin-bottom:10px; }
     .productThumb { width:100%; max-height:320px; object-fit:cover; border-radius:16px; border:1px solid #e5e7eb; margin:0 0 16px; }
+    .reviewForm { display:grid; gap:14px; margin-top:8px; max-width:100%; }
+    .formField { display:grid; gap:6px; }
+    .formLabel { color:#111827; font-weight:700; }
+    .ratingControl input { width:110px; text-align:center; font-weight:700; }
+    .checkboxControl { display:inline-flex; align-items:center; gap:10px; color:#111827; font-weight:600; }
+    .reviewForm button { justify-self:start; border-radius:12px; padding:12px 16px; font-weight:800; }
     @media (max-width: 860px) { .grid { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -126,19 +135,20 @@
     <div class="card">
       <h2 class="sectionTitle">Verified Reviews</h2>
       {% if can_review %}
-        <form method="post" action="{% url 'submit_review' product.id %}">
+        <form class="reviewForm" method="post" action="{% url 'submit_review' product.id %}">
           {% csrf_token %}
-          <div style="margin-bottom:12px;">
-            <label for="{{ review_form.rating.id_for_label }}">Star rating</label>
+          <div class="formField ratingControl">
+            <label class="formLabel" for="{{ review_form.rating.id_for_label }}">Star rating</label>
             {{ review_form.rating }}
           </div>
-          <div style="margin-bottom:12px;">
-            <label for="{{ review_form.comment.id_for_label }}">Written review</label>
+          <div class="formField">
+            <label class="formLabel" for="{{ review_form.comment.id_for_label }}">Written review</label>
             {{ review_form.comment }}
           </div>
-          <div style="margin-bottom:12px;">
-            <label>{{ review_form.is_anonymous }} Post anonymously</label>
-          </div>
+          <label class="checkboxControl">
+            {{ review_form.is_anonymous }}
+            <span>Post anonymously</span>
+          </label>
           <button type="submit">Submit verified review</button>
         </form>
       {% elif existing_review %}
