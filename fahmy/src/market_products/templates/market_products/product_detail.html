@@ -90,8 +90,9 @@
         {% endif %}
       </div>
 
-      <div class="card">
-        <h2 class="sectionTitle">Recipe Suggestions</h2>
+      <div>
+        <div class="card">
+          <h2 class="sectionTitle">Recipe Suggestions</h2>
         <p class="muted">Recipes are linked to real producer inventory so customers can discover practical ways to use local produce.</p>
         {% for recipe in linked_recipes %}
           <div class="recipeCard">
@@ -105,6 +106,18 @@
         {% empty %}
           <p class="muted">No recipe suggestions linked to this product yet.</p>
         {% endfor %}
+        </div>
+
+      {% if market_weather %}
+        <div class="card">
+          <h2 class="sectionTitle">Local Market Weather</h2>
+          <p class="muted">Current weather near {{ market_weather.location }}.</p>
+          <p style="margin-bottom:0;">
+            <strong>{{ market_weather.temperature }}&deg;C</strong>
+            - {{ market_weather.description }}
+          </p>
+        </div>
+      {% endif %}
       </div>
     </div>
 

@@ -155,3 +155,8 @@ PAYMENTS_SERVICE_URL = os.getenv("PAYMENTS_SERVICE_URL", "http://payments:8001")
 
 # Browser-facing URL used when redirecting customers to the payments page.
 PAYMENTS_BROWSER_URL = os.getenv("PAYMENTS_BROWSER_URL", "http://localhost:8001")
+
+# Optional weather API integration for product pages. Missing or invalid values
+# simply hide the weather card instead of affecting the main marketplace flow.
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "")
+WEATHER_LOCATION = os.getenv("WEATHER_LOCATION", "London")

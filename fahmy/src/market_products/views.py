@@ -26,6 +26,7 @@ from .services import (
     add_producer_response,
     average_product_rating,
     create_verified_review,
+    get_market_weather,
     producer_can_manage_review,
     published_product_recipes,
     published_producer_recipes,
@@ -247,6 +248,7 @@ def product_detail(request, pk: int):
             "review_form": ReviewForm(),
             "linked_recipes": linked_recipes,
             "producer_stories": producer_stories,
+            "market_weather": get_market_weather(),
         },
     )
 

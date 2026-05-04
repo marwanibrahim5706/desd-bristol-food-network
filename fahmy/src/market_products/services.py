@@ -1,3 +1,9 @@
+import json
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
+
+from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Avg
 from django.utils import timezone
@@ -86,3 +92,37 @@ def recipe_is_favourited_by_user(recipe, user):
     if not user.is_authenticated:
         return False
     return FavouriteRecipe.objects.filter(customer=user, recipe=recipe).exists()
+
+
+def get_market_weather():
+    if not settings.WEATHER_API_KEY:
+        return None
+
+    query = urlencode(
+        {
+            "q": settings.WEATHER_LOCATION,
+            "appid": settings.WEATHER_API_KEY,
+            "units": "metric",
+        }
+    )
+    url = f"https://api.openweathermap.org/data/2.5/weather?{query}"
+
+    try:
+        with urlopen(url, timeout=3) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, ValueError, KeyError):
+        return None
+
+    weather = data.get("weather") or [{}]
+    main = data.get("main") or {}
+    temperature = main.get("temp")
+    description = weather[0].get("description")
+
+    if temperature is None or not description:
+        return None
+
+    return {
+        "location": data.get("name") or settings.WEATHER_LOCATION,
+        "temperature": round(float(temperature)),
+        "description": description.title(),
+    }
