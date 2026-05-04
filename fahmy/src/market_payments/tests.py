@@ -1,5 +1,6 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -70,6 +71,25 @@ class SingleProducerCheckoutTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "currently out of stock")
+        self.assertFalse(CartItem.objects.filter(product=self.product_one).exists())
+
+    def test_customer_cannot_add_out_of_season_product_to_cart(self):
+        self.client.force_login(self.customer)
+        self.product_one.seasonal_availability = "seasonal"
+        self.product_one.season_start_month = 6
+        self.product_one.season_end_month = 8
+        self.product_one.save(update_fields=["seasonal_availability", "season_start_month", "season_end_month"])
+
+        with patch("market_products.models.timezone.localdate", return_value=date(2026, 12, 1)):
+            response = self.client.post(
+                reverse("market_payments:add_to_cart", args=[self.product_one.id]),
+                {"next": reverse("market_payments:cart")},
+                follow=True,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "out of season")
+        self.assertContains(response, "Available: June - August")
         self.assertFalse(CartItem.objects.filter(product=self.product_one).exists())
 
     def test_customer_cannot_add_more_than_available_stock_to_cart(self):

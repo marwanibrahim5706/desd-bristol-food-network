@@ -14,6 +14,8 @@ class ProductForm(forms.ModelForm):
             "is_organic",
             "food_miles",
             "seasonal_availability",
+            "season_start_month",
+            "season_end_month",
             "price",
             "stock_quantity",
             "low_stock_threshold",
@@ -29,6 +31,31 @@ class ProductForm(forms.ModelForm):
                 attrs={"placeholder": "e.g. Nuts, Milk, Gluten"}
             ),
         }
+        labels = {
+            "seasonal_availability": "Availability pattern",
+            "season_start_month": "Available from",
+            "season_end_month": "Available until",
+        }
+        help_texts = {
+            "seasonal_availability": "Use Available year-round for stored or permanent products. Use Seasonal date range for fruit and vegetables with specific months.",
+            "season_start_month": "First month customers can order this seasonal product.",
+            "season_end_month": "Last month customers can order this seasonal product.",
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        seasonal_availability = cleaned_data.get("seasonal_availability")
+        start_month = cleaned_data.get("season_start_month")
+        end_month = cleaned_data.get("season_end_month")
+
+        if seasonal_availability == "seasonal" and (not start_month or not end_month):
+            raise forms.ValidationError("Choose the start and end months for seasonal products.")
+
+        if seasonal_availability == "all_year":
+            cleaned_data["season_start_month"] = None
+            cleaned_data["season_end_month"] = None
+
+        return cleaned_data
 
 
 class ReviewForm(forms.ModelForm):

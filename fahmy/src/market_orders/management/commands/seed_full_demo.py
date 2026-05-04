@@ -153,32 +153,44 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------
         catalog = {
             producers[0]: [
-                ("P1 Apples Box", Decimal("40.00"), 50, "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("8.5"), "autumn", "", "Crisp seasonal apples grown close to Bristol, ideal for snacking, baking, and lunch boxes."),
-                ("P1 Carrots Bag", Decimal("15.00"), 35, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Carrots.JPG", "fruit_veg", True, Decimal("6.2"), "autumn", "", "Sweet local carrots with a firm crunch, perfect for roasting, soups, and fresh salads."),
-                ("P1 Potatoes Sack", Decimal("22.00"), 25, "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80", "fruit_veg", False, Decimal("7.0"), "all_year", "", "A hearty sack of all-round potatoes for mashing, baking, roasting, and weekly kitchen prep."),
-                ("P1 Olive Oil 1L", Decimal("95.00"), 12, "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1200&q=80", "other", False, Decimal("42.0"), "all_year", "", "Smooth extra virgin olive oil for dressings, roasting vegetables, and finishing warm dishes."),
-                ("P1 Tomatoes Crate", Decimal("32.00"), 4, "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("5.5"), "summer", "", "Juicy summer tomatoes with bright flavour for salads, sauces, sandwiches, and roasting."),   # low stock test
-                ("P1 Eggs Tray", Decimal("27.00"), 3, "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=1200&q=80", "eggs", True, Decimal("9.0"), "all_year", "Eggs", "Free range eggs with bright yolks, useful for breakfasts, baking, and protein-rich meals."),        # low stock test
+                ("Apples Box", Decimal("40.00"), 50, "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("8.5"), "seasonal", 9, 11, "", "Crisp seasonal apples grown close to Bristol, ideal for snacking, baking, and lunch boxes."),
+                ("Carrots Bag", Decimal("15.00"), 35, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Carrots.JPG", "fruit_veg", True, Decimal("6.2"), "seasonal", 6, 11, "", "Sweet local carrots with a firm crunch, perfect for roasting, soups, and fresh salads."),
+                ("Potatoes Sack", Decimal("22.00"), 25, "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80", "fruit_veg", False, Decimal("7.0"), "all_year", None, None, "", "A hearty sack of all-round potatoes for mashing, baking, roasting, and weekly kitchen prep."),
+                ("Olive Oil 1L", Decimal("95.00"), 12, "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1200&q=80", "other", False, Decimal("42.0"), "all_year", "", "Smooth extra virgin olive oil for dressings, roasting vegetables, and finishing warm dishes."),
+                ("Tomatoes Crate", Decimal("32.00"), 4, "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("5.5"), "seasonal", 6, 9, "", "Juicy summer tomatoes with bright flavour for salads, sauces, sandwiches, and roasting."),   # low stock test
+                ("Eggs Tray", Decimal("27.00"), 3, "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=1200&q=80", "eggs", True, Decimal("9.0"), "all_year", "Eggs", "Free range eggs with bright yolks, useful for breakfasts, baking, and protein-rich meals."),        # low stock test
             ],
             producers[1]: [
-                ("P2 Milk 1L", Decimal("18.00"), 120, "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Fresh whole milk from a local dairy, ready for breakfast, baking, tea, and coffee."),
-                ("P2 Cheese 500g", Decimal("65.00"), 60, "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Rich farmhouse-style cheese with a creamy texture, good for boards, toasties, and cooking."),
-                ("P2 Yogurt Pack", Decimal("24.00"), 18, "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Creamy yogurt pots for breakfasts, desserts, smoothies, or simple fruit pairings."),
-                ("P2 Butter Block", Decimal("19.00"), 7, "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Golden butter block for baking, spreading, pan cooking, and finishing vegetables."),
+                ("Milk 1L", Decimal("18.00"), 120, "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Fresh whole milk from a local dairy, ready for breakfast, baking, tea, and coffee."),
+                ("Cheese 500g", Decimal("65.00"), 60, "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Rich farmhouse-style cheese with a creamy texture, good for boards, toasties, and cooking."),
+                ("Yogurt Pack", Decimal("24.00"), 18, "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Creamy yogurt pots for breakfasts, desserts, smoothies, or simple fruit pairings."),
+                ("Butter Block", Decimal("19.00"), 7, "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Golden butter block for baking, spreading, pan cooking, and finishing vegetables."),
             ],
             producers[2]: [
-                ("P3 Fresh Bread", Decimal("12.50"), 80, "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten", "Freshly baked crusty bread for sandwiches, soup lunches, toast, and sharing."),
-                ("P3 Croissant Box", Decimal("20.00"), 30, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Croissants.jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk", "A box of buttery croissants with flaky layers, best for breakfast meetings and treats."),
-                ("P3 Wholemeal Loaf", Decimal("9.50"), 22, "https://images.pexels.com/photos/30675188/pexels-photo-30675188.jpeg?cs=srgb&dl=pexels-christina99999-30675188.jpg&fm=jpg", "bakery", True, Decimal("3.5"), "all_year", "Gluten", "Nutty wholemeal loaf baked for everyday sandwiches, toast, and soup pairings."),
-                ("P3 Donut Pack", Decimal("16.00"), 14, "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft sweet donuts for dessert tables, staff treats, and weekend sharing boxes."),
-                ("P3 Brioche", Decimal("11.00"), 2, "https://images.pexels.com/photos/7884507/pexels-photo-7884507.jpeg?cs=srgb&dl=pexels-ilariam-7884507.jpg&fm=jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft enriched brioche with a tender crumb, great for brunch, toast, or puddings."),          # low stock test
+                ("Fresh Bread", Decimal("12.50"), 80, "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten", "Freshly baked crusty bread for sandwiches, soup lunches, toast, and sharing."),
+                ("Croissant Box", Decimal("20.00"), 30, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Croissants.jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk", "A box of buttery croissants with flaky layers, best for breakfast meetings and treats."),
+                ("Wholemeal Loaf", Decimal("9.50"), 22, "https://images.pexels.com/photos/30675188/pexels-photo-30675188.jpeg?cs=srgb&dl=pexels-christina99999-30675188.jpg&fm=jpg", "bakery", True, Decimal("3.5"), "all_year", "Gluten", "Nutty wholemeal loaf baked for everyday sandwiches, toast, and soup pairings."),
+                ("Donut Pack", Decimal("16.00"), 14, "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft sweet donuts for dessert tables, staff treats, and weekend sharing boxes."),
+                ("Brioche", Decimal("11.00"), 2, "https://images.pexels.com/photos/7884507/pexels-photo-7884507.jpeg?cs=srgb&dl=pexels-ilariam-7884507.jpg&fm=jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft enriched brioche with a tender crumb, great for brunch, toast, or puddings."),          # low stock test
             ],
         }
 
         products_by_name = {}
 
         for producer, rows in catalog.items():
-            for name, price, stock, image_url, category, is_organic, food_miles, seasonal_availability, allergens, description in rows:
+            for row in rows:
+                if len(row) == 12:
+                    (
+                        name, price, stock, image_url, category, is_organic, food_miles,
+                        seasonal_availability, season_start_month, season_end_month, allergens, description,
+                    ) = row
+                else:
+                    (
+                        name, price, stock, image_url, category, is_organic, food_miles,
+                        seasonal_availability, allergens, description,
+                    ) = row
+                    season_start_month = None
+                    season_end_month = None
                 product, _ = Product.objects.get_or_create(
                     producer=producer,
                     name=name,
@@ -189,6 +201,8 @@ class Command(BaseCommand):
                         "is_organic": is_organic,
                         "food_miles": food_miles,
                         "seasonal_availability": seasonal_availability,
+                        "season_start_month": season_start_month,
+                        "season_end_month": season_end_month,
                         "allergens": allergens,
                         "description": description,
                         "stock_quantity": stock,
@@ -212,6 +226,10 @@ class Command(BaseCommand):
                     product.food_miles = food_miles
                 if hasattr(product, "seasonal_availability"):
                     product.seasonal_availability = seasonal_availability
+                if hasattr(product, "season_start_month"):
+                    product.season_start_month = season_start_month
+                if hasattr(product, "season_end_month"):
+                    product.season_end_month = season_end_month
                 if hasattr(product, "allergens"):
                     product.allergens = allergens
                 if hasattr(product, "description"):
@@ -222,7 +240,7 @@ class Command(BaseCommand):
                 products_by_name[name] = product
 
         legacy_products = {
-            "P2 Chicken Pack": {
+            "Chicken Pack": {
                 "image_url": "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1200&q=80",
                 "category": "meat",
                 "allergens": "",
@@ -379,7 +397,7 @@ class Command(BaseCommand):
                     [
                         (
                             producers[0],
-                            [("P1 Apples Box", 2), ("P1 Carrots Bag", 3)],
+                            [("Apples Box", 2), ("Carrots Bag", 3)],
                             ProducerSubOrder.Status.PENDING,
                         )
                     ],
@@ -392,12 +410,12 @@ class Command(BaseCommand):
                     [
                         (
                             producers[0],
-                            [("P1 Olive Oil 1L", 1), ("P1 Tomatoes Crate", 2)],
+                            [("Olive Oil 1L", 1), ("Tomatoes Crate", 2)],
                             ProducerSubOrder.Status.CONFIRMED,
                         ),
                         (
                             producers[1],
-                            [("P2 Milk 1L", 6), ("P2 Cheese 500g", 1)],
+                            [("Milk 1L", 6), ("Cheese 500g", 1)],
                             ProducerSubOrder.Status.PENDING,
                         ),
                     ],
@@ -410,12 +428,12 @@ class Command(BaseCommand):
                     [
                         (
                             producers[1],
-                            [("P2 Yogurt Pack", 2), ("P2 Butter Block", 3)],
+                            [("Yogurt Pack", 2), ("Butter Block", 3)],
                             ProducerSubOrder.Status.READY,
                         ),
                         (
                             producers[2],
-                            [("P3 Fresh Bread", 4), ("P3 Croissant Box", 2)],
+                            [("Fresh Bread", 4), ("Croissant Box", 2)],
                             ProducerSubOrder.Status.CONFIRMED,
                         ),
                     ],
@@ -428,7 +446,7 @@ class Command(BaseCommand):
                     [
                         (
                             producers[0],
-                            [("P1 Potatoes Sack", 1), ("P1 Apples Box", 1)],
+                            [("Potatoes Sack", 1), ("Apples Box", 1)],
                             ProducerSubOrder.Status.DELIVERED,
                         )
                     ],
@@ -441,12 +459,12 @@ class Command(BaseCommand):
                     [
                         (
                             producers[1],
-                            [("P1 Eggs Tray", 2), ("P2 Milk 1L", 4)],
+                            [("Eggs Tray", 2), ("Milk 1L", 4)],
                             ProducerSubOrder.Status.DELIVERED,
                         ),
                         (
                             producers[2],
-                            [("P3 Croissant Box", 3), ("P3 Donut Pack", 2)],
+                            [("Croissant Box", 3), ("Donut Pack", 2)],
                             ProducerSubOrder.Status.DELIVERED,
                         ),
                     ],
@@ -459,7 +477,7 @@ class Command(BaseCommand):
                     [
                         (
                             producers[2],
-                            [("P3 Brioche", 2)],
+                            [("Brioche", 2)],
                             ProducerSubOrder.Status.CANCELLED,
                         )
                     ],
@@ -567,22 +585,22 @@ class Command(BaseCommand):
             build_tc025_order(
                 customers[0],
                 now - timedelta(days=10),
-                [(producers[0], Decimal("100.00"), "P1 Apples Box")],
+                [(producers[0], Decimal("100.00"), "Apples Box")],
                 1,
             )
             build_tc025_order(
                 customers[1],
                 now - timedelta(days=3),
                 [
-                    (producers[0], Decimal("80.00"), "P1 Tomatoes Crate"),
-                    (producers[1], Decimal("70.00"), "P2 Cheese 500g"),
+                    (producers[0], Decimal("80.00"), "Tomatoes Crate"),
+                    (producers[1], Decimal("70.00"), "Cheese 500g"),
                 ],
                 2,
             )
             build_tc025_order(
                 customers[2],
                 now - timedelta(days=17),
-                [(producers[2], Decimal("248.50"), "P3 Croissant Box")],
+                [(producers[2], Decimal("248.50"), "Croissant Box")],
                 3,
             )
             generate_weekly_settlements(actor=admin)

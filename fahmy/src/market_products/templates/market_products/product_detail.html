@@ -55,7 +55,14 @@
 
         <div class="metaRow">
           <span class="pill">{{ product.get_category_display }}</span>
-          <span class="pill">{{ product.get_seasonal_availability_display }}</span>
+          {% if product.seasonal_availability == "all_year" %}
+            <span class="pill ok">{{ product.seasonal_status_label }}</span>
+          {% elif product.is_currently_in_season %}
+            <span class="pill ok">In season</span>
+          {% else %}
+            <span class="pill danger">Out of season</span>
+          {% endif %}
+          <span class="pill">{{ product.seasonal_range_display }}</span>
           {% if product.is_organic %}
             <span class="pill ok">Organic</span>
           {% endif %}
@@ -74,7 +81,7 @@
 
         <p><strong>Price:</strong> £{{ product.price }}</p>
         <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
-        <p><strong>Seasonal availability:</strong> {{ product.get_seasonal_availability_display }}</p>
+        <p><strong>Seasonal availability:</strong> {{ product.seasonal_status_label }}. {{ product.seasonal_range_display }}</p>
         <p><strong>Organic certification:</strong> {% if product.is_organic %}Certified organic{% else %}Not listed as organic{% endif %}</p>
         <p><strong>Food miles:</strong> {% if product.food_miles != None %}{{ product.food_miles }} miles{% else %}Not provided{% endif %}</p>
         <p><strong>Average rating:</strong>

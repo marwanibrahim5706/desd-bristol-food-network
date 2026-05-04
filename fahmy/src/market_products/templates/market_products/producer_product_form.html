@@ -231,7 +231,22 @@
               <div class="fieldBlock">
                 <label for="{{ form.seasonal_availability.id_for_label }}">Seasonal availability</label>
                 {{ form.seasonal_availability }}
+                <span class="muted">{{ form.seasonal_availability.help_text }}</span>
                 {{ form.seasonal_availability.errors }}
+              </div>
+
+              <div class="fieldBlock">
+                <label for="{{ form.season_start_month.id_for_label }}">Available from</label>
+                {{ form.season_start_month }}
+                <span class="muted">{{ form.season_start_month.help_text }}</span>
+                {{ form.season_start_month.errors }}
+              </div>
+
+              <div class="fieldBlock">
+                <label for="{{ form.season_end_month.id_for_label }}">Available until</label>
+                {{ form.season_end_month }}
+                <span class="muted">{{ form.season_end_month.help_text }}</span>
+                {{ form.season_end_month.errors }}
               </div>
 
               <div class="checkbox-row">

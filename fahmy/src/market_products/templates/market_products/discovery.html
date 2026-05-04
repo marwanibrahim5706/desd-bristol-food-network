@@ -520,7 +520,14 @@
                 <span class="pill ok">Organic</span>
               {% endif %}
               <span class="pill">{{ p.get_category_display }}</span>
-              <span class="pill">{{ p.get_seasonal_availability_display }}</span>
+              {% if p.seasonal_availability == "all_year" %}
+                <span class="pill ok">{{ p.seasonal_status_label }}</span>
+              {% elif p.is_currently_in_season %}
+                <span class="pill ok">In season</span>
+              {% else %}
+                <span class="pill danger">Out of season</span>
+              {% endif %}
+              <span class="pill">{{ p.seasonal_range_display }}</span>
               {% if p.food_miles != None %}
                 <span class="pill">{{ p.food_miles }} food miles</span>
               {% endif %}
@@ -531,14 +538,14 @@
           </a>
 
           <div class="product-actions">
-            {% if p.is_active and p.stock_quantity > 0 %}
+            {% if p.can_be_ordered %}
               <form method="post" action="{% url 'market_payments:add_to_cart' p.id %}">
                 {% csrf_token %}
-                <input type="hidden" name="next" value="/" />
+                <input type="hidden" name="next" value="{{ request.get_full_path }}" />
                 <button type="submit">Add to cart</button>
               </form>
             {% else %}
-              <button type="button" class="disabled-btn" disabled>Unavailable</button>
+              <button type="button" class="disabled-btn" disabled>{% if not p.is_currently_in_season %}Out of season{% else %}Unavailable{% endif %}</button>
             {% endif %}
           </div>
         </div>
