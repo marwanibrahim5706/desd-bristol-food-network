@@ -19,7 +19,7 @@
     <a class="muted" href="{% url 'producer_profile' story.producer.id %}">← Back to producer profile</a>
     <div class="card">
       <h1 style="margin:0 0 8px;">{{ story.title }}</h1>
-      <div class="muted">{{ story.producer.business_name|default:story.producer.username }} • {{ story.get_seasonal_tag_display }}</div>
+      <div class="muted">{{ story.producer.display_name }} • {{ story.get_seasonal_tag_display }}</div>
       <div style="margin-top:10px;"><span class="pill">Farm story</span></div>
       {% if story.image_url %}
         <img class="thumb" src="{{ story.image_url }}" alt="{{ story.title }}">

@@ -103,6 +103,8 @@ def discovery(request):
 
     if organic in ("1", "true", "True", "yes", "on"):
         qs = qs.filter(is_organic=True)
+    elif organic in ("0", "false", "False", "no", "off"):
+        qs = qs.filter(is_organic=False)
 
     if season:
         qs = qs.filter(Q(seasonal_availability=season) | Q(seasonal_availability="all_year"))
@@ -171,7 +173,7 @@ def discovery(request):
         [
             category,
             avoid_categories,
-            organic in ("1", "true", "True", "yes", "on"),
+            organic in ("1", "true", "True", "yes", "on", "0", "false", "False", "no", "off"),
             season,
             max_food_miles,
             min_price,

@@ -58,6 +58,10 @@ def login_view(request):
         if user is not None:
             cache.delete(attempt_key)
             login(request, user)
+            if request.POST.get("remember_me"):
+                request.session.set_expiry(1209600)
+            else:
+                request.session.set_expiry(0)
             return _safe_redirect_or_default(request, next_url, user)
 
         cache.set(attempt_key, failed_attempts + 1, LOGIN_LOCKOUT_SECONDS)

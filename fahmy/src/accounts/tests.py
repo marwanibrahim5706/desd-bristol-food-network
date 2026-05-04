@@ -106,6 +106,29 @@ class AuthenticationAuthorisationTests(TestCase):
 
         self.assertRedirects(response, "/discover/")
 
+    def test_login_without_remember_me_expires_on_browser_close(self):
+        self.client.post(
+            reverse("accounts:login"),
+            {
+                "identifier": "customer@test.com",
+                "password": "StrongPass123!",
+            },
+        )
+
+        self.assertEqual(self.client.session.get("_session_expiry"), 0)
+
+    def test_login_with_remember_me_sets_two_week_session(self):
+        self.client.post(
+            reverse("accounts:login"),
+            {
+                "identifier": "customer@test.com",
+                "password": "StrongPass123!",
+                "remember_me": "1",
+            },
+        )
+
+        self.assertEqual(self.client.session.get("_session_expiry"), 1209600)
+
     def test_login_ignores_unsafe_next_redirect(self):
         response = self.client.post(
             reverse("accounts:login"),
