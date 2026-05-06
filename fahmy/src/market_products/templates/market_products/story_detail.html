@@ -11,9 +11,10 @@
     .thumb { width:100%; max-height:360px; object-fit:cover; border-radius:14px; border:1px solid #e5e7eb; margin:12px 0; }
     .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#eef2ff; font-size:12px; margin-right:6px; }
     .muted { color:#6b7280; }
+    {% include "includes/customer_market_theme_styles.html" %}
   </style>
 </head>
-<body>
+<body class="customerMarketTheme">
   {% include "includes/site_nav.html" %}
   <div class="wrap">
     <a class="muted" href="{% url 'producer_profile' story.producer.id %}">← Back to producer profile</a>

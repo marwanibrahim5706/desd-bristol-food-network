@@ -66,9 +66,10 @@
       .producer-grid { grid-template-columns:1fr; }
       h1 { font-size:34px; }
     }
+    {% include "includes/customer_market_theme_styles.html" %}
   </style>
 </head>
-<body>
+<body class="customerMarketTheme">
   {% include "includes/site_nav.html" %}
   <main class="wrap">
     <div class="top">
@@ -76,7 +77,6 @@
         <h1>Producers</h1>
         <p class="muted">Browse each producer's items, recipes, and farm stories together.</p>
       </div>
-      <a class="btn" href="{% url 'discovery_alt' %}">Back to Discovery</a>
     </div>
 
     <form class="search-form" method="get">

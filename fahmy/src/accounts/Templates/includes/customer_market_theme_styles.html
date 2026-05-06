@@ -1,0 +1,307 @@
+/* Shared customer marketplace theme, matched to the producer cream/green UI. */
+body.customerMarketTheme{
+  --page:#f5f1e8;
+  --surface:#ffffff;
+  --surface-soft:#f7f3eb;
+  --surface-tint:#e9f3ef;
+  --text:#20231f;
+  --muted:#68736b;
+  --line:#ded5c8;
+  --line-soft:#ece4d8;
+  --primary:#315f52;
+  --primary-strong:#21483f;
+  --secondary:#59645e;
+  --warm:#c66b3d;
+  --success:#2f7d57;
+  --success-bg:#eaf5ee;
+  --warning:#a45f2b;
+  --warning-bg:#fff1df;
+  --danger:#ad3f35;
+  --danger-bg:#fae9e6;
+  --info-bg:#eaf1f7;
+  --shadow:0 18px 42px rgba(55,45,34,.10);
+  font-family:"Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(198,107,61,.14), transparent 30%),
+    radial-gradient(circle at 25% 0%, rgba(49,95,82,.12), transparent 34%),
+    var(--page);
+  color:var(--text);
+}
+
+body.customerMarketTheme .siteNav{
+  background:rgba(255,255,255,.86);
+  border-bottom:1px solid var(--line-soft);
+  box-shadow:0 14px 34px rgba(55,45,34,.10);
+}
+
+body.customerMarketTheme .siteBrand,
+body.customerMarketTheme .siteNavLinks a,
+body.customerMarketTheme .siteLogoutButton{
+  color:var(--text);
+}
+
+body.customerMarketTheme .siteBrandMark{
+  background:linear-gradient(135deg, var(--primary), var(--warm));
+  box-shadow:0 10px 22px rgba(49,95,82,.16);
+}
+
+body.customerMarketTheme .siteBrandText small,
+body.customerMarketTheme .siteUser{
+  color:var(--muted);
+}
+
+body.customerMarketTheme .siteNavLinks a:hover,
+body.customerMarketTheme .siteNavLinks a[aria-current="page"]{
+  background:linear-gradient(135deg, var(--surface-tint), #fff3e4);
+  border-color:var(--line);
+  color:var(--primary-strong);
+}
+
+body.customerMarketTheme .siteLogoutButton{
+  background:#fff;
+  border-color:var(--line);
+}
+
+body.customerMarketTheme .siteLogoutButton:hover{
+  background:var(--surface-soft);
+  border-color:var(--primary);
+}
+
+body.customerMarketTheme .wrap{
+  padding-top:32px;
+}
+
+body.customerMarketTheme .top,
+body.customerMarketTheme .pageHead{
+  padding:24px;
+  border:1px solid rgba(222,213,200,.72);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(198,107,61,.12), transparent 32%),
+    linear-gradient(135deg, rgba(255,255,255,.92), rgba(247,243,235,.86));
+  box-shadow:var(--shadow);
+}
+
+body.customerMarketTheme h1{
+  color:var(--text);
+  letter-spacing:-.04em;
+}
+
+body.customerMarketTheme .muted,
+body.customerMarketTheme .description,
+body.customerMarketTheme .address,
+body.customerMarketTheme .item-meta,
+body.customerMarketTheme .item-description,
+body.customerMarketTheme .favourite-desc,
+body.customerMarketTheme .empty,
+body.customerMarketTheme .totalLine,
+body.customerMarketTheme .itemMeta{
+  color:var(--muted);
+}
+
+body.customerMarketTheme .card,
+body.customerMarketTheme .producer-card,
+body.customerMarketTheme .repeatCard,
+body.customerMarketTheme .summaryBox,
+body.customerMarketTheme .repeatTotals,
+body.customerMarketTheme .noteForm,
+body.customerMarketTheme .empty,
+body.customerMarketTheme .favourite-item,
+body.customerMarketTheme .item,
+body.customerMarketTheme .recipeCard,
+body.customerMarketTheme .storyCard,
+body.customerMarketTheme .meta-card,
+body.customerMarketTheme .success-modal-card{
+  border-color:var(--line-soft);
+  background:rgba(255,255,255,.9);
+  box-shadow:0 10px 26px rgba(55,45,34,.07);
+}
+
+body.customerMarketTheme .producer-card,
+body.customerMarketTheme .card,
+body.customerMarketTheme .repeatCard,
+body.customerMarketTheme .empty{
+  border-radius:22px;
+}
+
+body.customerMarketTheme .producer-card{
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+body.customerMarketTheme .producer-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(49,95,82,.26);
+  box-shadow:0 18px 38px rgba(55,45,34,.12);
+}
+
+body.customerMarketTheme .producer-photo,
+body.customerMarketTheme .item-media,
+body.customerMarketTheme .item-media-placeholder,
+body.customerMarketTheme .favourite-thumb,
+body.customerMarketTheme .favourite-thumb-placeholder,
+body.customerMarketTheme .thumb,
+body.customerMarketTheme .productThumb{
+  border-color:var(--line-soft);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(198,107,61,.16), transparent 36%),
+    linear-gradient(135deg, var(--surface-tint), #fff3e4);
+}
+
+body.customerMarketTheme .search-form{
+  margin:18px 0 24px;
+  padding:16px;
+  border:1px solid var(--line-soft);
+  border-radius:20px;
+  background:rgba(255,255,255,.88);
+  box-shadow:0 10px 26px rgba(55,45,34,.07);
+}
+
+body.customerMarketTheme input,
+body.customerMarketTheme select,
+body.customerMarketTheme textarea,
+body.customerMarketTheme .summaryBox input,
+body.customerMarketTheme .itemQtyInput,
+body.customerMarketTheme input[type="date"],
+body.customerMarketTheme input[type="time"]{
+  border-color:var(--line);
+  background:#fff;
+  color:var(--text);
+}
+
+body.customerMarketTheme input:focus,
+body.customerMarketTheme select:focus,
+body.customerMarketTheme textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(49,95,82,.14);
+  outline:none;
+}
+
+body.customerMarketTheme button,
+body.customerMarketTheme .btn,
+body.customerMarketTheme .checkout-btn,
+body.customerMarketTheme .payment-submit{
+  border:1px solid var(--primary);
+  background:var(--primary);
+  color:#fff;
+  font-weight:900;
+  box-shadow:0 10px 22px rgba(49,95,82,.14);
+}
+
+body.customerMarketTheme button:hover,
+body.customerMarketTheme .btn:hover,
+body.customerMarketTheme .checkout-btn:hover,
+body.customerMarketTheme .payment-submit:hover{
+  border-color:var(--primary-strong);
+  background:var(--primary-strong);
+}
+
+body.customerMarketTheme .btn-secondary,
+body.customerMarketTheme .btnSecondary,
+body.customerMarketTheme .clear-btn,
+body.customerMarketTheme .btnDanger,
+body.customerMarketTheme .btn.secondary{
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--secondary);
+  box-shadow:none;
+}
+
+body.customerMarketTheme .btn-secondary:hover,
+body.customerMarketTheme .btnSecondary:hover,
+body.customerMarketTheme .clear-btn:hover{
+  background:var(--surface-soft);
+  color:var(--text);
+}
+
+body.customerMarketTheme .btnDanger{
+  color:var(--danger);
+  border-color:#fac5c0;
+}
+
+body.customerMarketTheme .pill,
+body.customerMarketTheme .itemQty{
+  border:1px solid var(--line-soft);
+  background:var(--surface-tint);
+  color:var(--primary-strong);
+  font-weight:800;
+}
+
+body.customerMarketTheme .pill.ok,
+body.customerMarketTheme .status{
+  border-color:#b9e5c8;
+  background:var(--success-bg);
+  color:var(--success);
+}
+
+body.customerMarketTheme .status.paused,
+body.customerMarketTheme .warning{
+  border-color:#f3d28a;
+  background:var(--warning-bg);
+  color:var(--warning);
+}
+
+body.customerMarketTheme .status.cancelled{
+  border-color:#fac5c0;
+  background:var(--danger-bg);
+  color:var(--danger);
+}
+
+body.customerMarketTheme .msg{
+  border:1px solid #c7d8ff;
+  background:var(--info-bg);
+  color:#1d4ed8;
+}
+
+body.customerMarketTheme .item-row,
+body.customerMarketTheme .total-row,
+body.customerMarketTheme .producer-block,
+body.customerMarketTheme .order-row,
+body.customerMarketTheme .repeatHeader,
+body.customerMarketTheme .item,
+body.customerMarketTheme .repeatTotals,
+body.customerMarketTheme .totalLine.final,
+body.customerMarketTheme .review,
+body.customerMarketTheme .delivery-fields,
+body.customerMarketTheme .totals{
+  border-color:var(--line-soft);
+}
+
+body.customerMarketTheme .success-modal{
+  background:rgba(49,95,82,.28);
+  backdrop-filter:blur(8px);
+}
+
+body.customerMarketTheme .success-modal-title{
+  color:var(--success);
+}
+
+body.customerMarketTheme .wrap a:not(.siteBrand):not(.btn):not(.btn-secondary):not(.btnSecondary):not(.clear-btn):not(.producer-card):not(.favourite-item):not(.item-media){
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  width:max-content;
+  max-width:100%;
+  padding:7px 11px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  color:var(--primary-strong);
+  font-weight:850;
+  text-decoration:none;
+  box-shadow:0 6px 14px rgba(55,45,34,.05);
+  transition:background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+body.customerMarketTheme .wrap a:not(.siteBrand):not(.btn):not(.btn-secondary):not(.btnSecondary):not(.clear-btn):not(.producer-card):not(.favourite-item):not(.item-media):hover{
+  transform:translateY(-1px);
+  border-color:var(--primary);
+  background:linear-gradient(135deg, var(--surface-tint), #fff3e4);
+  color:var(--primary-strong);
+}
+
+body.customerMarketTheme .item a,
+body.customerMarketTheme .recipeCard a,
+body.customerMarketTheme .storyCard a,
+body.customerMarketTheme .review-links a{
+  margin:2px 0;
+}

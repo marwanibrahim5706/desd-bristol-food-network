@@ -396,15 +396,427 @@
       }
 
     }
+
+    body.customerDiscovery {
+      --page: #f5f1e8;
+      --surface: #ffffff;
+      --surface-soft: #f7f3eb;
+      --surface-tint: #e9f3ef;
+      --text: #20231f;
+      --muted: #68736b;
+      --line: #ded5c8;
+      --line-soft: #ece4d8;
+      --primary: #315f52;
+      --primary-strong: #21483f;
+      --secondary: #59645e;
+      --warm: #c66b3d;
+      --success: #2f7d57;
+      --success-bg: #eaf5ee;
+      --danger: #ad3f35;
+      --danger-bg: #fae9e6;
+      --info-bg: #eaf1f7;
+      --shadow: 0 18px 42px rgba(55,45,34,.10);
+      font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 82% 8%, rgba(198,107,61,.14), transparent 30%),
+        radial-gradient(circle at 25% 0%, rgba(49,95,82,.12), transparent 34%),
+        var(--page);
+      color: var(--text);
+    }
+
+    body.customerDiscovery .siteNav {
+      background: rgba(255,255,255,.86);
+      border-bottom: 1px solid var(--line-soft);
+      box-shadow: 0 14px 34px rgba(55,45,34,.10);
+    }
+
+    body.customerDiscovery .siteBrand,
+    body.customerDiscovery .siteNavLinks a,
+    body.customerDiscovery .siteLogoutButton {
+      color: var(--text);
+    }
+
+    body.customerDiscovery .siteBrandMark {
+      background: linear-gradient(135deg, var(--primary), var(--warm));
+      box-shadow: 0 10px 22px rgba(49,95,82,.16);
+    }
+
+    body.customerDiscovery .siteBrandText small,
+    body.customerDiscovery .siteUser {
+      color: var(--muted);
+    }
+
+    body.customerDiscovery .siteNavLinks a:hover,
+    body.customerDiscovery .siteNavLinks a[aria-current="page"] {
+      background: linear-gradient(135deg, var(--surface-tint), #fff3e4);
+      border-color: var(--line);
+      color: var(--primary-strong);
+    }
+
+    body.customerDiscovery .siteLogoutButton {
+      background: #fff;
+      border-color: var(--line);
+    }
+
+    body.customerDiscovery .wrap {
+      max-width: 1180px;
+      padding: 32px 24px 44px;
+    }
+
+    body.customerDiscovery .top {
+      align-items: stretch;
+      padding: 28px;
+      border: 1px solid rgba(222,213,200,.72);
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 90% 10%, rgba(198,107,61,.14), transparent 34%),
+        linear-gradient(135deg, rgba(255,255,255,.92), rgba(247,243,235,.86));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    body.customerDiscovery .top::after {
+      content: "";
+      width: 180px;
+      height: 180px;
+      position: absolute;
+      right: -72px;
+      bottom: -86px;
+      border-radius: 999px;
+      background: rgba(49,95,82,.12);
+      pointer-events: none;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      margin-bottom: 10px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--surface-tint), #fff3e4);
+      border: 1px solid var(--line);
+      color: var(--primary-strong);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    body.customerDiscovery h1 {
+      color: var(--text);
+      font-size: clamp(2.3rem, 5vw, 4.3rem);
+      line-height: .98;
+      letter-spacing: -.06em;
+      max-width: 760px;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .hero-stat {
+      min-width: 132px;
+      padding: 12px 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: 16px;
+      background: rgba(255,255,255,.74);
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-size: 20px;
+      color: var(--primary-strong);
+    }
+
+    .hero-stat span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    body.customerDiscovery .search-form {
+      margin: -10px 0 22px;
+      padding: 18px;
+      border-color: var(--line-soft);
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      position: relative;
+      z-index: 2;
+    }
+
+    body.customerDiscovery .search-input {
+      min-height: 58px;
+      padding-left: 18px;
+      font-size: 16px;
+      border-radius: 18px;
+    }
+
+    body.customerDiscovery input,
+    body.customerDiscovery select {
+      border-color: var(--line);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    body.customerDiscovery input:focus,
+    body.customerDiscovery select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(49,95,82,.14);
+    }
+
+    body.customerDiscovery button,
+    body.customerDiscovery .btn {
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: #fff;
+      font-weight: 900;
+      box-shadow: 0 10px 22px rgba(49,95,82,.14);
+    }
+
+    body.customerDiscovery button:hover,
+    body.customerDiscovery .btn:hover {
+      background: var(--primary-strong);
+      border-color: var(--primary-strong);
+    }
+
+    body.customerDiscovery .filters-toggle,
+    body.customerDiscovery .btn-secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--secondary);
+      box-shadow: none;
+    }
+
+    body.customerDiscovery .filters-toggle:hover,
+    body.customerDiscovery .btn-secondary:hover {
+      background: var(--surface-soft);
+      color: var(--text);
+    }
+
+    body.customerDiscovery .filters-toggle::after {
+      content: "v";
+      color: var(--muted);
+    }
+
+    body.customerDiscovery .filters-toggle[aria-expanded="true"]::after {
+      content: "^";
+    }
+
+    body.customerDiscovery .filters-panel-wrap {
+      border-top-color: var(--line-soft);
+    }
+
+    body.customerDiscovery .avoid-panel {
+      background: var(--surface-soft);
+      border-color: var(--line-soft);
+    }
+
+    body.customerDiscovery .avoid-panel-title {
+      color: var(--primary-strong);
+    }
+
+    body.customerDiscovery .avoid-option {
+      background: #fff;
+      border-color: var(--line);
+      color: var(--secondary);
+    }
+
+    body.customerDiscovery .avoid-option input {
+      accent-color: var(--primary);
+    }
+
+    body.customerDiscovery .avoid-option:has(input:checked) {
+      background: var(--danger-bg);
+      border-color: #fac5c0;
+      color: var(--danger);
+    }
+
+    body.customerDiscovery .filter-summary {
+      margin: 0 0 18px;
+      padding: 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: 18px;
+      background: rgba(255,255,255,.68);
+    }
+
+    body.customerDiscovery .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    body.customerDiscovery .card {
+      border-color: var(--line-soft);
+      border-radius: 22px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 10px 26px rgba(55,45,34,.07);
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+      overflow: hidden;
+    }
+
+    body.customerDiscovery .product-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(49,95,82,.26);
+      box-shadow: 0 18px 38px rgba(55,45,34,.12);
+    }
+
+    body.customerDiscovery .thumb,
+    body.customerDiscovery .thumb-placeholder {
+      height: 205px;
+      border-color: var(--line-soft);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(198,107,61,.16), transparent 36%),
+        linear-gradient(135deg, var(--surface-tint), #fff3e4);
+    }
+
+    body.customerDiscovery .thumb-placeholder {
+      display: grid;
+      place-items: center;
+      margin-bottom: 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      color: var(--primary-strong);
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    body.customerDiscovery .product-title-row {
+      align-items: flex-start;
+    }
+
+    body.customerDiscovery .product-name {
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: -.02em;
+    }
+
+    body.customerDiscovery .pill {
+      border: 1px solid var(--line-soft);
+      background: var(--surface-tint);
+      color: var(--primary-strong);
+      font-weight: 800;
+    }
+
+    body.customerDiscovery .product-title-row .pill {
+      border-color: #edd2b8;
+      background: #fff3e4;
+      color: #8a4f25;
+      white-space: nowrap;
+    }
+
+    body.customerDiscovery .ok {
+      border-color: #b9e5c8;
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    body.customerDiscovery .danger {
+      border-color: #fac5c0;
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    body.customerDiscovery .muted,
+    body.customerDiscovery .product-description {
+      color: var(--muted);
+    }
+
+    body.customerDiscovery .product-description {
+      line-height: 1.55;
+    }
+
+    body.customerDiscovery .product-actions button {
+      min-height: 46px;
+      border-radius: 14px;
+    }
+
+    body.customerDiscovery .disabled-btn {
+      border-color: var(--line);
+      background: #e8e0d4;
+      color: var(--muted);
+      box-shadow: none;
+    }
+
+    body.customerDiscovery .pagination {
+      justify-content: center;
+    }
+
+    body.customerDiscovery .msg {
+      border: 1px solid #c7d8ff;
+      background: var(--info-bg);
+      color: #1d4ed8;
+    }
+
+    body.customerDiscovery .wrap a:not(.product-link):not(.btn):not(.btn-secondary) {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: max-content;
+      max-width: 100%;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--primary-strong);
+      font-weight: 850;
+      text-decoration: none;
+      box-shadow: 0 6px 14px rgba(55,45,34,.05);
+      transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+    }
+
+    body.customerDiscovery .wrap a:not(.product-link):not(.btn):not(.btn-secondary):hover {
+      transform: translateY(-1px);
+      border-color: var(--primary);
+      background: linear-gradient(135deg, var(--surface-tint), #fff3e4);
+      color: var(--primary-strong);
+    }
+
+    @media (max-width: 900px) {
+      body.customerDiscovery .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body.customerDiscovery .wrap {
+        padding: 18px 14px 34px;
+      }
+
+      body.customerDiscovery .top {
+        padding: 22px;
+      }
+
+      body.customerDiscovery .search-shell,
+      body.customerDiscovery .grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
-<body>
+<body class="customerDiscovery">
   {% include "includes/site_nav.html" %}
   <div class="wrap">
     <div class="top">
       <div>
-        <h1 style="margin:0;">Discovery</h1>
-        <div class="muted">Search by product, producer, category, allergens, season, food miles, organic status, price, and availability.</div>
+        <div class="hero-kicker">Customer marketplace</div>
+        <h1 style="margin:0;">Discover Bristol produce</h1>
+        <div class="hero-copy">Search local products, compare producers, avoid allergens, and sort by price, season, food miles, or newest arrivals.</div>
       </div>
 
     </div>
@@ -419,9 +831,9 @@
 
     <form method="get" class="search-form">
       <div class="search-shell">
-        <input class="search-input" name="q" placeholder="Search product, producer, category, season, allergen..." value="{{ filters.q }}">
-        <button type="button" class="filters-toggle" aria-expanded="{% if has_advanced_filters %}true{% else %}false{% endif %}" aria-controls="discovery-filters">Filters</button>
-        <button type="submit">Search</button>
+        <input class="search-input" name="q" placeholder="Search apples, bread, producers, category, season..." value="{{ filters.q }}">
+        <button type="button" class="filters-toggle" aria-expanded="{% if has_advanced_filters %}true{% else %}false{% endif %}" aria-controls="discovery-filters">Refine</button>
+        <button type="submit">Search marketplace</button>
       </div>
       <div id="discovery-filters" class="filters-panel-wrap{% if has_advanced_filters %} open{% endif %}">
         <div class="filters-panel">
@@ -490,13 +902,15 @@
 
     <div class="grid">
       {% for p in page_obj %}
-        <div class="card">
+        <div class="card product-card">
           <a class="product-link" href="{% url 'product_detail' p.id %}">
             {% if p.image_url %}
               <img class="thumb" src="{{ p.image_url }}" alt="{{ p.name }}" onerror="this.onerror=null;this.src='{{ p.image_fallback_url }}';">
+            {% else %}
+              <div class="thumb-placeholder">Local product</div>
             {% endif %}
-            <div class="row">
-              <strong>{{ p.name }}</strong>
+            <div class="row product-title-row">
+              <strong class="product-name">{{ p.name }}</strong>
               <span class="pill">£{{ p.price }}</span>
             </div>
 

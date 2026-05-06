@@ -167,11 +167,6 @@
         <span class="siteBrandMark" aria-hidden="true"></span>
         <span class="siteBrandText">
           Bristol Food Network
-          {% if user.is_staff or user.is_superuser or user.role == "ADMIN" %}
-            <small>Admin</small>
-          {% else %}
-            <small>{{ user.get_role_display|default:"Marketplace" }}</small>
-          {% endif %}
         </span>
       </a>
 

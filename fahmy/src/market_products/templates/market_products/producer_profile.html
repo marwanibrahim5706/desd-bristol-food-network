@@ -15,9 +15,10 @@
     .thumb { width:100%; max-height:220px; object-fit:cover; border-radius:14px; border:1px solid #e5e7eb; margin-bottom:10px; }
     button { padding:10px 14px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; cursor:pointer; }
     @media (max-width: 860px){ .grid{ grid-template-columns:1fr; } }
+    {% include "includes/customer_market_theme_styles.html" %}
   </style>
 </head>
-<body>
+<body class="customerMarketTheme">
   {% include "includes/site_nav.html" %}
   <div class="wrap">
     <a class="muted" href="{% url 'discovery' %}">← Back to discovery</a>
