@@ -195,7 +195,6 @@ class Command(BaseCommand):
                     name, price, stock, unit_label, image_url, category, is_organic, food_miles,
                     seasonal_availability, season_start_month, season_end_month, allergens, description,
                 ) = row
-                image_url = ""
                 product, _ = Product.objects.get_or_create(
                     producer=producer,
                     name=name,

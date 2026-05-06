@@ -138,8 +138,43 @@
       width: 18px;
       height: 18px;
       margin: 0;
+      appearance: none;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      background: #fff;
+      display: inline-grid;
+      place-content: center;
       accent-color: #315f52;
       box-shadow: none;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .loginPage .rememberChoice input::after {
+      content: "";
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) scale(0);
+      transform-origin: center;
+      transition: transform .12s ease;
+      margin-top: -1px;
+    }
+
+    .loginPage .rememberChoice input:checked {
+      background: #315f52;
+      border-color: #315f52;
+      box-shadow: 0 0 0 3px rgba(49,95,82,.14);
+    }
+
+    .loginPage .rememberChoice input:checked::after {
+      transform: rotate(45deg) scale(1);
+    }
+
+    .loginPage .rememberChoice input:focus-visible {
+      outline: none;
+      border-color: #315f52;
+      box-shadow: 0 0 0 4px rgba(49,95,82,.18);
     }
 
     .loginPage .rememberChoice span {

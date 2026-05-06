@@ -5,8 +5,182 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Register as Producer</title>
   <style>{% include "accounts/includes/auth_theme_styles.html" %}</style>
+  <style>
+    .loginPage {
+      background:
+        radial-gradient(900px 520px at 12% -12%, rgba(49,95,82,.14), transparent 58%),
+        radial-gradient(760px 460px at 100% 0%, rgba(37,99,235,.10), transparent 58%),
+        #f6f7fb;
+      color: #111827;
+    }
+
+    .loginPage .authPage {
+      padding: 32px 18px;
+    }
+
+    .loginPage .authShell {
+      width: min(1060px, 100%);
+      border: 1px solid #e5e7eb;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 22px 50px rgba(15,23,42,.10);
+      backdrop-filter: blur(10px);
+    }
+
+    .loginPage .authBrand {
+      background:
+        linear-gradient(135deg, rgba(233,243,239,.92), rgba(255,247,237,.94)),
+        #f7f3eb;
+      border-right: 1px solid #e5e7eb;
+      color: #111827;
+    }
+
+    .loginPage .authBrand::before,
+    .loginPage .authBrand::after {
+      display: none;
+    }
+
+    .loginPage .brandTop {
+      border-bottom: 1px solid rgba(49,95,82,.16);
+    }
+
+    .loginPage .logo {
+      background:
+        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.55), transparent 60%),
+        linear-gradient(135deg, #315f52, #2563eb);
+      box-shadow: 0 10px 22px rgba(49,95,82,.16);
+    }
+
+    .loginPage .brandTop p,
+    .loginPage .authBrand .lede,
+    .loginPage .featureList li,
+    .loginPage .subtext {
+      color: #64748b;
+    }
+
+    .loginPage .eyebrow {
+      background: rgba(49,95,82,.10);
+      border-color: rgba(49,95,82,.20);
+      color: #315f52;
+    }
+
+    .loginPage .authBrand h2,
+    .loginPage .authCard h3,
+    .loginPage label {
+      color: #111827;
+    }
+
+    .loginPage .featureIndex {
+      background: #315f52;
+      color: #fff;
+      border-color: rgba(49,95,82,.20);
+    }
+
+    .loginPage .authCardWrap {
+      background: #fff;
+    }
+
+    .loginPage .authCard {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      box-shadow: 0 18px 38px rgba(15,23,42,.08);
+      color: #111827;
+    }
+
+    .loginPage .kicker {
+      color: #315f52;
+    }
+
+    .loginPage input,
+    .loginPage textarea {
+      background: #f9fafb;
+      border-color: #d1d5db;
+      color: #111827;
+      border-radius: 14px;
+    }
+
+    .loginPage input::placeholder,
+    .loginPage textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    .loginPage input:focus,
+    .loginPage textarea:focus {
+      background: #fff;
+      border-color: #315f52;
+      box-shadow: 0 0 0 4px rgba(49,95,82,.14);
+    }
+
+    .loginPage .passwordInputWrap {
+      width: 100%;
+    }
+
+    .loginPage .passwordInputWrap input {
+      width: 100%;
+      min-height: 48px;
+      padding-right: 84px;
+    }
+
+    .loginPage .passwordToggle {
+      background: #fff;
+      border-color: #d1d5db;
+      color: #475569;
+    }
+
+    .loginPage .passwordToggle:hover {
+      background: #e9f3ef;
+      border-color: rgba(49,95,82,.28);
+      color: #315f52;
+    }
+
+    .loginPage .passwordMeterBar {
+      background: #e5e7eb;
+      border-color: #d1d5db;
+    }
+
+    .loginPage .passwordMeterLabel,
+    .loginPage .passwordMeterHint {
+      color: #64748b;
+    }
+
+    .loginPage .submit {
+      background: linear-gradient(135deg, #315f52, #21483f);
+      color: #fff;
+      box-shadow: 0 14px 26px rgba(49,95,82,.20);
+      border-radius: 14px;
+    }
+
+    .loginPage .submit:hover {
+      box-shadow: 0 18px 32px rgba(49,95,82,.24);
+      filter: none;
+    }
+
+    .loginPage .msgBox.error,
+    .loginPage .fieldError {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .loginPage .inlineLinks a {
+      color: #315f52;
+      text-decoration: none;
+    }
+
+    .loginPage .inlineLinks a:hover {
+      color: #21483f;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 980px) {
+      .loginPage .authBrand {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+      }
+    }
+  </style>
 </head>
-<body>
+<body class="loginPage">
   <main class="authPage">
     <section class="authShell">
       <aside class="authBrand">
@@ -85,7 +259,7 @@
                 {% for error in form.postcode.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
               </div>
 
-              <div class="field passwordField">
+              <div class="field passwordField full">
                 <label for="{{ form.password.id_for_label }}">Password</label>
                 <div class="passwordInputWrap">
                   {{ form.password }}
@@ -115,7 +289,7 @@
                 {% for error in form.password.errors %}<div class="fieldError">{{ error }}</div>{% endfor %}
               </div>
 
-              <div class="field passwordField">
+              <div class="field passwordField full">
                 <label for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
                 <div class="passwordInputWrap">
                   {{ form.confirm_password }}
