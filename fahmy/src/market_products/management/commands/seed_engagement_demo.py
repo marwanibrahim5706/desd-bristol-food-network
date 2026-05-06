@@ -362,11 +362,6 @@ class Command(BaseCommand):
 
         created_counts = {"recipes": 0, "stories": 0, "reviews": 0, "favourites": 0}
 
-        for spec in recipe_specs:
-            spec["image_url"] = ""
-        for spec in story_specs:
-            spec["image_url"] = ""
-
         Recipe.objects.filter(title="Tomato and Olive Oil Market Salad").delete()
 
         for spec in recipe_specs:
