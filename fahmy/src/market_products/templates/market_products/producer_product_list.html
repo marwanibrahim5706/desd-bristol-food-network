@@ -44,6 +44,14 @@
       font-size:13px;
     }
 
+    .productDescription{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+      min-height:42px;
+      margin:0 0 14px;
+    }
+
     .detailList{
       margin:0 0 18px;
       padding:0;
@@ -107,6 +115,7 @@
         <a href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
         <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
         <a class="active" href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a href="{% url 'producer_content_dashboard' %}"><span class="navIcon">C</span><span>Content</span></a>
         <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
       </nav>
 
@@ -130,7 +139,11 @@
           <h1>Your product catalogue</h1>
           <p>Keep product information, stock levels, and customer visibility up to date.</p>
         </div>
-        <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
+        <div class="productActions">
+          <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
+          <a class="linkBtn secondary" href="{% url 'producer_recipe_create' %}">Create recipe</a>
+          <a class="linkBtn secondary" href="{% url 'producer_story_create' %}">Create farm story</a>
+        </div>
       </header>
 
       {% if messages %}
@@ -156,9 +169,13 @@
               {% endif %}
               <h2>{{ product.name }}</h2>
               <p class="productMeta">{{ product.get_category_display }}</p>
+              {% if product.description %}
+                <p class="productDescription">{{ product.description|truncatechars:135 }}</p>
+              {% endif %}
 
               <ul class="detailList">
                 <li><span class="muted">Price</span><strong class="money">&pound;{{ product.price }}</strong></li>
+                <li><span class="muted">Pack size</span><strong>{% if product.unit_label %}{{ product.unit_label }}{% else %}Not set{% endif %}</strong></li>
                 <li><span class="muted">Stock</span><strong>{{ product.stock_quantity }}</strong></li>
                 <li><span class="muted">Low stock alert</span><strong>{{ product.low_stock_threshold }}</strong></li>
                 <li><span class="muted">Food miles</span><strong>{% if product.food_miles != None %}{{ product.food_miles }}{% else %}Not set{% endif %}</strong></li>

@@ -122,6 +122,7 @@
         <a href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
         <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
         <a class="active" href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a href="{% url 'producer_content_dashboard' %}"><span class="navIcon">C</span><span>Content</span></a>
         <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
       </nav>
 
@@ -190,6 +191,13 @@
                 <label for="{{ form.description.id_for_label }}">Description</label>
                 {{ form.description }}
                 {{ form.description.errors }}
+              </div>
+
+              <div class="fieldBlock">
+                <label for="{{ form.unit_label.id_for_label }}">Pack size / units</label>
+                {{ form.unit_label }}
+                {{ form.unit_label.errors }}
+                {% if form.unit_label.help_text %}<span class="muted">{{ form.unit_label.help_text }}</span>{% endif %}
               </div>
 
               <div class="fieldBlock full">

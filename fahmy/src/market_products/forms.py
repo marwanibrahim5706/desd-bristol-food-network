@@ -9,6 +9,7 @@ class ProductForm(forms.ModelForm):
         fields = [
             "name",
             "description",
+            "unit_label",
             "category",
             "image_url",
             "is_organic",
@@ -32,11 +33,13 @@ class ProductForm(forms.ModelForm):
             ),
         }
         labels = {
+            "unit_label": "Pack size / units",
             "seasonal_availability": "Availability pattern",
             "season_start_month": "Available from",
             "season_end_month": "Available until",
         }
         help_texts = {
+            "unit_label": "Examples: 12 oranges, 2kg bag, 6 x 500ml bottles.",
             "seasonal_availability": "Use Available year-round for stored or permanent products. Use Seasonal date range for fruit and vegetables with specific months.",
             "season_start_month": "First month customers can order this seasonal product.",
             "season_end_month": "Last month customers can order this seasonal product.",

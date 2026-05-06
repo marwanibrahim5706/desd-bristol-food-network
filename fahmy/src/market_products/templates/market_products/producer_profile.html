@@ -33,6 +33,7 @@
           <div class="item">
             <a href="{% url 'product_detail' product.id %}"><strong>{{ product.name }}</strong></a>
             <div class="muted">£{{ product.price }} • {{ product.get_category_display }}</div>
+            {% if product.unit_label %}<div class="muted">{{ product.unit_label }}</div>{% endif %}
             {% if product.description %}<p style="margin-bottom:0;">{{ product.description|truncatechars:120 }}</p>{% endif %}
           </div>
         {% empty %}

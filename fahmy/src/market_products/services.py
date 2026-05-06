@@ -1,4 +1,5 @@
 import json
+import logging
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -11,6 +12,8 @@ from django.utils import timezone
 from market_orders.models import ProducerSubOrder
 
 from .models import FarmStory, FavouriteRecipe, Recipe, Review
+
+logger = logging.getLogger(__name__)
 
 
 def user_can_review_product(user, product):
@@ -110,7 +113,11 @@ def get_market_weather():
     try:
         with urlopen(url, timeout=3) as response:
             data = json.loads(response.read().decode("utf-8"))
-    except (HTTPError, URLError, TimeoutError, ValueError, KeyError):
+    except HTTPError as exc:
+        logger.warning("Weather API request failed with HTTP %s.", exc.code)
+        return None
+    except (URLError, TimeoutError, ValueError, KeyError) as exc:
+        logger.warning("Weather API request failed: %s.", exc.__class__.__name__)
         return None
 
     weather = data.get("weather") or [{}]

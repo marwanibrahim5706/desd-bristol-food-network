@@ -7,26 +7,43 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: system-ui, Arial, sans-serif; margin:0; background:#f6f7fb; color:#111827; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 42px 24px; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 42px 24px; }
     .top { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; }
     h1 { margin:0; font-size:42px; line-height:1.05; }
     .muted { color:#6b7280; }
-    .producer-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; }
+    .producer-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:18px; }
     .producer-card {
       background:#fff;
       border:1px solid #e5e7eb;
       border-radius:16px;
-      padding:18px;
-      min-height:170px;
+      overflow:hidden;
+      min-height:100%;
       display:flex;
       flex-direction:column;
-      gap:14px;
       box-shadow:0 12px 28px rgba(17,24,39,.05);
       text-decoration:none;
       color:inherit;
     }
     .producer-card:hover { border-color:#bfdbfe; box-shadow:0 16px 34px rgba(37,99,235,.10); }
-    .producer-card strong { font-size:20px; }
+    .producer-photo {
+      width:100%;
+      aspect-ratio:16 / 9;
+      object-fit:cover;
+      display:block;
+      background:#e5e7eb;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .producer-body {
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      flex:1;
+    }
+    .producer-card strong { font-size:21px; line-height:1.2; }
+    .brief { font-weight:700; line-height:1.35; color:#374151; margin:0; }
+    .description { line-height:1.45; margin:0; color:#4b5563; font-size:14px; }
+    .address { color:#6b7280; font-size:14px; line-height:1.35; }
     .meta-pills { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; }
     .pill { display:inline-block; padding:5px 10px; border-radius:999px; background:#eef2ff; font-size:13px; font-weight:700; }
     .search-form { display:flex; gap:10px; margin:0 0 22px; }
@@ -71,12 +88,22 @@
       <section class="producer-grid" aria-label="Producer pages">
         {% for producer in producers %}
           <a class="producer-card" href="{% url 'producer_profile' producer.id %}">
-            <strong>{{ producer.business_name|default:producer.username }}</strong>
-            <span class="muted">{{ producer.username }}</span>
-            <div class="meta-pills">
-              <span class="pill">{{ producer.active_product_count }} item{{ producer.active_product_count|pluralize }}</span>
-              <span class="pill">{{ producer.published_recipe_count }} recipe{{ producer.published_recipe_count|pluralize }}</span>
-              <span class="pill">{{ producer.published_story_count }} stor{{ producer.published_story_count|pluralize:"y,ies" }}</span>
+            <img class="producer-photo" src="{{ producer.directory_image_url }}" alt="{{ producer.business_name|default:producer.username }}">
+            <div class="producer-body">
+              <div>
+                <strong>{{ producer.business_name|default:producer.username }}</strong>
+                <div class="muted">{{ producer.username }}</div>
+              </div>
+              <p class="brief">{{ producer.directory_brief }}</p>
+              <p class="description">{{ producer.directory_description }}</p>
+              {% if producer.directory_address %}
+                <div class="address"><strong>Address:</strong> {{ producer.directory_address }}</div>
+              {% endif %}
+              <div class="meta-pills">
+                <span class="pill">{{ producer.active_product_count }} item{{ producer.active_product_count|pluralize }}</span>
+                <span class="pill">{{ producer.published_recipe_count }} recipe{{ producer.published_recipe_count|pluralize }}</span>
+                <span class="pill">{{ producer.published_story_count }} stor{{ producer.published_story_count|pluralize:"y,ies" }}</span>
+              </div>
             </div>
           </a>
         {% endfor %}

@@ -5,7 +5,7 @@ from .models import FarmStory, FavouriteRecipe, Product, Recipe, Review
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "producer", "category", "price", "stock_quantity", "is_organic", "food_miles", "seasonal_availability", "is_active")
+    list_display = ("name", "producer", "unit_label", "category", "price", "stock_quantity", "is_organic", "food_miles", "seasonal_availability", "is_active")
     list_filter = ("is_active", "category", "is_organic", "seasonal_availability")
     search_fields = ("name", "description", "allergens", "producer__username", "producer__email", "producer__business_name")
 

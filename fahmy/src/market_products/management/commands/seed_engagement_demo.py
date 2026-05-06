@@ -34,7 +34,7 @@ class Command(BaseCommand):
                     "1 box apples\n"
                     "1 bag carrots\n"
                     "1 sack potatoes\n"
-                    "2 tbsp olive oil\n"
+                    "2 tbsp rapeseed oil\n"
                     "Sea salt\n"
                     "Black pepper\n"
                     "Fresh thyme"
@@ -42,7 +42,7 @@ class Command(BaseCommand):
                 "instructions": (
                     "1. Heat the oven to 200C.\n"
                     "2. Cut the apples, carrots, and potatoes into bite-sized pieces.\n"
-                    "3. Toss with olive oil, salt, pepper, and thyme.\n"
+                    "3. Toss with rapeseed oil, salt, pepper, and thyme.\n"
                     "4. Roast for 35 to 40 minutes until caramelised.\n"
                     "5. Serve warm as a hearty side or light supper."
                 ),
@@ -50,15 +50,17 @@ class Command(BaseCommand):
                 "freshness_guidance": "Use the apples within a week and keep potatoes in a cool dark place.",
                 "seasonal_tag": Recipe.Season.AUTUMN,
                 "image_url": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80",
-                "products": ["Apples Box", "Carrots Bag", "Potatoes Sack", "Olive Oil 1L"],
+                "products": ["Apples Box", "Carrots Bag", "Potatoes Sack"],
             },
             {
                 "producer": "producer1",
-                "title": "Tomato and Olive Oil Market Salad",
+                "title": "Tomato and Courgette Market Salad",
+                "legacy_titles": ["Tomato and Olive Oil Market Salad"],
                 "description": "A bright salad that keeps the tomatoes front and centre.",
                 "ingredients": (
                     "1 tomato crate\n"
-                    "3 tbsp olive oil\n"
+                    "1 courgette box\n"
+                    "3 tbsp dressing\n"
                     "Pinch of salt\n"
                     "Cracked black pepper\n"
                     "Fresh herbs"
@@ -66,14 +68,14 @@ class Command(BaseCommand):
                 "instructions": (
                     "1. Slice the tomatoes generously.\n"
                     "2. Arrange on a platter and season.\n"
-                    "3. Spoon over olive oil and herbs.\n"
+                    "3. Shave courgettes into ribbons and spoon over dressing and herbs.\n"
                     "4. Rest for 10 minutes before serving."
                 ),
                 "storage_guidance": "Best eaten fresh on the day it is prepared.",
                 "freshness_guidance": "Store tomatoes at room temperature for the fullest flavour.",
                 "seasonal_tag": Recipe.Season.SUMMER,
                 "image_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tomato%20salad.jpg",
-                "products": ["Tomatoes Crate", "Olive Oil 1L"],
+                "products": ["Tomatoes Crate", "Courgettes Box"],
             },
             {
                 "producer": "producer1",
@@ -82,14 +84,14 @@ class Command(BaseCommand):
                 "ingredients": (
                     "1 fresh bread loaf\n"
                     "1 box apples\n"
-                    "Olive oil\n"
+                    "Butter\n"
                     "Cinnamon\n"
                     "Honey or jam"
                 ),
                 "instructions": (
                     "1. Slice and toast the bread.\n"
                     "2. Pan-soften the apples with cinnamon.\n"
-                    "3. Drizzle toast lightly with olive oil.\n"
+                    "3. Spread the toast lightly with butter.\n"
                     "4. Top with warm apples and serve family-style."
                 ),
                 "storage_guidance": "Bread is best within 2 days; freeze extra slices if needed.",
@@ -107,13 +109,13 @@ class Command(BaseCommand):
                     "4 eggs\n"
                     "2 potatoes\n"
                     "2 tomatoes\n"
-                    "2 tbsp olive oil\n"
+                    "2 tbsp rapeseed oil\n"
                     "Salt\n"
                     "Pepper\n"
                     "Chopped herbs"
                 ),
                 "instructions": (
-                    "1. Roast sliced potatoes in olive oil until nearly tender.\n"
+                    "1. Roast sliced potatoes in rapeseed oil until nearly tender.\n"
                     "2. Add tomatoes to the tray and season well.\n"
                     "3. Crack in the eggs and return to the oven until just set.\n"
                     "4. Finish with herbs and serve straight from the tray."
@@ -122,7 +124,7 @@ class Command(BaseCommand):
                 "freshness_guidance": "Store eggs cool, keep potatoes in a dark place, and leave tomatoes at room temperature until ripe.",
                 "seasonal_tag": Recipe.Season.ALL_YEAR,
                 "image_url": "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80",
-                "products": ["Eggs Tray", "Potatoes Sack", "Tomatoes Crate", "Olive Oil 1L"],
+                "products": ["Eggs Tray", "Potatoes Sack", "Tomatoes Crate"],
             },
             {
                 "producer": "producer2",
@@ -359,6 +361,13 @@ class Command(BaseCommand):
         ]
 
         created_counts = {"recipes": 0, "stories": 0, "reviews": 0, "favourites": 0}
+
+        for spec in recipe_specs:
+            spec["image_url"] = ""
+        for spec in story_specs:
+            spec["image_url"] = ""
+
+        Recipe.objects.filter(title="Tomato and Olive Oil Market Salad").delete()
 
         for spec in recipe_specs:
             recipe = Recipe.objects.filter(

@@ -608,7 +608,7 @@ class AdminFinanceDashboardTests(TestCase):
         response = self.client.get(reverse("market_finance:admin_finance_dashboard"))
 
         self.assertNotContains(response, 'class="siteNav"')
-        self.assertContains(response, 'class="sessionLogout"')
+        self.assertContains(response, 'class="adminSidebarLogout"')
         self.assertContains(response, ">Log out<")
         self.assertContains(response, ">Overview<")
         self.assertContains(response, ">Financial Reports<")

@@ -80,6 +80,9 @@
         </div>
 
         <p><strong>Price:</strong> £{{ product.price }}</p>
+        {% if product.unit_label %}
+          <p><strong>Pack size:</strong> {{ product.unit_label }}</p>
+        {% endif %}
         <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
         <p><strong>Seasonal availability:</strong> {{ product.seasonal_status_label }}. {{ product.seasonal_range_display }}</p>
         <p><strong>Organic certification:</strong> {% if product.is_organic %}Certified organic{% else %}Not listed as organic{% endif %}</p>

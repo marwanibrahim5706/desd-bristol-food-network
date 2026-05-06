@@ -20,6 +20,14 @@ The Django app can reach the payments service over the internal Compose network 
 cp .env.example .env
 ```
 
+Optional weather card: add an OpenWeather key to `.env` if you want product
+pages to show current local weather:
+
+```bash
+WEATHER_API_KEY=your-openweather-key
+WEATHER_LOCATION=Bristol,UK
+```
+
 2. Build and start the stack:
 
 ```bash

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -16,7 +16,45 @@ from market_payments.models import Payment
 from market_payments.models import Cart, CartItem
 
 from .models import FarmStory, FavouriteRecipe, Product, Recipe, Review
-from .services import average_product_rating, create_verified_review, user_can_review_product
+from .services import (
+    average_product_rating,
+    create_verified_review,
+    get_market_weather,
+    user_can_review_product,
+)
+
+
+class WeatherServiceTests(TestCase):
+    @override_settings(WEATHER_API_KEY="", WEATHER_LOCATION="Bristol,UK")
+    def test_weather_returns_none_without_api_key(self):
+        self.assertIsNone(get_market_weather())
+
+    @override_settings(WEATHER_API_KEY="test-key", WEATHER_LOCATION="Bristol,UK")
+    @patch("market_products.services.urlopen")
+    def test_weather_formats_openweather_response(self, mock_urlopen):
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self):
+                return (
+                    b'{"name": "Bristol", "main": {"temp": 12.4}, '
+                    b'"weather": [{"description": "light rain"}]}'
+                )
+
+        mock_urlopen.return_value = FakeResponse()
+
+        self.assertEqual(
+            get_market_weather(),
+            {
+                "location": "Bristol",
+                "temperature": 12,
+                "description": "Light Rain",
+            },
+        )
 
 
 class DiscoverySearchTests(TestCase):
@@ -783,15 +821,15 @@ class ProducerContentTests(TestCase):
         self.assertContains(response, "From The Producer")
         self.assertContains(response, 'src="https://example.com/harvest.jpg"')
 
-    def test_producer_content_forms_render_image_preview_markup(self):
+    def test_producer_content_forms_keep_optional_image_url_without_preview(self):
         self.client.force_login(self.producer)
         recipe_response = self.client.get(reverse("producer_recipe_create"))
         story_response = self.client.get(reverse("producer_story_create"))
 
-        self.assertContains(recipe_response, "Image preview")
-        self.assertContains(recipe_response, "image-url-preview")
-        self.assertContains(story_response, "Image preview")
-        self.assertContains(story_response, "image-url-preview")
+        self.assertContains(recipe_response, 'name="image_url"')
+        self.assertContains(recipe_response, "https://example.com/recipe-image.jpg")
+        self.assertContains(story_response, 'name="image_url"')
+        self.assertContains(story_response, "https://example.com/story-image.jpg")
 
     def test_producer_product_form_renders_image_preview_markup(self):
         self.client.force_login(self.producer)

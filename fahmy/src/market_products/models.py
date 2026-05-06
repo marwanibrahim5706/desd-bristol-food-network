@@ -54,6 +54,7 @@ class Product(models.Model):
     )
 
     description = models.TextField(blank=True)
+    unit_label = models.CharField(max_length=120, blank=True, default="")
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="other")
     image_url = models.URLField(blank=True, default="")
     is_organic = models.BooleanField(default=False)

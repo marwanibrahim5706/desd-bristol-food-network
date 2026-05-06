@@ -503,6 +503,9 @@
             <div class="muted" style="margin-top:6px;">
               Producer: {{ p.producer.display_name }}
             </div>
+            {% if p.unit_label %}
+              <div class="muted" style="margin-top:4px;">Pack size: {{ p.unit_label }}</div>
+            {% endif %}
 
             {% if p.description %}
               <p class="product-description">{{ p.description|truncatechars:120 }}</p>

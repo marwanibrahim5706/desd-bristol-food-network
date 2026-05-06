@@ -95,8 +95,8 @@ class Command(BaseCommand):
                 extra={
                     "business_name": "Green Farm Co",
                     "phone": "07000000001",
-                    "address": "Farm Lane 1, Bristol",
-                    "postcode": "BS1 1AA",
+                    "address": "Unit 4, St Werburghs City Farm Yard, Watercress Road, Bristol",
+                    "postcode": "BS2 9YJ",
                 },
             ),
             upsert_user(
@@ -104,8 +104,8 @@ class Command(BaseCommand):
                 extra={
                     "business_name": "Fresh Dairy House",
                     "phone": "07000000002",
-                    "address": "Market Road 12, Bristol",
-                    "postcode": "BS2 2BB",
+                    "address": "12 Cattle Market Road, St Philips, Bristol",
+                    "postcode": "BS2 0XA",
                 },
             ),
             upsert_user(
@@ -113,8 +113,8 @@ class Command(BaseCommand):
                 extra={
                     "business_name": "Bakers Corner",
                     "phone": "07000000003",
-                    "address": "Bread Street 8, Bristol",
-                    "postcode": "BS3 3CC",
+                    "address": "8 North Street, Bedminster, Bristol",
+                    "postcode": "BS3 1HT",
                 },
             ),
         ]
@@ -153,25 +153,37 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------
         catalog = {
             producers[0]: [
-                ("Apples Box", Decimal("40.00"), 50, "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("8.5"), "seasonal", 9, 11, "", "Crisp seasonal apples grown close to Bristol, ideal for snacking, baking, and lunch boxes."),
-                ("Carrots Bag", Decimal("15.00"), 35, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Carrots.JPG", "fruit_veg", True, Decimal("6.2"), "seasonal", 6, 11, "", "Sweet local carrots with a firm crunch, perfect for roasting, soups, and fresh salads."),
-                ("Potatoes Sack", Decimal("22.00"), 25, "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80", "fruit_veg", False, Decimal("7.0"), "all_year", None, None, "", "A hearty sack of all-round potatoes for mashing, baking, roasting, and weekly kitchen prep."),
-                ("Olive Oil 1L", Decimal("95.00"), 12, "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1200&q=80", "other", False, Decimal("42.0"), "all_year", "", "Smooth extra virgin olive oil for dressings, roasting vegetables, and finishing warm dishes."),
-                ("Tomatoes Crate", Decimal("32.00"), 4, "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("5.5"), "seasonal", 6, 9, "", "Juicy summer tomatoes with bright flavour for salads, sauces, sandwiches, and roasting."),   # low stock test
-                ("Eggs Tray", Decimal("27.00"), 3, "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=1200&q=80", "eggs", True, Decimal("9.0"), "all_year", "Eggs", "Free range eggs with bright yolks, useful for breakfasts, baking, and protein-rich meals."),        # low stock test
+                ("Apples Box", Decimal("18.00"), 50, "24 apples", "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("8.5"), "seasonal", 9, 11, "", "Crisp seasonal apples grown close to Bristol, ideal for snacking, baking, and lunch boxes."),
+                ("Carrots Bag", Decimal("8.00"), 35, "2kg bag", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Carrots.JPG", "fruit_veg", True, Decimal("6.2"), "seasonal", 6, 11, "", "Sweet local carrots with a firm crunch, perfect for roasting, soups, and fresh salads."),
+                ("Potatoes Sack", Decimal("12.00"), 25, "5kg sack", "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=1200&q=80", "fruit_veg", False, Decimal("7.0"), "all_year", None, None, "", "All-round potatoes for mashing, baking, roasting, and weekly kitchen prep."),
+                ("Tomatoes Crate", Decimal("14.00"), 4, "3kg crate", "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=1200&q=80", "fruit_veg", True, Decimal("5.5"), "seasonal", 6, 9, "", "Juicy summer tomatoes with bright flavour for salads, sauces, sandwiches, and roasting."),
+                ("Eggs Tray", Decimal("7.20"), 3, "30 eggs", "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=1200&q=80", "eggs", True, Decimal("9.0"), "all_year", None, None, "Eggs", "Free range eggs with bright yolks, useful for breakfasts, baking, and protein-rich meals."),
+                ("Strawberries Punnet", Decimal("4.50"), 28, "500g punnet", "", "fruit_veg", True, Decimal("6.0"), "seasonal", 6, 8, "", "Sweet summer strawberries picked for desserts, breakfast bowls, and market grazing."),
+                ("Seasonal Greens", Decimal("6.00"), 24, "1kg bundle", "", "fruit_veg", True, Decimal("5.8"), "seasonal", 4, 10, "", "Leafy seasonal greens for stir-fries, soups, sides, and fresh lunch plates."),
+                ("Courgettes Box", Decimal("9.00"), 18, "12 courgettes", "", "fruit_veg", True, Decimal("6.4"), "seasonal", 6, 9, "", "Tender courgettes for grilling, roasting, pasta dishes, and vegetable bakes."),
+                ("Beetroot Bunch", Decimal("5.50"), 16, "6 beetroot", "", "fruit_veg", True, Decimal("7.2"), "seasonal", 7, 11, "", "Earthy beetroot bunches for roasting, salads, pickling, and colourful sides."),
             ],
             producers[1]: [
-                ("Milk 1L", Decimal("18.00"), 120, "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Fresh whole milk from a local dairy, ready for breakfast, baking, tea, and coffee."),
-                ("Cheese 500g", Decimal("65.00"), 60, "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Rich farmhouse-style cheese with a creamy texture, good for boards, toasties, and cooking."),
-                ("Yogurt Pack", Decimal("24.00"), 18, "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Creamy yogurt pots for breakfasts, desserts, smoothies, or simple fruit pairings."),
-                ("Butter Block", Decimal("19.00"), 7, "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", "Milk", "Golden butter block for baking, spreading, pan cooking, and finishing vegetables."),
+                ("Milk 1L", Decimal("1.80"), 120, "1 litre bottle", "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Fresh whole milk from a local dairy, ready for breakfast, baking, tea, and coffee."),
+                ("Cheese 500g", Decimal("6.50"), 60, "500g block", "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Rich farmhouse-style cheese with a creamy texture, good for boards, toasties, and cooking."),
+                ("Yogurt Pack", Decimal("4.80"), 18, "6 x 125g pots", "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Creamy yogurt pots for breakfasts, desserts, smoothies, or simple fruit pairings."),
+                ("Butter Block", Decimal("3.80"), 7, "250g block", "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=1200&q=80", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Golden butter block for baking, spreading, pan cooking, and finishing vegetables."),
+                ("Double Cream", Decimal("2.60"), 35, "300ml pot", "", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Rich double cream for desserts, sauces, soups, and weekend baking."),
+                ("Soured Cream", Decimal("2.20"), 30, "250ml tub", "", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Tangy soured cream for dips, tacos, baked potatoes, and dressings."),
+                ("Halloumi Slices", Decimal("4.40"), 20, "225g pack", "", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Firm halloumi slices for grilling, salads, wraps, and warm lunch bowls."),
+                ("Kefir Bottle", Decimal("3.20"), 26, "500ml bottle", "", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Cultured kefir with a clean tang, useful for smoothies and breakfast bowls."),
+                ("Soft Cheese Tub", Decimal("3.40"), 24, "300g tub", "", "dairy", False, Decimal("12.0"), "all_year", None, None, "Milk", "Smooth soft cheese for spreading, dips, sauces, and savoury baking."),
             ],
             producers[2]: [
-                ("Fresh Bread", Decimal("12.50"), 80, "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten", "Freshly baked crusty bread for sandwiches, soup lunches, toast, and sharing."),
-                ("Croissant Box", Decimal("20.00"), 30, "https://commons.wikimedia.org/wiki/Special:Redirect/file/Croissants.jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk", "A box of buttery croissants with flaky layers, best for breakfast meetings and treats."),
-                ("Wholemeal Loaf", Decimal("9.50"), 22, "https://images.pexels.com/photos/30675188/pexels-photo-30675188.jpeg?cs=srgb&dl=pexels-christina99999-30675188.jpg&fm=jpg", "bakery", True, Decimal("3.5"), "all_year", "Gluten", "Nutty wholemeal loaf baked for everyday sandwiches, toast, and soup pairings."),
-                ("Donut Pack", Decimal("16.00"), 14, "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft sweet donuts for dessert tables, staff treats, and weekend sharing boxes."),
-                ("Brioche", Decimal("11.00"), 2, "https://images.pexels.com/photos/7884507/pexels-photo-7884507.jpeg?cs=srgb&dl=pexels-ilariam-7884507.jpg&fm=jpg", "bakery", False, Decimal("3.5"), "all_year", "Gluten, Milk, Eggs", "Soft enriched brioche with a tender crumb, great for brunch, toast, or puddings."),          # low stock test
+                ("Fresh Bread", Decimal("3.20"), 80, "1 large loaf", "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten", "Freshly baked crusty bread for sandwiches, soup lunches, toast, and sharing."),
+                ("Croissant Box", Decimal("9.00"), 30, "6 croissants", "https://commons.wikimedia.org/wiki/Special:Redirect/file/Croissants.jpg", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten, Milk", "A box of buttery croissants with flaky layers, best for breakfast meetings and treats."),
+                ("Wholemeal Loaf", Decimal("3.00"), 22, "1 sliced loaf", "https://images.pexels.com/photos/30675188/pexels-photo-30675188.jpeg?cs=srgb&dl=pexels-christina99999-30675188.jpg&fm=jpg", "bakery", True, Decimal("3.5"), "all_year", None, None, "Gluten", "Nutty wholemeal loaf baked for everyday sandwiches, toast, and soup pairings."),
+                ("Donut Pack", Decimal("7.50"), 14, "6 donuts", "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten, Milk, Eggs", "Soft sweet donuts for dessert tables, staff treats, and weekend sharing boxes."),
+                ("Brioche", Decimal("4.20"), 2, "1 loaf", "https://images.pexels.com/photos/7884507/pexels-photo-7884507.jpeg?cs=srgb&dl=pexels-ilariam-7884507.jpg&fm=jpg", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten, Milk, Eggs", "Soft enriched brioche with a tender crumb, great for brunch, toast, or puddings."),
+                ("Sourdough Loaf", Decimal("4.50"), 20, "1 large loaf", "", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten", "Slow-fermented sourdough with a crisp crust for sandwiches, toast, and sharing boards."),
+                ("Cinnamon Buns", Decimal("8.00"), 18, "4 buns", "", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten, Milk, Eggs", "Soft cinnamon buns with a light glaze, baked for breakfast treats and coffee breaks."),
+                ("Baguette Pair", Decimal("3.60"), 25, "2 baguettes", "", "bakery", False, Decimal("3.5"), "all_year", None, None, "Gluten", "Two crisp baguettes for sandwiches, soups, cheese boards, and picnic lunches."),
+                ("Seeded Rolls", Decimal("4.80"), 24, "8 rolls", "", "bakery", True, Decimal("3.5"), "all_year", None, None, "Gluten, Sesame", "Seeded rolls with a soft crumb for lunch service, burgers, and packed meals."),
             ],
         }
 
@@ -179,23 +191,17 @@ class Command(BaseCommand):
 
         for producer, rows in catalog.items():
             for row in rows:
-                if len(row) == 12:
-                    (
-                        name, price, stock, image_url, category, is_organic, food_miles,
-                        seasonal_availability, season_start_month, season_end_month, allergens, description,
-                    ) = row
-                else:
-                    (
-                        name, price, stock, image_url, category, is_organic, food_miles,
-                        seasonal_availability, allergens, description,
-                    ) = row
-                    season_start_month = None
-                    season_end_month = None
+                (
+                    name, price, stock, unit_label, image_url, category, is_organic, food_miles,
+                    seasonal_availability, season_start_month, season_end_month, allergens, description,
+                ) = row
+                image_url = ""
                 product, _ = Product.objects.get_or_create(
                     producer=producer,
                     name=name,
                     defaults={
                         "price": price,
+                        "unit_label": unit_label,
                         "image_url": image_url,
                         "category": category,
                         "is_organic": is_organic,
@@ -212,6 +218,8 @@ class Command(BaseCommand):
                 )
                 # keep core values fresh
                 product.price = price
+                if hasattr(product, "unit_label"):
+                    product.unit_label = unit_label
                 if hasattr(product, "stock_quantity"):
                     product.stock_quantity = stock
                 if hasattr(product, "low_stock_threshold"):
@@ -238,6 +246,10 @@ class Command(BaseCommand):
                     product.is_active = True
                 product.save()
                 products_by_name[name] = product
+
+        for producer, rows in catalog.items():
+            desired_names = [row[0] for row in rows]
+            Product.objects.filter(producer=producer).exclude(name__in=desired_names).update(is_active=False)
 
         legacy_products = {
             "Chicken Pack": {
@@ -410,7 +422,7 @@ class Command(BaseCommand):
                     [
                         (
                             producers[0],
-                            [("Olive Oil 1L", 1), ("Tomatoes Crate", 2)],
+                            [("Courgettes Box", 1), ("Tomatoes Crate", 2)],
                             ProducerSubOrder.Status.CONFIRMED,
                         ),
                         (
@@ -459,7 +471,7 @@ class Command(BaseCommand):
                     [
                         (
                             producers[1],
-                            [("Eggs Tray", 2), ("Milk 1L", 4)],
+                            [("Cheese 500g", 2), ("Milk 1L", 4)],
                             ProducerSubOrder.Status.DELIVERED,
                         ),
                         (

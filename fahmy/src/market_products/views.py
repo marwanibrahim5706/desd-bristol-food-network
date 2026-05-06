@@ -72,6 +72,56 @@ def _producer_directory_queryset(query=""):
     return producers.order_by("business_name", "username")
 
 
+PRODUCER_DIRECTORY_DETAILS = {
+    "Green Farm Co": {
+        "image_url": "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80",
+        "brief": "Seasonal fruit, vegetables, and free range eggs from a Bristol growing team.",
+        "description": (
+            "Green Farm Co focuses on fresh, practical produce for weekly cooking: orchard fruit, salad crops, "
+            "roots, greens, and eggs. Their range changes with the season, with clear availability notes so "
+            "customers can plan around local harvests."
+        ),
+    },
+    "Fresh Dairy House": {
+        "image_url": "https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?auto=format&fit=crop&w=1200&q=80",
+        "brief": "Small-batch dairy staples for breakfast, baking, and everyday cooking.",
+        "description": (
+            "Fresh Dairy House supplies milk, cultured dairy, butter, cream, and cheeses in sensible pack sizes. "
+            "The range is designed for households, cafes, and community groups that need reliable chilled staples."
+        ),
+    },
+    "Bakers Corner": {
+        "image_url": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
+        "brief": "Fresh loaves, rolls, pastries, and sharing bakes made for Bristol deliveries.",
+        "description": (
+            "Bakers Corner offers everyday bread alongside breakfast pastries and sweet bakes. Products are listed "
+            "by pack size so customers can choose between single loaves, rolls for lunches, and boxes for groups."
+        ),
+    },
+}
+
+DEFAULT_PRODUCER_DIRECTORY_DETAIL = {
+    "image_url": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+    "brief": "Local producer supplying Bristol customers through the marketplace.",
+    "description": "Browse this producer's products, recipes, and farm stories in one place.",
+}
+
+
+def _attach_producer_directory_details(producers):
+    for producer in producers:
+        name = producer.business_name or producer.username
+        detail = PRODUCER_DIRECTORY_DETAILS.get(name, DEFAULT_PRODUCER_DIRECTORY_DETAIL)
+        producer.directory_image_url = detail["image_url"]
+        producer.directory_brief = detail["brief"]
+        producer.directory_description = detail["description"]
+        address_parts = [
+            (producer.address or "").strip(),
+            (producer.postcode or "").strip(),
+        ]
+        producer.directory_address = ", ".join(part for part in address_parts if part)
+    return producers
+
+
 def discovery(request):
     q = (request.GET.get("q") or "").strip()
     available = request.GET.get("available")
@@ -207,7 +257,7 @@ def discovery(request):
 
 def producer_directory(request):
     q = (request.GET.get("q") or "").strip()
-    producers = list(_producer_directory_queryset(q))
+    producers = _attach_producer_directory_details(list(_producer_directory_queryset(q)))
     return render(
         request,
         "market_products/producer_directory.html",

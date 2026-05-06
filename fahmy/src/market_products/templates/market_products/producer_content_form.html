@@ -6,100 +6,154 @@
   <title>{{ page_title }}</title>
   <style>
     {% include "market_orders/includes/producer_theme_styles.html" %}
-    body { margin:0; }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 24px; }
-    .card { background:linear-gradient(180deg, rgba(30,41,59,.74), rgba(17,24,39,.92)); border:1px solid rgba(55,65,81,.9); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
-    label { display:block; margin-bottom:6px; color:var(--muted); }
-    input, textarea, select { width:100%; border-radius:12px; border:1px solid rgba(100,116,139,.6); background:rgba(15,23,42,.92); color:var(--text); padding:10px 12px; font:inherit; }
-    textarea { min-height:120px; }
-    .field { margin-bottom:14px; }
-    .help { color:var(--muted); font-size:13px; margin-top:4px; }
-    button { padding:10px 14px; border-radius:10px; border:1px solid rgba(59,130,246,.28); background:rgba(37,99,235,.18); color:var(--text); cursor:pointer; }
-    .preview-card { margin-bottom:18px; padding:14px; border-radius:16px; border:1px solid rgba(100,116,139,.35); background:rgba(15,23,42,.52); }
-    .preview-card h2 { margin:0 0 10px; font-size:18px; }
-    .preview-frame { overflow:hidden; border-radius:14px; border:1px solid rgba(100,116,139,.3); background:rgba(2,6,23,.9); min-height:220px; display:flex; align-items:center; justify-content:center; }
-    .preview-frame img { display:block; width:100%; max-height:340px; object-fit:cover; }
-    .preview-empty { color:var(--muted); font-size:14px; padding:18px; text-align:center; }
+
+    .formWrap{
+      max-width:960px;
+      margin:0 auto;
+      padding:38px 18px;
+    }
+
+    .formHeader{
+      display:flex;
+      justify-content:space-between;
+      gap:24px;
+      align-items:flex-start;
+      margin-bottom:26px;
+      padding:24px;
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      background:linear-gradient(135deg, #ffffff, #fff3e4);
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+    }
+
+    .formHeader h1{
+      margin:0;
+      font-size:34px;
+      letter-spacing:-.03em;
+    }
+
+    .formPanel{
+      background:var(--surface);
+      border:1px solid var(--line-soft);
+      border-radius:22px;
+      padding:24px;
+      box-shadow:0 12px 28px rgba(55,45,34,.06);
+    }
+
+    .formGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:18px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .field.full{ grid-column:1 / -1; }
+    .field input,
+    .field textarea,
+    .field select{ width:100%; }
+    .field ul{
+      margin:0;
+      padding:14px;
+      list-style:none;
+      border:1px solid var(--line-soft);
+      border-radius:16px;
+      background:#fff;
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:8px 16px;
+    }
+    .field li label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--text);
+      font-weight:700;
+      font-size:14px;
+    }
+    .field li input{ width:auto; }
+    .help{ color:var(--muted); font-size:13px; }
+    .errorlist{ color:var(--danger); margin:6px 0 0; padding-left:18px; }
+    .btn-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:24px; }
+
+    @media(max-width:760px){
+      .formHeader{ flex-direction:column; }
+      .formGrid{ grid-template-columns:1fr; }
+      .field.full{ grid-column:auto; }
+      .field ul{ grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
-  {% include "includes/site_nav.html" %}
-  <div class="wrap">
-    <a href="{% url 'producer_content_dashboard' %}" style="color:#475569; text-decoration:none;">← Back to content dashboard</a>
-    <div class="card" style="margin-top:14px;">
-      <h1 style="margin-top:0;">{{ page_title }}</h1>
-      <form method="post">
+  <div class="producerShell">
+    <aside class="producerNav">
+      <div class="brand">
+        <div class="brandLogo">P</div>
+        <div>
+          <h1>Producer Hub</h1>
+          <p>{{ request.user.display_name }}</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Producer navigation">
+        <a href="/orders/producer/"><span class="navIcon">H</span><span>Dashboard</span></a>
+        <a href="/orders/producer/dashboard/"><span class="navIcon">O</span><span>Orders</span></a>
+        <a href="/finance/producer/settlements/"><span class="navIcon">£</span><span>Settlements</span></a>
+        <a href="/producer/products/"><span class="navIcon">P</span><span>Products</span></a>
+        <a class="active" href="{% url 'producer_content_dashboard' %}"><span class="navIcon">C</span><span>Content</span></a>
+        <a href="/admin/"><span class="navIcon">A</span><span>Admin</span></a>
+      </nav>
+
+      <div class="profile">
+        <span class="avatar">{{ request.user.display_name|default:"U"|first|upper }}</span>
+        <span>
+          <strong>{{ request.user.display_name }}</strong><br>
+          <span class="muted">Signed in as producer</span>
+        </span>
+      </div>
+      <form class="sidebarLogout" method="post" action="{% url 'accounts:logout' %}">
         {% csrf_token %}
-        {% if form.image_url %}
-          <div class="preview-card">
-            <h2>Image preview</h2>
-            <div class="preview-frame">
-              <img
-                id="image-url-preview"
-                src="{{ form.image_url.value|default:'' }}"
-                alt="Image preview"
-                {% if not form.image_url.value %}style="display:none;"{% endif %}
-              />
-              <div
-                id="image-url-preview-empty"
-                class="preview-empty"
-                {% if form.image_url.value %}style="display:none;"{% endif %}
-              >
-                Add an image URL to preview how this recipe or farm story will appear.
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        {% for field in form %}
-          <div class="field">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-            {% for error in field.errors %}<div class="help" style="color:#fca5a5;">{{ error }}</div>{% endfor %}
-          </div>
-        {% endfor %}
-        <button type="submit">{{ submit_label }}</button>
+        <button type="submit">Log out</button>
       </form>
-    </div>
+    </aside>
+
+    <main class="producerMain">
+      <div class="formWrap">
+        <header class="formHeader">
+          <div>
+            <p class="eyebrow">{% if content_type == "recipe" %}Recipe{% else %}Farm Story{% endif %}</p>
+            <h1>{{ page_title }}</h1>
+            <p class="muted">Keep it short, useful, and easy for customers to understand.</p>
+          </div>
+          <a class="linkBtn secondary" href="{% url 'producer_content_dashboard' %}">Back to content</a>
+        </header>
+
+        <section class="formPanel">
+          <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="formGrid">
+              {% for field in form %}
+                <div class="field {% if field.name == 'description' or field.name == 'ingredients' or field.name == 'instructions' or field.name == 'storage_guidance' or field.name == 'freshness_guidance' or field.name == 'summary' or field.name == 'body' or field.name == 'educational_content' or field.name == 'products' %}full{% endif %}">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}<span class="help">{{ field.help_text }}</span>{% endif %}
+                  {{ field.errors }}
+                </div>
+              {% endfor %}
+            </div>
+            <div class="btn-row">
+              <button class="linkBtn" type="submit">{{ submit_label }}</button>
+              <a class="linkBtn secondary" href="{% url 'producer_content_dashboard' %}">Cancel</a>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
   </div>
-  {% if form.image_url %}
-    <script>
-      (function () {
-        var input = document.getElementById("{{ form.image_url.id_for_label }}");
-        var preview = document.getElementById("image-url-preview");
-        var empty = document.getElementById("image-url-preview-empty");
-        if (!input || !preview || !empty) {
-          return;
-        }
-
-        function renderPreview() {
-          var value = (input.value || "").trim();
-          if (!value) {
-            preview.style.display = "none";
-            preview.removeAttribute("src");
-            empty.style.display = "block";
-            return;
-          }
-          preview.src = value;
-          preview.style.display = "block";
-          empty.style.display = "none";
-        }
-
-        preview.addEventListener("error", function () {
-          preview.style.display = "none";
-          empty.textContent = "This image URL could not be loaded. Double-check the link and try again.";
-          empty.style.display = "block";
-        });
-
-        preview.addEventListener("load", function () {
-          empty.style.display = "none";
-          preview.style.display = "block";
-        });
-
-        input.addEventListener("input", renderPreview);
-        renderPreview();
-      })();
-    </script>
-  {% endif %}
 </body>
 </html>
