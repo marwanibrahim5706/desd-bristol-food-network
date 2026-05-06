@@ -62,7 +62,9 @@
           {% else %}
             <span class="pill danger">Out of season</span>
           {% endif %}
-          <span class="pill">{{ product.seasonal_range_display }}</span>
+          {% if product.seasonal_range_display %}
+            <span class="pill">{{ product.seasonal_range_display }}</span>
+          {% endif %}
           {% if product.is_organic %}
             <span class="pill ok">Organic</span>
           {% endif %}
@@ -84,7 +86,7 @@
           <p><strong>Pack size:</strong> {{ product.unit_label }}</p>
         {% endif %}
         <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
-        <p><strong>Seasonal availability:</strong> {{ product.seasonal_status_label }}. {{ product.seasonal_range_display }}</p>
+        <p><strong>Seasonal availability:</strong> {{ product.seasonal_status_label }}{% if product.seasonal_range_display %}. {{ product.seasonal_range_display }}{% endif %}</p>
         <p><strong>Organic certification:</strong> {% if product.is_organic %}Certified organic{% else %}Not listed as organic{% endif %}</p>
         <p><strong>Food miles:</strong> {% if product.food_miles != None %}{{ product.food_miles }} miles{% else %}Not provided{% endif %}</p>
         <p><strong>Average rating:</strong>

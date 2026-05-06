@@ -100,6 +100,20 @@ class DiscoverySearchTests(TestCase):
             seasonal_availability="all_year",
             allergens="Gluten",
         )
+        self.croissant = Product.objects.create(
+            name="Croissant Box",
+            description="A box of buttery croissants with flaky layers.",
+            producer=self.other_producer,
+            category="bakery",
+            image_url="https://example.com/croissants.jpg",
+            price=Decimal("9.00"),
+            stock_quantity=12,
+            is_active=True,
+            is_organic=False,
+            food_miles=Decimal("3.5"),
+            seasonal_availability="all_year",
+            allergens="Gluten, Milk",
+        )
         self.milk = Product.objects.create(
             name="Whole Milk",
             description="Local dairy",
@@ -130,7 +144,7 @@ class DiscoverySearchTests(TestCase):
         )
 
     def test_search_matches_product_description_and_producer(self):
-        response = self.client.get(reverse("discovery_alt"), {"q": "autumn"})
+        response = self.client.get(reverse("discovery_alt"), {"q": "autumn", "available": "active"})
         self.assertContains(response, "Organic Apples")
         self.assertNotContains(response, "Seeded Bread")
 
@@ -149,24 +163,61 @@ class DiscoverySearchTests(TestCase):
         self.assertNotContains(response, "Whole Milk")
 
     def test_available_filter_hides_out_of_stock_products(self):
-        response = self.client.get(reverse("discovery_alt"), {"available": "1"})
+        response = self.client.get(reverse("discovery_alt"), {"available": "in_stock"})
         self.assertContains(response, "Organic Apples")
         self.assertNotContains(response, "Whole Milk")
 
+    def test_default_discovery_shows_only_in_stock_and_in_season_products(self):
+        with patch("market_products.views.timezone.localdate", return_value=date(2026, 5, 1)):
+            response = self.client.get(reverse("discovery_alt"))
+
+        self.assertContains(response, "Seeded Bread")
+        self.assertContains(response, "Free Range Eggs")
+        self.assertNotContains(response, "Whole Milk")
+        self.assertNotContains(response, "Organic Apples")
+        self.assertContains(response, "In stock and in season")
+
+    def test_availability_filter_can_show_in_season_only_or_all_active_products(self):
+        out_of_stock_seasonal = Product.objects.create(
+            name="Summer Cherries",
+            description="Short summer crop",
+            producer=self.producer,
+            category="fruit_veg",
+            price=Decimal("5.00"),
+            stock_quantity=0,
+            is_active=True,
+            seasonal_availability="seasonal",
+            season_start_month=6,
+            season_end_month=8,
+        )
+
+        with patch("market_products.views.timezone.localdate", return_value=date(2026, 7, 1)):
+            response = self.client.get(reverse("discovery_alt"), {"available": "in_season", "q": out_of_stock_seasonal.name})
+        self.assertContains(response, "Summer Cherries")
+        self.assertContains(response, "Out of stock")
+
+        with patch("market_products.views.timezone.localdate", return_value=date(2026, 5, 1)):
+            response = self.client.get(reverse("discovery_alt"), {"available": "both", "q": out_of_stock_seasonal.name})
+        self.assertContains(response, "0 products found")
+        self.assertNotContains(response, "Out of stock")
+
+        response = self.client.get(reverse("discovery_alt"), {"available": "active", "q": "Organic Apples"})
+        self.assertContains(response, "Organic Apples")
+
     def test_organic_filter_only_shows_organic_products(self):
-        response = self.client.get(reverse("discovery_alt"), {"organic": "1"})
+        response = self.client.get(reverse("discovery_alt"), {"organic": "1", "available": "active"})
         self.assertContains(response, "Organic Apples")
         self.assertNotContains(response, "Seeded Bread")
 
     def test_allergen_free_filter_excludes_matching_allergens(self):
-        response = self.client.get(reverse("discovery_alt"), {"allergen_free": "gluten"})
+        response = self.client.get(reverse("discovery_alt"), {"allergen_free": "gluten", "available": "active"})
         self.assertContains(response, "Organic Apples")
         self.assertNotContains(response, "Seeded Bread")
 
     def test_avoid_categories_filter_excludes_multiple_categories(self):
         response = self.client.get(
             reverse("discovery_alt"),
-            {"avoid_categories": ["bakery", "dairy"]},
+            {"avoid_categories": ["bakery", "dairy"], "available": "active"},
         )
 
         self.assertContains(response, "Organic Apples")
@@ -176,15 +227,47 @@ class DiscoverySearchTests(TestCase):
         self.assertContains(response, "Avoiding Bakery")
         self.assertContains(response, "Avoiding Dairy")
 
-    def test_season_filter_includes_selected_season_and_all_year(self):
-        response = self.client.get(reverse("discovery_alt"), {"season": "autumn"})
-        self.assertContains(response, "Organic Apples")
-        self.assertContains(response, "Seeded Bread")
-        self.assertContains(response, "Whole Milk")
+    def test_avoid_eggs_excludes_products_with_egg_allergens(self):
+        response = self.client.get(
+            reverse("discovery_alt"),
+            {"avoid_categories": ["eggs"], "available": "active"},
+        )
 
-        response = self.client.get(reverse("discovery_alt"), {"season": "summer"})
+        self.assertNotContains(response, "Seeded Bread")
+        self.assertNotContains(response, "Free Range Eggs")
+        self.assertNotContains(response, "Croissant Box")
+        self.assertContains(response, "Organic Apples")
+        self.assertContains(response, "Avoiding Eggs")
+
+    def test_season_filter_matches_selected_season_pattern(self):
+        response = self.client.get(reverse("discovery_alt"), {"season": "autumn", "available": "active"})
+        self.assertContains(response, "Organic Apples")
+        self.assertNotContains(response, "Seeded Bread")
+        self.assertNotContains(response, "Whole Milk")
+
+        response = self.client.get(reverse("discovery_alt"), {"season": "summer", "available": "active"})
         self.assertNotContains(response, "Organic Apples")
-        self.assertContains(response, "Seeded Bread")
+        self.assertNotContains(response, "Seeded Bread")
+
+    def test_seasonal_date_range_filter_shows_date_range_products(self):
+        strawberries = Product.objects.create(
+            name="Seasonal Strawberries",
+            description="Summer crop",
+            producer=self.producer,
+            category="fruit_veg",
+            price=Decimal("4.50"),
+            stock_quantity=10,
+            is_active=True,
+            seasonal_availability="seasonal",
+            season_start_month=6,
+            season_end_month=8,
+        )
+
+        response = self.client.get(reverse("discovery_alt"), {"season": "seasonal", "available": "active"})
+
+        self.assertContains(response, strawberries.name)
+        self.assertContains(response, "Available: June - August")
+        self.assertNotContains(response, "Seeded Bread")
 
     def test_food_miles_and_price_filters_limit_results(self):
         response = self.client.get(reverse("discovery_alt"), {"max_food_miles": "7", "max_price": "3.50"})
@@ -193,7 +276,7 @@ class DiscoverySearchTests(TestCase):
         self.assertNotContains(response, "Whole Milk")
 
     def test_discovery_shows_test_case_metadata(self):
-        response = self.client.get(reverse("discovery_alt"), {"q": "Organic Apples"})
+        response = self.client.get(reverse("discovery_alt"), {"q": "Organic Apples", "available": "active"})
         self.assertContains(response, "Organic")
         self.assertContains(response, "6.5 food miles")
         self.assertContains(response, "Autumn")
@@ -222,14 +305,16 @@ class DiscoverySearchTests(TestCase):
             seasonal_availability="all_year",
         )
 
-        with patch("market_products.models.timezone.localdate", return_value=date(2026, 7, 1)):
+        with patch("market_products.models.timezone.localdate", return_value=date(2026, 7, 1)), patch(
+            "market_products.views.timezone.localdate", return_value=date(2026, 7, 1)
+        ):
             response = self.client.get(reverse("discovery_alt"), {"q": "Strawberries"})
             self.assertContains(response, "In season")
             self.assertContains(response, "Available: June - August")
             self.assertContains(response, "Add to cart")
 
         with patch("market_products.models.timezone.localdate", return_value=date(2026, 12, 1)):
-            response = self.client.get(reverse("discovery_alt"), {"q": "Strawberries"})
+            response = self.client.get(reverse("discovery_alt"), {"q": "Strawberries", "available": "active"})
             self.assertContains(response, "Out of season")
             self.assertContains(response, "Available: June - August")
             self.assertNotContains(response, f'action="{reverse("market_payments:add_to_cart", args=[strawberries.id])}"')
@@ -237,6 +322,9 @@ class DiscoverySearchTests(TestCase):
         response = self.client.get(reverse("discovery_alt"), {"q": "Stored Potatoes"})
         self.assertContains(response, "Available year-round")
         self.assertNotContains(response, "Out of season")
+
+    def test_all_year_seasonal_range_display_is_blank(self):
+        self.assertEqual(self.bread.seasonal_range_display, "")
 
     def test_add_to_cart_preserves_discovery_page_and_filters(self):
         for index in range(15):

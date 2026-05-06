@@ -76,13 +76,8 @@
         <h1>Producers</h1>
         <p class="muted">Browse each producer's items, recipes, and farm stories together.</p>
       </div>
-      <a class="btn" href="{% url 'discovery_alt' %}">Back to Discovery</a>
     </div>
 
-    <form class="search-form" method="get">
-      <input name="q" value="{{ q }}" placeholder="Search producer or product..." />
-      <button type="submit">Search</button>
-    </form>
 
     {% if producers %}
       <section class="producer-grid" aria-label="Producer pages">
@@ -92,7 +87,6 @@
             <div class="producer-body">
               <div>
                 <strong>{{ producer.business_name|default:producer.username }}</strong>
-                <div class="muted">{{ producer.username }}</div>
               </div>
               <p class="brief">{{ producer.directory_brief }}</p>
               <p class="description">{{ producer.directory_description }}</p>

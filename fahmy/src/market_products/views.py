@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import ProtectedError
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -122,9 +122,34 @@ def _attach_producer_directory_details(producers):
     return producers
 
 
+def _seasonal_availability_q(reference_date=None):
+    month = (reference_date or timezone.localdate()).month
+    q = Q(seasonal_availability="all_year")
+
+    for season, (start_month, end_month) in Product.SEASON_MONTHS.items():
+        if Product._month_in_range(month, start_month, end_month):
+            q |= Q(seasonal_availability=season)
+
+    q |= Q(
+        season_start_month__lte=month,
+        season_end_month__gte=month,
+    )
+    q |= Q(
+        season_start_month__gt=F("season_end_month"),
+    ) & (Q(season_start_month__lte=month) | Q(season_end_month__gte=month))
+    return q
+
+
 def discovery(request):
     q = (request.GET.get("q") or "").strip()
-    available = request.GET.get("available")
+    raw_available = request.GET.get("available")
+    availability = (raw_available or "both").strip()
+    legacy_in_stock_values = {"1", "true", "True", "yes", "on"}
+    if availability in legacy_in_stock_values:
+        availability = "in_stock"
+    valid_availability_filters = {"active", "in_stock", "in_season", "both"}
+    if availability not in valid_availability_filters:
+        availability = "both"
     category = (request.GET.get("category") or "").strip()
     valid_categories = {value for value, _label in Product.CATEGORY_CHOICES}
     avoid_categories = [
@@ -142,14 +167,29 @@ def discovery(request):
 
     qs = Product.objects.select_related("producer").filter(is_active=True)
 
-    if available in ("1", "true", "True", "yes", "on"):
+    in_season_q = _seasonal_availability_q()
+
+    if availability == "in_stock":
         qs = qs.filter(stock_quantity__gt=0)
+    elif availability == "in_season":
+        qs = qs.filter(in_season_q)
+    elif availability == "both":
+        qs = qs.filter(stock_quantity__gt=0).filter(in_season_q)
 
     if category:
         qs = qs.filter(category=category)
 
     if avoid_categories:
         qs = qs.exclude(category__in=avoid_categories)
+        for avoid in avoid_categories:
+            qs = qs.exclude(allergens__icontains=avoid)
+            if avoid in Product.AVOID_CATEGORY_KEYWORDS:
+                for term in Product.AVOID_CATEGORY_KEYWORDS[avoid]:
+                    qs = qs.exclude(
+                        Q(allergens__icontains=term)
+                        | Q(name__icontains=term)
+                        | Q(description__icontains=term)
+                    )
 
     if organic in ("1", "true", "True", "yes", "on"):
         qs = qs.filter(is_organic=True)
@@ -157,7 +197,7 @@ def discovery(request):
         qs = qs.filter(is_organic=False)
 
     if season:
-        qs = qs.filter(Q(seasonal_availability=season) | Q(seasonal_availability="all_year"))
+        qs = qs.filter(seasonal_availability=season)
 
     if allergen_free:
         qs = qs.exclude(allergens__icontains=allergen_free)
@@ -208,7 +248,7 @@ def discovery(request):
 
     filters = {
         "q": q,
-        "available": available or "",
+        "available": availability,
         "category": category,
         "avoid_categories": avoid_categories,
         "organic": organic or "",
@@ -224,12 +264,11 @@ def discovery(request):
             category,
             avoid_categories,
             organic in ("1", "true", "True", "yes", "on", "0", "false", "False", "no", "off"),
-            season,
             max_food_miles,
             min_price,
             max_price,
             sort != "name",
-            available == "1",
+            availability != "both",
         ]
     )
 
@@ -240,7 +279,7 @@ def discovery(request):
             "page_obj": page_obj,
             "filters": filters,
             "q": q,
-            "available": available,
+            "available": availability,
             "categories": Product.CATEGORY_CHOICES,
             "avoided_category_labels": [
                 label

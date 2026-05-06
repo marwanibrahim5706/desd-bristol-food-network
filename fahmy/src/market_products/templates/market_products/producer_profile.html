@@ -20,7 +20,7 @@
 <body>
   {% include "includes/site_nav.html" %}
   <div class="wrap">
-    <a class="muted" href="{% url 'discovery' %}">← Back to discovery</a>
+    <a class="muted" href="{% url 'producer_directory' %}">← Back to producers</a>
     <div class="card">
       <h1 style="margin:0 0 8px;">{{ producer.display_name }}</h1>
       <div class="muted">Producer profile, recipes, and farm stories.</div>
@@ -31,8 +31,18 @@
         <h2 style="margin-top:0;">Products</h2>
         {% for product in products %}
           <div class="item">
+            {% if product.image_url %}
+              <img class="thumb" src="{{ product.image_url }}" alt="{{ product.name }}" onerror="this.onerror=null;this.src='{{ product.image_fallback_url }}';">
+            {% endif %}
             <a href="{% url 'product_detail' product.id %}"><strong>{{ product.name }}</strong></a>
             <div class="muted">£{{ product.price }} • {{ product.get_category_display }}</div>
+            <div class="muted">
+              {% if product.is_organic %}<span class="pill ok">Organic</span>{% endif %}
+              {% if product.stock_quantity <= 0 %}<span class="pill danger">Out of stock</span>{% endif %}
+              {% for label in product.avoid_category_labels %}
+                {% if label != product.get_category_display %}<span class="pill">{{ label }}</span>{% endif %}
+              {% endfor %}
+            </div>
             {% if product.unit_label %}<div class="muted">{{ product.unit_label }}</div>{% endif %}
             {% if product.description %}<p style="margin-bottom:0;">{{ product.description|truncatechars:120 }}</p>{% endif %}
           </div>
