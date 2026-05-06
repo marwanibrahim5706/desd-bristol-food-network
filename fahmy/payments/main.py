@@ -151,7 +151,7 @@ def pay_submit(
     cvv: str = Form(...),
     action: str = Form("pay"),
 ):
-    # Mock payment handling for demo purposes only. No raw card details are persisted.
+    # Mock payment handling; no raw card details are persisted.
     if action == "cancel":
         return RedirectResponse(url=f"/cancel/{payment_id}?{urlencode({'return_url': cancel_url})}", status_code=303)
 

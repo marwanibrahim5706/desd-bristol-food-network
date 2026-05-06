@@ -6,7 +6,7 @@ This project uses a single Docker Compose stack with three services:
 
 - `web`: the Django marketplace application
 - `db`: PostgreSQL only
-- `payments`: a small FastAPI microservice for payment, commission, and settlement demo endpoints
+- `payments`: a small FastAPI microservice for mock payment, commission, and settlement endpoints
 
 The Django app can reach the payments service over the internal Compose network at:
 
@@ -44,7 +44,7 @@ docker compose run --rm web python src/manage.py migrate
 
 ```bash
 docker compose run --rm web python src/manage.py check
-docker compose run --rm web python src/manage.py migrate --check
+docker compose run --rm web python src/manage.py makemigrations --check --dry-run
 docker compose run --rm web python src/manage.py test
 ```
 

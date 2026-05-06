@@ -72,8 +72,8 @@
 
     .order-row {
       display: grid;
-      grid-template-columns: minmax(220px, 1.45fr) minmax(90px, .45fr) minmax(130px, .65fr) minmax(120px, .65fr) minmax(120px, .55fr) minmax(160px, .7fr);
-      gap: 18px;
+      grid-template-columns: minmax(260px, 1.6fr) minmax(90px, .45fr) minmax(130px, .65fr) minmax(120px, .55fr) minmax(150px, .7fr);
+      gap: 20px;
       padding: 22px 0;
       border-bottom: 1px solid #e5e7eb;
       align-items: start;
@@ -92,7 +92,22 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      align-items: flex-start;
+      align-items: stretch;
+    }
+
+    .receipt-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 118px;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      color: #315f52;
+      background: #fff;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
     }
 
     .review-links {
@@ -135,7 +150,8 @@
     }
 
     .order-actions button {
-      min-width: 126px;
+      min-width: 150px;
+      width: 100%;
     }
 
     .msg-wrap {
@@ -205,20 +221,10 @@
               </div>
             </div>
             <div>
-              <div class="muted">Order status</div>
-              <div>
-                {% if entry.market_order %}
-                  <span class="pill">{{ entry.market_order.get_status_display }}</span>
-                {% else %}
-                  <span class="muted">Unavailable</span>
-                {% endif %}
-              </div>
-            </div>
-            <div>
               <div class="muted">Receipt</div>
               <div>
                 {% if entry.latest_payment %}
-                  <a href="{% url 'market_payments:receipt' entry.latest_payment.id %}">Open receipt</a>
+                  <a class="receipt-link" href="{% url 'market_payments:receipt' entry.latest_payment.id %}">View receipt</a>
                 {% else %}
                   <span class="muted">Unavailable</span>
                 {% endif %}
@@ -236,7 +242,7 @@
                 </div>
               {% endif %}
               {% if entry.market_order %}
-                <form method="post" action="{% url 'market_finance:create_recurring_order_from_order' entry.market_order.id %}" style="margin-bottom:10px;">
+                <form method="post" action="{% url 'market_finance:create_recurring_order_from_order' entry.market_order.id %}">
                   {% csrf_token %}
                   <button type="submit">Make Recurring</button>
                 </form>

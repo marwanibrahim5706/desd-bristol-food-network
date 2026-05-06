@@ -157,6 +157,15 @@
       max-width: 42ch;
     }
 
+    .item-allergens {
+      color: #b91c1c;
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 6px 0 0;
+      max-width: 42ch;
+      font-weight: 600;
+    }
+
     .item-actions {
       display: flex;
       flex-direction: column;
@@ -211,6 +220,44 @@
       font-size: 14px;
     }
 
+    .checkout-confirmation {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .checkout-confirmation p {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .checkout-confirmation .confirm-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 14px 0 0;
+      font-size: 13px;
+      color: #111827;
+      line-height: 1.45;
+    }
+
+    .checkout-confirmation input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+      margin: 2px 0 0;
+      accent-color: #166534;
+    }
+
+    .checkout-confirmation .highlight {
+      font-weight: 700;
+      color: #991b1b;
+    }
+
     .btn {
       border: 1px solid #111827;
       background: #111827;
@@ -257,6 +304,23 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      margin-top: 12px;
+      transition: background .15s ease, border-color .15s ease, color .15s ease, opacity .15s ease;
+    }
+
+    .checkout-btn:disabled {
+      background: #4b5563;
+      border-color: #374151;
+      color: #e5e7eb;
+      cursor: not-allowed;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+      opacity: 1;
+    }
+
+    .checkout-btn:not(:disabled) {
+      background: #2f6f5d;
+      border-color: #2f6f5d;
+      color: #fff;
     }
 
     .clear-cart-form {
@@ -514,6 +578,9 @@
                       {% if item.product.description %}
                         <p class="item-description">{{ item.product.description|truncatechars:110 }}</p>
                       {% endif %}
+                      {% if item.product.allergens %}
+                        <p class="item-allergens"><strong>Allergens:</strong> {{ item.product.allergens }}</p>
+                      {% endif %}
 
                       <form class="qty-form" method="post" action="{% url 'market_payments:update_cart_item' item.id %}">
                         {% csrf_token %}
@@ -579,7 +646,28 @@
         </div>
 
         <div class="stack">
-          <a class="btn checkout-btn" href="{% url 'market_payments:payment' %}">Proceed to Checkout</a>
+          <form class="checkout-confirmation" method="post" action="{% url 'market_payments:confirm_checkout' %}">
+            {% csrf_token %}
+            {% if cart_allergens %}
+              <p>
+                <span class="highlight">Allergen alert:</span>
+                this cart contains the following allergen(s): {{ cart_allergens|join:", " }}.
+              </p>
+            {% else %}
+              <p>
+                No allergens are listed on the items in your cart. Please review each item before continuing.
+              </p>
+            {% endif %}
+
+            <label class="confirm-checkbox" for="confirm_allergens">
+              <input type="checkbox" id="confirm_allergens" name="confirm_allergens" />
+              I confirm that I have reviewed the allergen information for every item in my basket.
+            </label>
+
+            <button type="submit" class="btn checkout-btn" id="checkoutButton" disabled>
+              Proceed to Checkout
+            </button>
+          </form>
 
           <form class="clear-cart-form" method="post" action="{% url 'market_payments:clear_cart' %}">
             {% csrf_token %}
@@ -589,5 +677,15 @@
       </div>
     </div>
   </div>
+  <script>
+    const confirmAllergens = document.getElementById("confirm_allergens");
+    const checkoutButton = document.getElementById("checkoutButton");
+    if (confirmAllergens && checkoutButton) {
+      checkoutButton.disabled = !confirmAllergens.checked;
+      confirmAllergens.addEventListener("change", function() {
+        checkoutButton.disabled = !confirmAllergens.checked;
+      });
+    }
+  </script>
 </body>
 </html>

@@ -19,7 +19,7 @@ class Product(models.Model):
     AVOID_CATEGORY_KEYWORDS = {
         "fruit_veg": ["fruit", "vegetable", "veg", "salad", "greens", "herb", "courgette", "cucumber", "tomato", "potato"],
         "dairy": ["milk", "cheese", "butter", "cream", "yogurt", "yoghurt", "custard", "kefir", "casein"],
-        "eggs": ["egg", "eggs", "brioche", "croissant", "omelette", "mayonnaise", "meringue", "custard", "quiche", "pancake"],
+        "eggs": ["egg", "eggs", "bread", "brioche", "croissant", "omelette", "mayonnaise", "meringue", "custard", "quiche", "pancake"],
         "bakery": ["bread", "loaf", "roll", "brioche", "baguette", "croissant", "pastry", "donut", "buns", "bun", "muffin", "cake", "scone"],
         "meat": ["meat", "chicken", "beef", "pork", "lamb", "sausage", "ham", "turkey", "bacon"],
         "drinks": ["drink", "drinks", "juice", "tea", "coffee", "soda", "smoothie", "latte", "kefir", "milkshake", "cider", "water", "beer", "wine"],

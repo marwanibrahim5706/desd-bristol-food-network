@@ -74,6 +74,23 @@ def _get_single_producer(cart):
     return None
 
 
+def _get_cart_allergens(cart):
+    allergens = []
+    for item in cart.items.select_related("product"):
+        raw_allergens = (item.product.allergens or "").strip()
+        if not raw_allergens:
+            continue
+        for allergen in raw_allergens.split(","):
+            allergen_name = allergen.strip()
+            if allergen_name and allergen_name not in allergens:
+                allergens.append(allergen_name)
+    return allergens
+
+
+def _reset_checkout_allergen_confirmation(request):
+    request.session.pop("checkout_allergens_confirmed", None)
+
+
 def _get_favourite_recipe_cards(user, *, limit=3):
     if not user.is_authenticated:
         return []
@@ -264,9 +281,32 @@ def cart_page(request):
         {
             "cart": cart,
             "producer_sections": producer_sections,
+            "cart_allergens": _get_cart_allergens(cart),
             "favourite_recipes": _get_favourite_recipe_cards(request.user),
         },
     )
+
+
+@login_required
+def confirm_checkout(request):
+    _ensure_customer_access(request.user)
+    if request.method != "POST":
+        return redirect("market_payments:cart")
+
+    cart = _get_or_create_cart(request.user)
+    if cart.items.count() == 0:
+        messages.error(request, "Please add an item to your cart before continuing.")
+        return redirect("market_payments:cart")
+
+    if request.POST.get("confirm_allergens") != "on":
+        messages.error(
+            request,
+            "Please confirm that you have reviewed the allergen information for every item in your cart before proceeding to checkout.",
+        )
+        return redirect("market_payments:cart")
+
+    request.session["checkout_allergens_confirmed"] = True
+    return redirect("market_payments:payment")
 
 
 @login_required
@@ -333,6 +373,7 @@ def add_to_cart(request, product_id):
         return redirect(request.POST.get("next") or "market_payments:cart")
 
     cart = _get_or_create_cart(request.user)
+    _reset_checkout_allergen_confirmation(request)
 
     item, created = CartItem.objects.get_or_create(
         cart=cart,
@@ -375,16 +416,19 @@ def update_cart_item(request, item_id):
     if quantity <= 0:
         product_name = item.product.name
         item.delete()
+        _reset_checkout_allergen_confirmation(request)
         messages.info(request, f"{product_name} removed from your cart.")
         return redirect("market_payments:cart")
 
     if not item.product.is_active:
         messages.error(request, f"{item.product.name} is no longer available.")
         item.delete()
+        _reset_checkout_allergen_confirmation(request)
         return redirect("market_payments:cart")
     if not item.product.is_currently_in_season():
         messages.error(request, f"{item.product.name} is out of season. {item.product.seasonal_range_display}.")
         item.delete()
+        _reset_checkout_allergen_confirmation(request)
         return redirect("market_payments:cart")
 
     if quantity > item.product.stock_quantity:
@@ -480,6 +524,13 @@ def payment_page(request):
 
     min_delivery_at = timezone.localtime(_minimum_delivery_datetime()).strftime("%Y-%m-%dT%H:%M")
 
+    if cart.items.count() > 0 and not request.session.get("checkout_allergens_confirmed"):
+        messages.warning(
+            request,
+            "Please confirm that you have reviewed the allergen information for every item in your cart before proceeding to checkout.",
+        )
+        return redirect("market_payments:cart")
+
     return render(
         request,
         "market_payments/payment.html",
@@ -509,6 +560,13 @@ def pay_now(request):
 
     if cart.items.count() == 0:
         messages.error(request, "Please add an item to your cart before continuing.")
+        return redirect("market_payments:cart")
+
+    if not request.session.get("checkout_allergens_confirmed"):
+        messages.error(
+            request,
+            "Please confirm that you have reviewed the allergen information for every item in your cart before proceeding to checkout.",
+        )
         return redirect("market_payments:cart")
 
     producer_sections = _group_cart_items_by_producer(cart)
@@ -700,6 +758,7 @@ def clear_cart(request):
 
     cart = _get_or_create_cart(request.user)
     cart.items.all().delete()
+    _reset_checkout_allergen_confirmation(request)
     messages.info(request, "Cart cleared.")
     return redirect("market_payments:cart")
 

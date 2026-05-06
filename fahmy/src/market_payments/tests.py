@@ -132,6 +132,17 @@ class SingleProducerCheckoutTestCase(TestCase):
         self.assertContains(cart_response, "Platform commission (5%)")
         self.assertContains(cart_response, "Saved favourites")
         self.assertContains(cart_response, "Spring Greens Tart")
+        self.assertContains(cart_response, "I confirm that I have reviewed the allergen information")
+
+        blocked_payment_response = self.client.get(reverse("market_payments:payment"), follow=True)
+        self.assertRedirects(blocked_payment_response, reverse("market_payments:cart"))
+        self.assertContains(blocked_payment_response, "Please confirm that you have reviewed the allergen information")
+
+        confirm_response = self.client.post(
+            reverse("market_payments:confirm_checkout"),
+            {"confirm_allergens": "on"},
+        )
+        self.assertRedirects(confirm_response, reverse("market_payments:payment"))
 
         payment_response = self.client.get(reverse("market_payments:payment"))
         self.assertEqual(payment_response.status_code, 200)
@@ -296,6 +307,12 @@ class MultiProducerCheckoutTestCase(TestCase):
         self.assertContains(cart_response, "Hillside Dairy")
         self.assertContains(cart_response, "Grouped by producer")
         self.assertContains(cart_response, "Proceed to Checkout")
+
+        confirm_response = self.client.post(
+            reverse("market_payments:confirm_checkout"),
+            {"confirm_allergens": "on"},
+        )
+        self.assertRedirects(confirm_response, reverse("market_payments:payment"))
 
         payment_response = self.client.get(reverse("market_payments:payment"))
         self.assertEqual(payment_response.status_code, 200)
