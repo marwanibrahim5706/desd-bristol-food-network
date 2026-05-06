@@ -139,11 +139,7 @@
           <h1>Your product catalogue</h1>
           <p>Keep product information, stock levels, and customer visibility up to date.</p>
         </div>
-        <div class="productActions">
-          <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
-          <a class="linkBtn secondary" href="{% url 'producer_recipe_create' %}">Create recipe</a>
-          <a class="linkBtn secondary" href="{% url 'producer_story_create' %}">Create farm story</a>
-        </div>
+        <a class="linkBtn" href="{% url 'producer_product_create' %}">Add product</a>
       </header>
 
       {% if messages %}
@@ -180,7 +176,9 @@
                 <li><span class="muted">Low stock alert</span><strong>{{ product.low_stock_threshold }}</strong></li>
                 <li><span class="muted">Food miles</span><strong>{% if product.food_miles != None %}{{ product.food_miles }}{% else %}Not set{% endif %}</strong></li>
                 <li><span class="muted">Season</span><strong>{{ product.seasonal_status_label }}</strong></li>
-                <li><span class="muted">Availability</span><strong>{{ product.seasonal_range_display }}</strong></li>
+                {% if product.seasonal_range_display %}
+                  <li><span class="muted">Availability</span><strong>{{ product.seasonal_range_display }}</strong></li>
+                {% endif %}
                 {% if product.allergens %}
                   <li><span class="muted">Allergens</span><strong>{{ product.allergens }}</strong></li>
                 {% endif %}

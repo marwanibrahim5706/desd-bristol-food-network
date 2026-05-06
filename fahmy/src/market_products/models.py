@@ -16,6 +16,16 @@ class Product(models.Model):
         ("other", "Other"),
     ]
 
+    AVOID_CATEGORY_KEYWORDS = {
+        "fruit_veg": ["fruit", "vegetable", "veg", "salad", "greens", "herb", "courgette", "cucumber", "tomato", "potato"],
+        "dairy": ["milk", "cheese", "butter", "cream", "yogurt", "yoghurt", "custard", "kefir", "casein"],
+        "eggs": ["egg", "eggs", "brioche", "croissant", "omelette", "mayonnaise", "meringue", "custard", "quiche", "pancake"],
+        "bakery": ["bread", "loaf", "roll", "brioche", "baguette", "croissant", "pastry", "donut", "buns", "bun", "muffin", "cake", "scone"],
+        "meat": ["meat", "chicken", "beef", "pork", "lamb", "sausage", "ham", "turkey", "bacon"],
+        "drinks": ["drink", "drinks", "juice", "tea", "coffee", "soda", "smoothie", "latte", "kefir", "milkshake", "cider", "water", "beer", "wine"],
+        "other": [],
+    }
+
     SEASON_CHOICES = [
         ("seasonal", "Seasonal date range"),
         ("spring", "Spring"),
@@ -99,7 +109,7 @@ class Product(models.Model):
     def seasonal_range_display(self):
         bounds = self._season_month_bounds()
         if not bounds:
-            return "Available year-round"
+            return ""
         month_names = dict(self.MONTH_CHOICES)
         return f"Available: {month_names[bounds[0]]} - {month_names[bounds[1]]}"
 
@@ -118,6 +128,24 @@ class Product(models.Model):
         if self.seasonal_availability == "all_year":
             return "Available year-round"
         return "In season" if self.is_currently_in_season() else "Out of season"
+
+    @property
+    def avoid_category_labels(self):
+        text = " ".join(
+            [self.allergens or "", self.name or "", self.description or ""]
+        ).lower()
+        labels = []
+
+        for category_key, category_label in self.CATEGORY_CHOICES:
+            matched = self.category == category_key
+            for term in self.AVOID_CATEGORY_KEYWORDS.get(category_key, []):
+                if term in text:
+                    matched = True
+                    break
+            if matched:
+                labels.append(category_label)
+
+        return labels
 
     @property
     def can_be_ordered(self):

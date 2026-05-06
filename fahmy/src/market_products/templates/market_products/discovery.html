@@ -322,6 +322,27 @@
       background: #9ca3af;
     }
 
+    .card.unavailable {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+      color: #6b7280;
+    }
+
+    .card.unavailable .thumb,
+    .card.unavailable .muted,
+    .card.unavailable .product-description {
+      opacity: 0.72;
+    }
+
+    .card.unavailable .row strong {
+      color: #4b5563;
+    }
+
+    .card.unavailable .pill:not(.danger):not(.ok) {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+
     .pagination {
       display: flex;
       gap: 10px;
@@ -815,8 +836,8 @@
     <div class="top">
       <div>
         <div class="hero-kicker">Customer marketplace</div>
-        <h1 style="margin:0;">Discover Bristol produce</h1>
-        <div class="hero-copy">Search local products, compare producers, avoid allergens, and sort by price, season, food miles, or newest arrivals.</div>
+        <h1 style="margin:0;">Discovery</h1>
+        <div class="muted">Search by product, producer, category, allergens, food miles, organic status, price, and availability.</div>
       </div>
 
     </div>
@@ -844,19 +865,15 @@
               {% endfor %}
             </select>
             <select class="control-md" name="available">
-              <option value="">Active products</option>
-              <option value="1" {% if filters.available == "1" %}selected{% endif %}>Available only</option>
+              <option value="both" {% if filters.available == "both" %}selected{% endif %}>In stock and in season</option>
+              <option value="in_stock" {% if filters.available == "in_stock" %}selected{% endif %}>In stock only</option>
+              <option value="in_season" {% if filters.available == "in_season" %}selected{% endif %}>In season only</option>
+              <option value="active" {% if filters.available == "active" %}selected{% endif %}>All active products</option>
             </select>
             <select class="control-md" name="organic">
               <option value="" {% if not filters.organic %}selected{% endif %}>All</option>
               <option value="1" {% if filters.organic == "1" %}selected{% endif %}>Organic only</option>
               <option value="0" {% if filters.organic == "0" %}selected{% endif %}>Non-organic only</option>
-            </select>
-            <select class="control-md" name="season">
-              <option value="">Any season</option>
-              {% for value, label in seasons %}
-                <option value="{{ value }}" {% if filters.season == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
             </select>
             <input class="control-sm" name="max_food_miles" type="number" step="0.1" min="0" placeholder="Max food miles" value="{{ filters.max_food_miles }}">
             <input class="control-sm" name="min_price" type="number" step="0.01" min="0" placeholder="Min £" value="{{ filters.min_price }}">
@@ -892,17 +909,19 @@
       <span class="pill">{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }} found</span>
       {% if filters.q %}<span class="pill">Search: {{ filters.q }}</span>{% endif %}
       {% if filters.category %}<span class="pill">Category filtered</span>{% endif %}
-      {% if filters.available == "1" %}<span class="pill ok">In stock only</span>{% endif %}
+      {% if filters.available == "both" %}<span class="pill ok">In stock and in season</span>{% endif %}
+      {% if filters.available == "in_stock" %}<span class="pill ok">In stock only</span>{% endif %}
+      {% if filters.available == "in_season" %}<span class="pill ok">In season only</span>{% endif %}
+      {% if filters.available == "active" %}<span class="pill">All active products</span>{% endif %}
       {% if filters.organic == "1" %}<span class="pill ok">Organic only</span>{% endif %}
       {% if filters.organic == "0" %}<span class="pill">Non-organic only</span>{% endif %}
-      {% if filters.season %}<span class="pill">Season: {{ filters.season }}</span>{% endif %}
       {% for label in avoided_category_labels %}<span class="pill">Avoiding {{ label }}</span>{% endfor %}
       {% if filters.max_food_miles %}<span class="pill">Within {{ filters.max_food_miles }} miles</span>{% endif %}
     </div>
 
     <div class="grid">
       {% for p in page_obj %}
-        <div class="card product-card">
+        <div class="card product-card{% if not p.can_be_ordered %} unavailable{% endif %}">
           <a class="product-link" href="{% url 'product_detail' p.id %}">
             {% if p.image_url %}
               <img class="thumb" src="{{ p.image_url }}" alt="{{ p.name }}" onerror="this.onerror=null;this.src='{{ p.image_fallback_url }}';">
@@ -939,6 +958,11 @@
                 <span class="pill ok">Organic</span>
               {% endif %}
               <span class="pill">{{ p.get_category_display }}</span>
+              {% for label in p.avoid_category_labels %}
+                {% if label != p.get_category_display %}
+                  <span class="pill">{{ label }}</span>
+                {% endif %}
+              {% endfor %}
               {% if p.seasonal_availability == "all_year" %}
                 <span class="pill ok">{{ p.seasonal_status_label }}</span>
               {% elif p.is_currently_in_season %}
@@ -946,7 +970,9 @@
               {% else %}
                 <span class="pill danger">Out of season</span>
               {% endif %}
-              <span class="pill">{{ p.seasonal_range_display }}</span>
+              {% if p.seasonal_range_display %}
+                <span class="pill">{{ p.seasonal_range_display }}</span>
+              {% endif %}
               {% if p.food_miles != None %}
                 <span class="pill">{{ p.food_miles }} food miles</span>
               {% endif %}
@@ -964,7 +990,7 @@
                 <button type="submit">Add to cart</button>
               </form>
             {% else %}
-              <button type="button" class="disabled-btn" disabled>{% if not p.is_currently_in_season %}Out of season{% else %}Unavailable{% endif %}</button>
+              <button type="button" class="disabled-btn" disabled>{% if p.stock_quantity <= 0 %}Out of stock{% elif not p.is_currently_in_season %}Out of season{% else %}Unavailable{% endif %}</button>
             {% endif %}
           </div>
         </div>
